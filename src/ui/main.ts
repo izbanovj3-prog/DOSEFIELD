@@ -3,7 +3,7 @@
  * the slider readout interpolates the active curve (instant), and the canvas plots all three.
  */
 import './styles.css';
-import type { CurvePoint, CurveSeries } from './dose.worker.js';
+import type { CurvePoint, CurveSeries, ValidationData } from './dose.worker.js';
 
 const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
@@ -13,12 +13,14 @@ interface State {
   material: keyof typeof TRACE;
   thickness: number;
   solar: 'min' | 'max';
+  mode: 'primaries' | 'fragmentation';
   duration: number;
 }
-const state: State = { material: 'aluminum', thickness: 10, solar: 'min', duration: 360 };
+const state: State = { material: 'aluminum', thickness: 10, solar: 'min', mode: 'primaries', duration: 360 };
 
-// cache of computed curves per solar condition
+// cache of computed curves per (solar condition, nuclear mode)
 const curveCache = new Map<string, CurveSeries>();
+const curveKey = (): string => `${state.solar}:${state.mode}`;
 let curves: CurveSeries | null = null;
 
 const worker = new Worker(new URL('./dose.worker.ts', import.meta.url), { type: 'module' });
@@ -45,27 +47,27 @@ function interp(pts: CurvePoint[], t: number): CurvePoint {
 }
 
 function requestCurves(): void {
-  const cached = curveCache.get(state.solar);
+  const cached = curveCache.get(curveKey());
   if (cached) {
     curves = cached;
     render();
     return;
   }
   setStatus('busy', 'COMPUTING');
-  worker.postMessage({ type: 'curves', solar: state.solar });
+  worker.postMessage({ type: 'curves', solar: state.solar, mode: state.mode });
 }
 
 worker.onmessage = (e: MessageEvent) => {
   const msg = e.data;
   if (msg.type === 'curves') {
-    curveCache.set(msg.solar, msg.series);
-    if (msg.solar === state.solar) {
+    curveCache.set(`${msg.solar}:${msg.mode}`, msg.series);
+    if (msg.solar === state.solar && msg.mode === state.mode) {
       curves = msg.series;
       setStatus('ready', 'READY');
       render();
     }
   } else if (msg.type === 'validate') {
-    renderValidation(msg.rows);
+    renderValidation(msg.data);
   }
 };
 
@@ -96,6 +98,10 @@ function render(): void {
     note.textContent = `${totalMsv.toFixed(0)} mSv of 600 mSv over ${state.duration} d`;
     note.style.color = 'var(--dim)';
   }
+  $('footnote').textContent =
+    state.mode === 'fragmentation'
+      ? 'Free space, with simplified nuclear fragmentation (Bradt–Peters; charged fragments only — no secondary neutrons, not HZETRN). GCR: Matthiä 2013. Q: ICRP-60. Tissue: water.'
+      : 'Free space, primaries only (no nuclear fragmentation). GCR: Matthiä 2013 (BON fit). Q: ICRP-60. Tissue: water.';
   drawChart();
 }
 
@@ -169,15 +175,48 @@ function drawChart(): void {
   ctx.strokeStyle = TRACE[state.material]; ctx.lineWidth = 2; ctx.stroke();
 }
 
-function renderValidation(rows: Array<{ status: string; label: string; detail: string }>): void {
-  const icon = (s: string) => (s === 'pass' ? '✔' : s === 'fail' ? '✘' : '…');
-  $('validationResults').innerHTML = rows
-    .map(
-      (r) =>
-        `<div class="val-row ${r.status}"><span class="vr-icon">${icon(r.status)}</span>` +
-        `<span>${r.label}</span><span class="vr-detail">${r.detail}</span></div>`,
-    )
-    .join('');
+function renderValidation(d: ValidationData): void {
+  const f = (x: number, n = 2): string => x.toFixed(n);
+  const check = (ok: boolean, label: string, detail: string): string =>
+    `<div class="val-row ${ok ? 'pass' : 'fail'}"><span class="vr-icon">${ok ? '✔' : '✘'}</span>` +
+    `<span>${label}</span><span class="vr-detail">${detail}</span></div>`;
+  const r = d.rad;
+  const radRow = (q: string, model: string, meas: string, ratio: string): string =>
+    `<tr><td style="padding:6px 8px;color:var(--dim)">${q}</td>` +
+    `<td style="padding:6px 8px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums">${model}</td>` +
+    `<td style="padding:6px 8px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums">${meas}</td>` +
+    `<td style="padding:6px 8px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums">${ratio}×</td></tr>`;
+  $('validationResults').innerHTML =
+    check(
+      d.nistMaxSolid <= 5,
+      'Proton stopping power vs NIST PSTAR',
+      `max err ≥10 MeV ${f(d.nistMaxSolid)}% · all energies ${f(d.nistMaxAll)}%`,
+    ) +
+    check(
+      d.trendOk,
+      'Polyethylene < aluminium at equal areal density',
+      `poly better by up to ${f(d.trendWorst, 1)}%`,
+    ) +
+    `<div style="margin-top:12px;background:#091020;border:1px solid var(--edge);border-radius:8px;padding:12px">
+      <div style="font-size:11px;color:var(--accent);letter-spacing:1px;margin-bottom:6px">MSL/RAD CRUISE — MODEL vs MEASURED</div>
+      <div style="font-size:10.5px;color:var(--dim);margin-bottom:8px">φ≈${d.phiLo}–${d.phiHi} MV → Matthiä W≈${d.cruiseW}, behind ${d.cruiseShield} g/cm² Al-equiv · set independently of the measurement</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px">
+          <th style="text-align:left;padding:4px 8px;font-weight:400">quantity</th>
+          <th style="text-align:right;padding:4px 8px;font-weight:400">model</th>
+          <th style="text-align:right;padding:4px 8px;font-weight:400">measured (RAD)</th>
+          <th style="text-align:right;padding:4px 8px;font-weight:400">ratio</th></tr></thead>
+        <tbody>
+          ${radRow('absorbed dose [mGy/d]', f(r.model.D, 3), `${f(r.measured.D, 3)} ± ${d.radSigma.D}`, f(r.ratioD))}
+          ${radRow('dose-equivalent [mSv/d]', f(r.model.H), `${f(r.measured.H)} ± ${d.radSigma.H}`, f(r.ratioH))}
+          ${radRow('mean quality ⟨Q⟩', f(r.model.Q), `${f(r.measured.Q)} ± ${d.radSigma.Q}`, f(r.ratioQ))}
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;font-size:11px;line-height:1.65;color:var(--dim)">
+      <span style="color:var(--text)">Limitations.</span> 1-D deterministic CSDA · GCR primaries + simplified Bradt–Peters fragmentation ·
+      <span style="color:var(--warn)">no secondary-neutron / target-fragment transport</span>, so absorbed dose is under-predicted (ratio ${f(r.ratioD)}×) — the honest scope limit. Not a substitute for HZETRN / OLTARIS.
+    </div>`;
 }
 
 // ---- wiring ----------------------------------------------------------------
@@ -193,6 +232,14 @@ $('solarSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.solar = (b as HTMLElement).dataset.solar as 'min' | 'max';
     $('solarSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    requestCurves();
+  }),
+);
+$('modeSeg').querySelectorAll('button').forEach((b) =>
+  b.addEventListener('click', () => {
+    state.mode = (b as HTMLElement).dataset.mode as 'primaries' | 'fragmentation';
+    $('modeSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     requestCurves();
   }),
@@ -222,3 +269,4 @@ window.addEventListener('resize', () => drawChart());
 
 setStatus('busy', 'COMPUTING');
 requestCurves();
+worker.postMessage({ type: 'validate' }); // populate the validation panel on load
