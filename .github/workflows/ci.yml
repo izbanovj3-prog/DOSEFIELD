@@ -1,0 +1,48 @@
+name: CI
+
+# Runs the full credibility suite on every push / PR: types, unit tests, a clean
+# production build, and the headless physics validation (NIST PSTAR + MSL/RAD).
+# Any failing step fails the build — the validation gates have non-zero exit codes.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  validate:
+    name: typecheck · tests · physics validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install (clean)
+        run: npm ci
+
+      - name: Typecheck (node + browser configs)
+        run: npm run typecheck
+
+      - name: Unit tests (vitest)
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Physics validation — NIST PSTAR stopping power & CSDA range
+        run: npm run validate:phase1
+
+      - name: Physics validation — GCR dose / LET / Q(LET)
+        run: npm run validate:phase2
+
+      - name: Physics validation — shielding transport (poly < Al)
+        run: npm run validate:phase3
+
+      - name: Physics validation — MSL/RAD cruise dose (within ~2x)
+        run: npm run validate:phase4
+
+      - name: Physics validation — simplified fragmentation
+        run: npm run validate:phase5

@@ -1,5 +1,7 @@
 # DOSEFIELD
 
+[![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
+
 A scientifically-honest **1D deep-space radiation dose & shielding model**. The goal is
 to estimate the dose-equivalent an astronaut receives behind shielding on a Mars-transit
 mission and validate it against the real measured dose from NASA's MSL/RAD instrument.

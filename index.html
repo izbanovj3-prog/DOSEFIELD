@@ -44,11 +44,19 @@
           </div>
 
           <div class="control">
+            <label>Nuclear model</label>
+            <div class="segmented" id="modeSeg">
+              <button data-mode="primaries" class="active">Primaries only</button>
+              <button data-mode="fragmentation">+ Fragmentation</button>
+            </div>
+          </div>
+
+          <div class="control">
             <label>Mission duration · <span id="durationVal" class="readback">360</span> days</label>
             <input type="range" id="duration" min="30" max="1000" step="10" value="360" />
           </div>
 
-          <p class="footnote">
+          <p class="footnote" id="footnote">
             Free space, primaries only. GCR: Matthiä 2013 (BON fit). Q: ICRP-60. Tissue: water.
           </p>
         </section>

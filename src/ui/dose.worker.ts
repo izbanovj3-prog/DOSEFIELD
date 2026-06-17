@@ -3,10 +3,14 @@
  * Computes dose-equivalent vs shield thickness for Al/poly/water, and the live validation suite.
  */
 import { computeShieldedDose } from '../dose/shieldedDose.js';
+import { computeFragmentedDose } from '../dose/fragmentedDose.js';
+import { computeRadComparison } from '../dose/radComparison.js';
+import type { RadComparison } from '../dose/radComparison.js';
 import { electronicMassStoppingPower } from '../physics/stoppingPower.js';
 import { MATERIALS } from '../physics/materials.js';
 import { PSTAR_DATASETS } from '../../data/pstar/index.js';
-import { W_SOLAR_MIN, W_SOLAR_MAX } from '../../data/gcr/matthia2013.js';
+import { RAD_CRUISE } from '../../data/rad/zeitlin2013.js';
+import { W_SOLAR_MIN, W_SOLAR_MAX, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
 
 const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water'] as const;
 const T_MAX = 40;
@@ -25,13 +29,16 @@ function wFor(solar: string): number {
   return solar === 'max' ? W_SOLAR_MAX : W_SOLAR_MIN;
 }
 
-function computeCurves(solar: string): CurveSeries {
+function computeCurves(solar: string, mode: string): CurveSeries {
   const W = wFor(solar);
+  // mode 'fragmentation' wires in the EXISTING Bradt–Peters fragmentation physics;
+  // 'primaries' is the primary-only transport. No new physics, no fudge.
+  const dose = mode === 'fragmentation' ? computeFragmentedDose : computeShieldedDose;
   const series: CurveSeries = {};
   for (const m of MATERIAL_KEYS) {
     const pts: CurvePoint[] = [];
     for (let t = 0; t <= T_MAX + 1e-9; t += T_STEP) {
-      const r = computeShieldedDose(m, t, W, CURVE_PERDECADE);
+      const r = dose(m, t, W, CURVE_PERDECADE);
       pts.push({ t, H: r.doseEquivalent_mSv_day, D: r.absorbedDose_mGy_day, Q: r.meanQ });
     }
     series[m] = pts;
@@ -39,55 +46,63 @@ function computeCurves(solar: string): CurveSeries {
   return series;
 }
 
-interface ValRow {
-  status: 'pass' | 'fail' | 'pending';
-  label: string;
-  detail: string;
+export interface ValidationData {
+  /** NIST PSTAR max % error in the ≥10 MeV Bethe-valid region (the headline 1.55%) */
+  nistMaxSolid: number;
+  /** NIST PSTAR max % error over all energies (1–1000 MeV) */
+  nistMaxAll: number;
+  trendOk: boolean;
+  trendWorst: number;
+  /** MSL/RAD comparison — the SAME function `npm run report` uses */
+  rad: RadComparison;
+  radSigma: { D: number; H: number; Q: number };
+  cruiseW: number;
+  cruiseShield: number;
+  phiLo: number;
+  phiHi: number;
 }
 
-function runValidation(): ValRow[] {
-  const rows: ValRow[] = [];
-
-  // 1. NIST PSTAR stopping power (max % error over all embedded points)
-  let maxErr = 0;
+// Every number below comes from the same code paths as `npm run report` (generateReport.ts),
+// so the in-UI validation matches the generated report exactly. Nothing is hardcoded.
+function runValidation(): ValidationData {
+  // 1. NIST PSTAR — max % error, all energies and the ≥10 MeV region (Bethe valid).
+  let nistMaxAll = 0;
+  let nistMaxSolid = 0;
   for (const key of Object.keys(PSTAR_DATASETS) as (keyof typeof PSTAR_DATASETS)[]) {
     const ds = PSTAR_DATASETS[key];
     const mat = MATERIALS[key]!;
     for (const p of ds.points) {
-      const model = electronicMassStoppingPower(p.T_MeV, mat);
-      maxErr = Math.max(maxErr, Math.abs((model - p.electronic) / p.electronic) * 100);
+      const e = Math.abs((electronicMassStoppingPower(p.T_MeV, mat) - p.electronic) / p.electronic) * 100;
+      nistMaxAll = Math.max(nistMaxAll, e);
+      if (p.T_MeV >= 10) nistMaxSolid = Math.max(nistMaxSolid, e);
     }
   }
-  rows.push({
-    status: maxErr <= 5 ? 'pass' : 'fail',
-    label: 'Stopping power vs NIST PSTAR (Al / water / poly, protons)',
-    detail: `max err ${maxErr.toFixed(2)}%`,
-  });
 
-  // 2. Shielding trend: polyethylene < aluminium at equal areal density
-  const W = W_SOLAR_MIN;
+  // 2. Shielding trend: polyethylene < aluminium at equal areal density.
   let trendOk = true;
-  let worst = 0;
+  let trendWorst = 0;
   for (const t of [10, 20, 30]) {
-    const al = computeShieldedDose('aluminum', t, W, CURVE_PERDECADE).doseEquivalent_mSv_day;
-    const poly = computeShieldedDose('polyethylene', t, W, CURVE_PERDECADE).doseEquivalent_mSv_day;
+    const al = computeShieldedDose('aluminum', t, W_SOLAR_MIN).doseEquivalent_mSv_day;
+    const poly = computeShieldedDose('polyethylene', t, W_SOLAR_MIN).doseEquivalent_mSv_day;
     if (!(poly < al)) trendOk = false;
-    worst = Math.max(worst, (1 - poly / al) * 100);
+    trendWorst = Math.max(trendWorst, (1 - poly / al) * 100);
   }
-  rows.push({
-    status: trendOk ? 'pass' : 'fail',
-    label: 'Shielding trend: polyethylene < aluminium (equal g/cm²)',
-    detail: `poly better by up to ${worst.toFixed(1)}%`,
-  });
 
-  // 3. RAD cruise dose — Phase 4
-  rows.push({
-    status: 'pending',
-    label: 'MSL/RAD cruise dose comparison',
-    detail: 'Phase 4',
-  });
+  // 3. MSL/RAD cruise comparison (model vs measured, with ratios).
+  const rad = computeRadComparison();
 
-  return rows;
+  return {
+    nistMaxSolid,
+    nistMaxAll,
+    trendOk,
+    trendWorst,
+    rad,
+    radSigma: { D: RAD_CRUISE.doseRate_sigma, H: RAD_CRUISE.doseEquivalent_sigma, Q: RAD_CRUISE.meanQ_sigma },
+    cruiseW: W_CRUISE_2012,
+    cruiseShield: RAD_CRUISE.shielding_gcm2,
+    phiLo: RAD_CRUISE.phi_MV_low,
+    phiHi: RAD_CRUISE.phi_MV_high,
+  };
 }
 
 // Cast away the Window-typed global so we don't need the WebWorker lib (which conflicts with DOM).
@@ -97,13 +112,14 @@ const ctx = self as unknown as {
 };
 
 ctx.onmessage = (e: MessageEvent) => {
-  const msg = e.data as { type: string; solar?: string };
+  const msg = e.data as { type: string; solar?: string; mode?: string };
   if (msg.type === 'curves') {
     const solar = msg.solar ?? 'min';
-    const series = computeCurves(solar);
+    const mode = msg.mode ?? 'primaries';
+    const series = computeCurves(solar, mode);
     const thicknesses = series.aluminum!.map((p) => p.t);
-    ctx.postMessage({ type: 'curves', solar, thicknesses, series });
+    ctx.postMessage({ type: 'curves', solar, mode, thicknesses, series });
   } else if (msg.type === 'validate') {
-    ctx.postMessage({ type: 'validate', rows: runValidation() });
+    ctx.postMessage({ type: 'validate', data: runValidation() });
   }
 };
