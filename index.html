@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DOSEFIELD · Deep-Space Dosimeter</title>
+    <link rel="stylesheet" href="/src/ui/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="masthead">
+        <div class="title-block">
+          <h1>DOSEFIELD</h1>
+          <p class="subtitle">1D deep-space radiation dose &amp; shielding model · GCR → dose-equivalent</p>
+        </div>
+        <div class="status-lamp" id="statusLamp"><span class="dot"></span><span id="statusText">INIT</span></div>
+      </header>
+
+      <main class="grid">
+        <!-- CONTROLS -->
+        <section class="panel controls">
+          <h2>Mission Configuration</h2>
+
+          <div class="control">
+            <label>Shield material</label>
+            <div class="segmented" id="materialSeg">
+              <button data-mat="aluminum" class="active">Aluminium</button>
+              <button data-mat="polyethylene">Polyethylene</button>
+              <button data-mat="water">Water</button>
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Shield areal density · <span id="thicknessVal" class="readback">10.0</span> g/cm²</label>
+            <input type="range" id="thickness" min="0" max="40" step="0.5" value="10" />
+          </div>
+
+          <div class="control">
+            <label>Solar condition</label>
+            <div class="segmented" id="solarSeg">
+              <button data-solar="min" class="active">Solar MIN (worst GCR)</button>
+              <button data-solar="max">Solar MAX</button>
+            </div>
+          </div>
+
+          <div class="control">
+            <label>Mission duration · <span id="durationVal" class="readback">360</span> days</label>
+            <input type="range" id="duration" min="30" max="1000" step="10" value="360" />
+          </div>
+
+          <p class="footnote">
+            Free space, primaries only. GCR: Matthiä 2013 (BON fit). Q: ICRP-60. Tissue: water.
+          </p>
+        </section>
+
+        <!-- READOUT -->
+        <section class="panel readout">
+          <h2>Dose-Equivalent (behind shield)</h2>
+          <div class="big-number">
+            <span id="rateValue">—</span><span class="unit">mSv/day</span>
+          </div>
+          <div class="sub-metrics">
+            <div class="metric"><span class="m-label">Absorbed dose</span><span class="m-val" id="absVal">—</span><span class="m-unit">mGy/day</span></div>
+            <div class="metric"><span class="m-label">Mean quality ⟨Q⟩</span><span class="m-val" id="qVal">—</span><span class="m-unit"></span></div>
+            <div class="metric"><span class="m-label">Mission total</span><span class="m-val" id="totalVal">—</span><span class="m-unit">Sv</span></div>
+          </div>
+
+          <div class="career">
+            <div class="career-head">
+              <span>NASA career limit · 600 mSv</span>
+              <span id="careerPct" class="career-pct">—</span>
+            </div>
+            <div class="career-bar"><div class="career-fill" id="careerFill"></div></div>
+            <div class="career-note" id="careerNote"></div>
+          </div>
+        </section>
+
+        <!-- CHART -->
+        <section class="panel chart">
+          <h2>Dose-Equivalent vs Shield Areal Density</h2>
+          <canvas id="chart" width="900" height="420"></canvas>
+          <div class="legend">
+            <span class="lg lg-al">■ Aluminium</span>
+            <span class="lg lg-poly">■ Polyethylene</span>
+            <span class="lg lg-water">■ Water</span>
+            <span class="lg lg-mark">▮ current</span>
+          </div>
+        </section>
+
+        <!-- VALIDATION -->
+        <section class="panel validation">
+          <h2>Validation Suite</h2>
+          <button id="runValidation" class="run-btn">▶ RUN VALIDATION</button>
+          <div id="validationResults" class="val-results">
+            <p class="val-hint">Runs the live physics checks behind this model.</p>
+          </div>
+        </section>
+      </main>
+
+      <footer class="colophon">
+        Developed using NASA MSL/RAD measurements and OLTARIS reference data ·
+        deterministic 1D CSDA · fragmentation approximated (not a substitute for HZETRN).
+      </footer>
+    </div>
+
+    <script type="module" src="/src/ui/main.ts"></script>
+  </body>
+</html>

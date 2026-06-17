@@ -1,0 +1,28 @@
+{
+  "name": "dosefield",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scientifically-honest 1D deep-space radiation dose & shielding model. Phase 1: Bethe stopping power + CSDA range, validated against NIST PSTAR.",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "validate:phase1": "tsx src/validation/runPhase1.ts",
+    "validate:phase2": "tsx src/validation/runPhase2.ts",
+    "validate:phase3": "tsx src/validation/runPhase3.ts",
+    "validate:phase4": "tsx src/validation/runPhase4.ts",
+    "validate:phase5": "tsx src/validation/runPhase5.ts",
+    "report": "tsx src/report/generateReport.ts",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.ui.json"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.0.0",
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}

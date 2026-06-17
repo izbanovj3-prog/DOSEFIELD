@@ -1,0 +1,20 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+
+# WakaTime / Hackatime local artifacts.
+# These normally live in your HOME dir (~/.wakatime.cfg, ~/.wakatime/), NOT here —
+# listed defensively so a stray project-local copy is never committed.
+# (*.log above already covers .wakatime.log.) The .wakatime-project file is
+# intentionally NOT ignored: it pins the project name and SHOULD be committed.
+.wakatime.cfg
+.wakatime.db
+.wakatime.bdb
+.wakatime-internal.cfg
+.wakatime/
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
