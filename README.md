@@ -1,5 +1,7 @@
 # DOSEFIELD
 
+### ▶ Live dosimeter: **https://izbanovj3-prog.github.io/DOSEFIELD/**
+
 [![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
 
 A scientifically-honest **1D deep-space radiation dose & shielding model**. The goal is
@@ -127,6 +129,35 @@ parameter-free results that move the model **toward** RAD:
 secondary **neutrons** / target fragments that carry much of the shielded dose. That is HZETRN's
 job and is deliberately out of scope; Phase 5 isolates the ⟨Q⟩-softening and material-ordering.
 
+## Project structure
+
+```
+src/
+  physics/          energy-loss & nuclear engine (validated first, per build plan)
+    constants.ts        CODATA 2018 physical constants
+    materials.ts        cited material data (Al / water / polyethylene)
+    stoppingPower.ts    Bethe–Bloch + Sternheimer density effect      (Phase 1)
+    range.ts            CSDA range via ∫ dE / S                        (Phase 1)
+    effectiveCharge.ts  Barkas z_eff(Z,β)                              (Phase 2)
+    ionStopping.ts      heavy-ion stopping via z_eff² scaling          (Phase 2)
+    qualityFactor.ts    ICRP-60 Q(LET)                                 (Phase 2)
+    ionRange.ts         per-material ion range tables + inversion      (Phase 3)
+    fragmentation.ts    Bradt–Peters charge-changing cross-sections    (Phase 5)
+  dose/             dose pipelines built on the physics engine
+    doseModel.ts        free-space GCR dose / LET / H / ⟨Q⟩            (Phase 2)
+    shieldedDose.ts     CSDA slab transport in residual-energy space   (Phase 3)
+    radComparison.ts    model vs MSL/RAD cruise dose                   (Phase 4)
+    fragmentedDose.ts   fragmentation-corrected shielded dose          (Phase 5)
+  validation/       headless PASS/FAIL harnesses (runPhase1..5.ts)
+  report/           generateReport.ts → markdown + PNG plots          (Phase 4)
+  ui/               Vite dosimeter (main.ts, styles.css, dose.worker.ts)
+data/
+  pstar/            NIST PSTAR reference tables (accessed 2026-06-16)
+  gcr/              Matthiä et al. (2013) GCR spectrum coefficients
+  rad/              MSL/RAD measured cruise-dose values
+test/               vitest regression lock (physics + phase2..5)
+```
+
 ## Run it
 
 ```bash
@@ -162,3 +193,10 @@ The required MVP (Phases 1–4) and the optional Phase 5 are **done and validate
 and NASA MSL/RAD**. Possible future extensions (explicitly *not* attempted here): explicit neutron /
 target-fragment transport (the absorbed-dose gap), multi-generation fragmentation cascades, 3-D
 geometry, and energy-dependent nuclear cross-sections — i.e. the territory HZETRN/OLTARIS occupy.
+
+## License
+
+The code is released under the **MIT License** — see [`LICENSE`](LICENSE). This applies to
+the model and tooling only; the third-party scientific data it depends on (NIST PSTAR, the
+Matthiä et al. GCR model, ICRP-60, and the MSL/RAD measurements) remains under its own terms
+and is credited under [Data sources](#data-sources) above.
