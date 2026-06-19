@@ -22,6 +22,7 @@ const state: State = { material: 'aluminum', thickness: 10, solar: 'min', mode: 
 const curveCache = new Map<string, CurveSeries>();
 const curveKey = (): string => `${state.solar}:${state.mode}`;
 let curves: CurveSeries | null = null;
+let heroSet = false; // hero subhead is computed once, from the default-config curve
 
 const worker = new Worker(new URL('./dose.worker.ts', import.meta.url), { type: 'module' });
 
@@ -61,6 +62,10 @@ worker.onmessage = (e: MessageEvent) => {
   const msg = e.data;
   if (msg.type === 'curves') {
     curveCache.set(`${msg.solar}:${msg.mode}`, msg.series);
+    if (!heroSet && msg.solar === 'min' && msg.mode === 'primaries') {
+      setHeroSubhead(msg.series);
+      heroSet = true;
+    }
     if (msg.solar === state.solar && msg.mode === state.mode) {
       curves = msg.series;
       setStatus('ready', 'READY');
@@ -68,6 +73,7 @@ worker.onmessage = (e: MessageEvent) => {
     }
   } else if (msg.type === 'validate') {
     renderValidation(msg.data);
+    renderStrip(msg.data);
   }
 };
 
@@ -217,6 +223,31 @@ function renderValidation(d: ValidationData): void {
       <span style="color:var(--text)">Limitations.</span> 1-D deterministic CSDA · GCR primaries + simplified Bradt–Peters fragmentation ·
       <span style="color:var(--warn)">no secondary-neutron / target-fragment transport</span>, so absorbed dose is under-predicted (ratio ${f(r.ratioD)}×) — the honest scope limit. Not a substitute for HZETRN / OLTARIS.
     </div>`;
+}
+
+// Hero subhead — the REAL default-config mission total (aluminium · 10 g/cm² · solar min ·
+// primaries · 360 d), computed live from the curve, never a typed number. Truth-over-drama
+// guard: the "past the limit" claim only renders if the computed total actually exceeds it.
+function setHeroSubhead(series: CurveSeries): void {
+  const days = 360; // default mission duration (matches the duration slider's default)
+  const defH = interp(series.aluminum!, 10).H; // dose-equivalent [mSv/day] at the default 10 g/cm²
+  const totalMsv = defH * days;
+  const sv = totalMsv / 1000;
+  const months = Math.round(days / 30.44);
+  const el = $('heroSubhead');
+  el.innerHTML =
+    totalMsv > NASA_CAREER_LIMIT_MSV
+      ? `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — past NASA's ${NASA_CAREER_LIMIT_MSV} mSv career limit, before you've landed.`
+      : `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — ${Math.round((totalMsv / NASA_CAREER_LIMIT_MSV) * 100)}% of NASA's ${NASA_CAREER_LIMIT_MSV} mSv career limit.`;
+}
+
+// Always-on validation strip + the hero's NIST figure — sourced from the SAME runValidation()
+// data that `npm run report` / generateReport.ts use. No literals typed into the markup.
+function renderStrip(d: ValidationData): void {
+  $('heroNist').textContent = `${d.nistMaxSolid.toFixed(2)}%`;
+  $('vsNist').innerHTML = `<span class="vs-ok">${d.nistMaxSolid.toFixed(2)}%</span> max error`;
+  const r = d.rad;
+  $('vsRad').innerHTML = `${r.model.H.toFixed(2)} vs ${r.measured.H.toFixed(2)} mSv/day · <span class="vs-ok">${r.ratioH.toFixed(2)}×</span>`;
 }
 
 // ---- wiring ----------------------------------------------------------------
