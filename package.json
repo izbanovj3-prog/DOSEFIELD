@@ -13,6 +13,7 @@
     "validate:phase3": "tsx src/validation/runPhase3.ts",
     "validate:phase4": "tsx src/validation/runPhase4.ts",
     "validate:phase5": "tsx src/validation/runPhase5.ts",
+    "verify:deployed": "tsx src/validation/verifyDeployed.ts",
     "report": "tsx src/report/generateReport.ts",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.ui.json"
