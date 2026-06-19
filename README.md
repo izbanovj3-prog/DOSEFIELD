@@ -1,18 +1,38 @@
 # DOSEFIELD
 
-### ▶ Live dosimeter: **https://izbanovj3-prog.github.io/DOSEFIELD/**
+**A scientifically-honest 1-D model of the radiation dose an astronaut absorbs behind shielding
+on a deep-space mission — validated against NASA's MSL/RAD measurement, from first-principles
+physics, with no parameter tuned to the answer.**
+
+### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
 [![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
+&nbsp; CI runs typecheck · 76 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
 
-A scientifically-honest **1D deep-space radiation dose & shielding model**. The goal is
-to estimate the dose-equivalent an astronaut receives behind shielding on a Mars-transit
-mission and validate it against the real measured dose from NASA's MSL/RAD instrument.
+> ### The headline
+> **A Mars round-trip exceeds NASA's 600 mSv career radiation limit.** NASA's MSL/RAD instrument
+> measured ≈ **0.66 Sv** of dose-equivalent over the round-trip cruise to Mars (Zeitlin et al.,
+> *Science* 2013) — past the 600 mSv cap. DOSEFIELD reproduces that dose rate to within ~2×
+> straight from the Bethe stopping-power formula and a tabulated GCR spectrum, so you can watch
+> the dose climb past the limit in the live app as you change shielding material, thickness, and
+> mission duration.
 
-> Scope note: this is a **tractable deterministic 1D slab model**, not a reimplementation
-> of HZETRN/OLTARIS. Every approximation is labeled in the code and the report. The
-> credibility of the project is the validation, not the visuals.
+**Proof, not visuals.** The full validation — NIST agreement, the RAD comparison with an honest
+error discussion, and a Limitations section — is the auto-generated report:
+**[`report/DOSEFIELD_report.md`](report/DOSEFIELD_report.md)** &nbsp;·&nbsp; plots:
+[NIST](report/plots/nist_validation.png) ·
+[shielding curve](report/plots/shielding_curve.png) ·
+[RAD comparison](report/plots/rad_comparison.png) ·
+[fragmentation](report/plots/phase5_quality.png)
 
-## Status — Phases 1–5 complete · validated MVP + fragmentation
+> **Scope — read this first.** A *tractable deterministic 1-D slab model*, **not** a reimplementation
+> of HZETRN/OLTARIS. Every approximation is labeled in the code and the report; the credibility is
+> the validation number, not the UI. Top-line results: proton stopping power within **≤ 1.55 %** of
+> NIST PSTAR (≥ 10 MeV), and an MSL/RAD cruise dose-equivalent ratio of **0.84** (well inside the
+> ~2× bar). The one honest gap — absorbed dose under-predicted (~0.7×) because secondary neutrons
+> aren't transported — is documented, not hidden.
+
+## Status — validated MVP + fragmentation · CI-gated · deployed live
 
 ### Phase 1 — physics core + NIST PSTAR validation
 
