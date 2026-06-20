@@ -43,7 +43,6 @@ html, body {
 
 /* ---- hero ---- */
 .hero { margin-top: 22px; }
-.hero-title { font-size: clamp(34px, 6vw, 54px); font-weight: 700; letter-spacing: 8px; line-height: 1; color: #eaf2ff; text-shadow: 0 0 24px rgba(54, 245, 176, 0.18); }
 .hero-subhead { font-size: clamp(16px, 2.3vw, 22px); font-weight: 600; line-height: 1.45; color: var(--text); margin: 14px 0 0; max-width: 62ch; text-wrap: balance; }
 .hero-subhead .hero-x { color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .hero-plain { font-size: 12.5px; line-height: 1.7; color: var(--dim); margin: 12px 0 0; max-width: 84ch; text-wrap: pretty; }
