@@ -237,8 +237,8 @@ function setHeroSubhead(series: CurveSeries): void {
   const el = $('heroSubhead');
   el.innerHTML =
     totalMsv > NASA_CAREER_LIMIT_MSV
-      ? `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — past NASA's ${NASA_CAREER_LIMIT_MSV} mSv career limit, before you've landed.`
-      : `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — ${Math.round((totalMsv / NASA_CAREER_LIMIT_MSV) * 100)}% of NASA's ${NASA_CAREER_LIMIT_MSV} mSv career limit.`;
+      ? `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — past NASA’s ${NASA_CAREER_LIMIT_MSV} mSv career limit, before you’ve landed.`
+      : `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — ${Math.round((totalMsv / NASA_CAREER_LIMIT_MSV) * 100)}% of NASA’s ${NASA_CAREER_LIMIT_MSV} mSv career limit.`;
 }
 
 // Always-on validation strip + the hero's NIST figure — sourced from the SAME runValidation()
