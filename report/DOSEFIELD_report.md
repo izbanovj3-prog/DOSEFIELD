@@ -1,7 +1,7 @@
 # DOSEFIELD — Validation & Results Report
 
 *A scientifically-honest 1D deep-space radiation dose & shielding model.*
-**Developed using NASA MSL/RAD measurements and OLTARIS reference data.**
+**Validated against NIST PSTAR stopping-power tables and NASA MSL/RAD measurements.**
 
 This report is auto-generated (`npm run report`). Every number below comes from the
 deterministic physics core; reference values are pulled from cited sources, with no fudge
