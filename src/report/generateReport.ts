@@ -19,7 +19,8 @@ import { computeFreeSpaceDose } from '../dose/doseModel.js';
 import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { interactionMFP } from '../physics/fragmentation.js';
-import { computeRadComparison } from '../dose/radComparison.js';
+import { computeValidationSummary } from '../validation/validationSummary.js';
+import type { RadComparison } from '../dose/radComparison.js';
 import { RAD_CRUISE } from '../../data/rad/zeitlin2013.js';
 import { W_SOLAR_MIN, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
 
@@ -107,7 +108,7 @@ function plotShielding(thick: number[], series: Record<string, number[]>): strin
 }
 
 // ======================= Plot 3: RAD comparison ===========================
-function plotRad(c: ReturnType<typeof computeRadComparison>): string {
+function plotRad(c: RadComparison): string {
   const W = 760, H = 440;
   const { canvas, ctx } = frame(W, H, 'Model vs measured MSL/RAD cruise dose-equivalent');
   const pad = { l: 64, r: 20, t: 50, b: 60 };
@@ -168,15 +169,11 @@ function plotPhase5(primQ: number, fragQ: number, measQ: number): string {
 // ============================== compute ===================================
 console.log('Computing report data…');
 
-// NIST validation summary
-let nistMaxAll = 0, nistMaxSolid = 0;
-for (const key of Object.keys(PSTAR_DATASETS) as (keyof typeof PSTAR_DATASETS)[]) {
-  for (const p of PSTAR_DATASETS[key].points) {
-    const e = Math.abs((electronicMassStoppingPower(p.T_MeV, MATERIALS[key]!) - p.electronic) / p.electronic) * 100;
-    nistMaxAll = Math.max(nistMaxAll, e);
-    if (p.T_MeV >= 10) nistMaxSolid = Math.max(nistMaxSolid, e);
-  }
-}
+// Validation summary shared with the live UI worker. This keeps the report and the
+// on-page validation strip on the same code path instead of duplicating literals or loops.
+const validation = computeValidationSummary();
+const nistMaxAll = validation.nist.maxAllPct;
+const nistMaxSolid = validation.nist.maxSolidPct;
 
 const free = computeFreeSpaceDose(W_SOLAR_MIN);
 const feFrac = (free.perSpecies.find((p) => p.Z === 26)?.doseEqFraction ?? 0) * 100;
@@ -187,7 +184,7 @@ for (const m of Object.keys(series)) for (const t of thick) series[m]!.push(comp
 const i20 = thick.indexOf(20);
 const polyBenefit20 = (1 - series.polyethylene![i20]! / series.aluminum![i20]!) * 100;
 
-const rad = computeRadComparison();
+const rad = validation.rad;
 
 // Phase 5 — fragmentation
 const feMfp = {
