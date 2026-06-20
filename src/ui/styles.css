@@ -44,15 +44,15 @@ html, body {
 /* ---- hero ---- */
 .hero { margin-top: 22px; }
 .hero-title { font-size: clamp(34px, 6vw, 54px); font-weight: 700; letter-spacing: 8px; line-height: 1; color: #eaf2ff; text-shadow: 0 0 24px rgba(54, 245, 176, 0.18); }
-.hero-subhead { font-size: clamp(16px, 2.3vw, 22px); font-weight: 600; line-height: 1.45; color: var(--text); margin: 14px 0 0; max-width: 62ch; }
+.hero-subhead { font-size: clamp(16px, 2.3vw, 22px); font-weight: 600; line-height: 1.45; color: var(--text); margin: 14px 0 0; max-width: 62ch; text-wrap: balance; }
 .hero-subhead .hero-x { color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hero-plain { font-size: 12.5px; line-height: 1.7; color: var(--dim); margin: 12px 0 0; max-width: 84ch; }
-.hero-scope { font-size: 11px; line-height: 1.65; color: var(--dim); margin: 8px 0 0; max-width: 84ch; }
+.hero-plain { font-size: 12.5px; line-height: 1.7; color: var(--dim); margin: 12px 0 0; max-width: 84ch; text-wrap: pretty; }
+.hero-scope { font-size: 11px; line-height: 1.65; color: var(--dim); margin: 8px 0 0; max-width: 84ch; text-wrap: pretty; }
 .hero-num { color: var(--accent); font-variant-numeric: tabular-nums; }
 .valstrip { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
 .vs-item { flex: 1 1 260px; background: #091020; border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
 .vs-label { font-size: 9.5px; color: var(--dim); letter-spacing: 0.5px; text-transform: uppercase; }
-.vs-val { font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; }
+.vs-val { font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .vs-val .vs-ok { color: var(--accent); }
 
 /* ---- grid ---- */
