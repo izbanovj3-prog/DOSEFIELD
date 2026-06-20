@@ -49,9 +49,9 @@ html, body {
 .hero-scope { font-size: 11px; line-height: 1.65; color: var(--dim); margin: 8px 0 0; max-width: 84ch; text-wrap: pretty; }
 .hero-num { color: var(--accent); font-variant-numeric: tabular-nums; }
 .valstrip { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-.vs-item { flex: 1 1 260px; background: #091020; border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
+.vs-item { flex: 1 1 260px; min-width: 0; background: #091020; border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; }
 .vs-label { font-size: 9.5px; color: var(--dim); letter-spacing: 0.5px; text-transform: uppercase; }
-.vs-val { font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vs-val { font-size: 14px; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .vs-val .vs-ok { color: var(--accent); }
 
 /* ---- grid ---- */
