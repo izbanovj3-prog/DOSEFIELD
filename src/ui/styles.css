@@ -5,7 +5,7 @@
   --edge: #1b2942;
   --edge-bright: #2a3f63;
   --text: #cdd9ea;
-  --dim: #6a7c97;
+  --dim: #7689a3; /* AA-compliant ≥4.5:1 on panel/card/gradient backgrounds */
   --accent: #36f5b0; /* phosphor green */
   --al: #ffb000; /* aluminium trace */
   --poly: #46e06a; /* polyethylene trace */
