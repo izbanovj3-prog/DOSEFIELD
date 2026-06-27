@@ -104,8 +104,27 @@ export const POLYETHYLENE: Material = {
   sourceNote: 'NIST PSTAR matno 221; Sternheimer params PDG 2023.',
 };
 
+export const HYDROGEN: Material = {
+  key: 'hydrogen',
+  name: 'Hydrogen (H₂)',
+  matno: '001',
+  ZoverA: 1 / 1.00794, // = 0.99212 mol/g (Z=1, A=1.00794) — highest <Z/A> of any element
+  density: 0.0708, // liquid H₂ (PDG); mass stopping power is density-independent
+  I_eV: 19.2, // NIST PSTAR / ICRU-49; model reproduces PSTAR to 0.14% (H has negligible shell correction)
+  // Density effect modeled as δ≡0: plasma energy 0.263 eV (PDG, gaseous H) puts the Sternheimer
+  // onset at βγ≳80 — above the modeled GCR range (≤100 GeV/n ⇒ βγ≲108, contributes negligibly).
+  // Labeled approximation: x0 is a sentinel that keeps δ=0 throughout; the other params are inert.
+  densityEffect: { a: 0, m: 1, x0: 99, x1: 99, Cbar: 0, delta0: 0 },
+  composition: [{ Z: 1, A: 1.008, massFraction: 1.0 }],
+  sourceNote:
+    'NIST PSTAR matno 001 (I=19.2 eV, ICRU-49), validated to 0.14%. Density effect negligible ' +
+    '(PDG plasma energy 0.263 eV → onset above GCR range), modeled as 0. Represents a cryogenic ' +
+    'liquid-H₂ shield; the per-areal-density result is governed by <Z/A>=0.992, identical gas/liquid.',
+};
+
 export const MATERIALS: Record<string, Material> = {
   aluminum: ALUMINUM,
   water: WATER,
   polyethylene: POLYETHYLENE,
+  hydrogen: HYDROGEN,
 };
