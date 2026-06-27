@@ -122,9 +122,32 @@ export const HYDROGEN: Material = {
     'liquid-H₂ shield; the per-areal-density result is governed by <Z/A>=0.992, identical gas/liquid.',
 };
 
+export const METHANE: Material = {
+  key: 'methane',
+  name: 'Methane (CH₄)',
+  matno: 'CH4',
+  ZoverA: 10 / 16.043, // = 0.62333 mol/g (CH4: ΣZ=10, ΣA=16.043) — H-richer than polyethylene (0.570)
+  density: 0.4226, // liquid CH₄ (cryogenic); mass stopping power is density-independent
+  I_eV: 41.7, // NIST PSTAR / ICRU-37; model reproduces PSTAR to 2.66% (1 MeV) / 0.34% (≥10 MeV)
+  // Density effect modeled as δ≡0: gaseous CH₄ plasma energy ≈0.59 eV → Sternheimer onset above
+  // the modeled GCR range (labeled). A liquid-CH₄ shield's δ is stronger above ~10 GeV/n but
+  // contributes negligibly to integrated dose. x0 sentinel keeps δ=0; the other params are inert.
+  densityEffect: { a: 0, m: 1, x0: 99, x1: 99, Cbar: 0, delta0: 0 },
+  composition: [
+    { Z: 6, A: 12.011, massFraction: 0.748673 },
+    { Z: 1, A: 1.008, massFraction: 0.251327 },
+  ],
+  sourceNote:
+    'NIST PSTAR Methane (CH₄), I=41.7 eV (ICRU-37), validated to 2.66%/0.34%. Density effect ' +
+    'negligible (gas plasma energy ≈0.59 eV → onset above GCR range), modeled as 0. Cryogenic ' +
+    'liquid-CH₄ shield (dual-use propellant); per areal density governed by <Z/A>=0.623. matno ' +
+    'left as formula (not in the pasted NIST export).',
+};
+
 export const MATERIALS: Record<string, Material> = {
   aluminum: ALUMINUM,
   water: WATER,
   polyethylene: POLYETHYLENE,
   hydrogen: HYDROGEN,
+  methane: METHANE,
 };

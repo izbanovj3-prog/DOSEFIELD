@@ -11,6 +11,7 @@
   --poly: #46e06a; /* polyethylene trace */
   --water: #38bdf8; /* water trace */
   --hydrogen: #ff79c6; /* hydrogen trace */
+  --methane: #a78bfa; /* methane trace */
   --warn: #ff5a5a;
   --mark: #e7f0ff;
   --mono: "JetBrains Mono", "SFMono-Regular", "Consolas", "Roboto Mono", ui-monospace, monospace;
@@ -97,7 +98,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 /* ---- chart ---- */
 .chart canvas { width: 100%; height: auto; display: block; }
 .legend { display: flex; gap: 18px; margin-top: 10px; font-size: 11px; color: var(--dim); flex-wrap: wrap; }
-.lg-al { color: var(--al); } .lg-poly { color: var(--poly); } .lg-water { color: var(--water); } .lg-h { color: var(--hydrogen); } .lg-mark { color: var(--mark); }
+.lg-al { color: var(--al); } .lg-poly { color: var(--poly); } .lg-water { color: var(--water); } .lg-h { color: var(--hydrogen); } .lg-ch4 { color: var(--methane); } .lg-mark { color: var(--mark); }
 
 /* ---- validation ---- */
 .run-btn { background: rgba(54, 245, 176, 0.1); color: var(--accent); border: 1px solid var(--accent); border-radius: 8px; padding: 11px 22px; font-family: var(--mono); font-size: 12px; letter-spacing: 1.5px; cursor: pointer; transition: all 0.15s; }

@@ -12,7 +12,7 @@ import { PSTAR_DATASETS } from '../../data/pstar/index.js';
 import { RAD_CRUISE } from '../../data/rad/zeitlin2013.js';
 import { W_SOLAR_MIN, W_SOLAR_MAX, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
 
-const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water', 'hydrogen'] as const;
+const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water', 'hydrogen', 'methane'] as const;
 const T_MAX = 40;
 const T_STEP = 1;
 const CURVE_PERDECADE = 50;
