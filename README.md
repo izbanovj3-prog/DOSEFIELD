@@ -7,7 +7,7 @@ physics, with no parameter tuned to the answer.**
 ### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
 [![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
-&nbsp; CI runs typecheck · 76 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
+&nbsp; CI runs typecheck · 103 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
 
 > ### The headline
 > **A Mars round-trip exceeds NASA's 600 mSv career radiation limit.** NASA's MSL/RAD instrument
@@ -104,8 +104,9 @@ R_shield(E_in) ≤ t  → stops in shield;   else  E_out = R_shield⁻¹(R_shiel
 H(t) = κ · Σ_Z ∫ 4π·J_Z(E_in) · S_water(Z,E_out) · Q(LET(E_out)) dE_in
 ```
 
-**Result (spec validation #3):** polyethylene gives lower dose-equivalent than aluminium at
-**every** areal density (poly < water < Al, matching the ⟨Z/A⟩ ordering) — by ~12% at 20 g/cm².
+**Result (spec validation #3):** dose-equivalent ranks the five shields **exactly by hydrogen
+content** (⟨Z/A⟩) at every areal density — **hydrogen < methane < polyethylene < water < aluminium** —
+with hydrogen cutting dose ~44% below aluminium at 40 g/cm² (polyethylene, the best *solid*, by ~12% at 20).
 The range table reproduces NIST PSTAR proton ranges in Al to <0.4% (9.98 vs 10.01, 412.2 vs
 412.4 g/cm²), and t=0 reduces exactly to the Phase-2 free-space dose. Aluminium shows
 diminishing returns (only ~60% reduction across 40 g/cm²). **Honest caveat:** this primary-only
@@ -189,7 +190,7 @@ npm run validate:phase3   # shielding sweep + poly<Al trend
 npm run validate:phase4   # model vs measured MSL/RAD cruise dose
 npm run validate:phase5   # simplified fragmentation → movement toward RAD
 npm run report            # auto-generate report/ (markdown + 4 PNG plots)
-npm test                  # vitest regression lock (76 tests)
+npm test                  # vitest regression lock (103 tests)
 ```
 
 ## Data sources

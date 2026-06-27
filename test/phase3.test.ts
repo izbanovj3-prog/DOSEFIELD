@@ -4,6 +4,7 @@ import { getRangeTable, IonRangeTable } from '../src/physics/ionRange.js';
 import { computeShieldedDose } from '../src/dose/shieldedDose.js';
 import { computeFreeSpaceDose } from '../src/dose/doseModel.js';
 import { W_SOLAR_MIN } from '../data/gcr/matthia2013.js';
+import { computeShieldingTrendSummary, SHIELD_RANK } from '../src/validation/validationSummary.js';
 
 const relErr = (a: number, b: number) => Math.abs(a - b) / b;
 
@@ -61,5 +62,22 @@ describe('VALIDATION #3 — shielding trend (polyethylene < aluminum at equal ar
     const poly = computeShieldedDose('polyethylene', 20, W_SOLAR_MIN).doseEquivalent_mSv_day;
     expect(poly).toBeLessThanOrEqual(water + 1e-9);
     expect(water).toBeLessThanOrEqual(al + 1e-9);
+  });
+});
+
+describe('VALIDATION #3b — full monotonic shielding ranking (by hydrogen content / ⟨Z/A⟩)', () => {
+  const summary = computeShieldingTrendSummary();
+  it('ranks shields exactly H2 < CH4 < PE < water < Al', () => {
+    expect([...summary.rank]).toEqual(['hydrogen', 'methane', 'polyethylene', 'water', 'aluminum']);
+    expect(summary.ok).toBe(true); // strictly increasing dose-equivalent along the rank at every tested t
+  });
+  for (const t of [10, 20, 40]) {
+    it(`dose-equivalent strictly increases H2→CH4→PE→water→Al at ${t} g/cm²`, () => {
+      const H = SHIELD_RANK.map((m) => computeShieldedDose(m, t, W_SOLAR_MIN).doseEquivalent_mSv_day);
+      for (let i = 1; i < H.length; i++) expect(H[i]!).toBeGreaterThan(H[i - 1]!);
+    });
+  }
+  it('best shield (H2) beats worst (Al) by a wide margin (>40%)', () => {
+    expect(summary.maxBestBenefitPct).toBeGreaterThan(40);
   });
 });
