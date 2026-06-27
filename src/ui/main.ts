@@ -7,7 +7,7 @@ import type { CurvePoint, CurveSeries, ValidationData } from './dose.worker.js';
 
 const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
-const TRACE = { aluminum: '#ffb000', polyethylene: '#46e06a', water: '#38bdf8' } as const;
+const TRACE = { aluminum: '#ffb000', polyethylene: '#46e06a', water: '#38bdf8', hydrogen: '#ff79c6' } as const;
 
 interface State {
   material: keyof typeof TRACE;
@@ -157,7 +157,7 @@ function drawChart(): void {
   ctx.fillText('dose-equivalent  (mSv/day)', 0, 0); ctx.restore();
 
   // traces
-  for (const m of ['aluminum', 'polyethylene', 'water'] as const) {
+  for (const m of ['aluminum', 'polyethylene', 'water', 'hydrogen'] as const) {
     const pts = curves[m]!;
     ctx.strokeStyle = TRACE[m];
     ctx.lineWidth = m === state.material ? 2.6 : 1.5;
