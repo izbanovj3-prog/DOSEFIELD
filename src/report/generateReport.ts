@@ -32,7 +32,7 @@ mkdirSync(PLOTS, { recursive: true });
 // ---- theme -----------------------------------------------------------------
 const C = {
   bg: '#0a0f1a', panel: '#0e1626', grid: '#22324e', dim: '#7286a3', text: '#cdd9ea',
-  al: '#ffb000', poly: '#46e06a', water: '#38bdf8', accent: '#36f5b0', warn: '#ff6b6b', mark: '#e7f0ff',
+  al: '#ffb000', poly: '#46e06a', water: '#38bdf8', hydrogen: '#ff79c6', methane: '#a78bfa', accent: '#36f5b0', warn: '#ff6b6b', mark: '#e7f0ff',
 };
 const FONT = '13px sans-serif';
 type Ctx = SKRSContext2D;
@@ -99,11 +99,11 @@ function plotShielding(thick: number[], series: Record<string, number[]>): strin
   for (let t = 0; t <= tMax; t += 5) { const x = xOf(t); ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + ph); ctx.stroke(); ctx.textAlign = 'center'; ctx.fillText(String(t), x, H - pad.b + 18); }
   ctx.textAlign = 'center'; ctx.fillText('shield areal density (g/cm²)', pad.l + pw / 2, H - 10);
   ctx.save(); ctx.translate(16, pad.t + ph / 2); ctx.rotate(-Math.PI / 2); ctx.fillText('dose-equivalent (mSv/day)', 0, 0); ctx.restore();
-  const cols: Record<string, string> = { aluminum: C.al, polyethylene: C.poly, water: C.water };
-  for (const k of ['aluminum', 'water', 'polyethylene']) { ctx.strokeStyle = cols[k]!; ctx.lineWidth = 2.4; ctx.beginPath(); series[k]!.forEach((h, i) => { const x = xOf(thick[i]!); const y = yOf(h); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); }
+  const cols: Record<string, string> = { aluminum: C.al, polyethylene: C.poly, water: C.water, hydrogen: C.hydrogen, methane: C.methane };
+  for (const k of ['aluminum', 'water', 'polyethylene', 'methane', 'hydrogen']) { ctx.strokeStyle = cols[k]!; ctx.lineWidth = 2.4; ctx.beginPath(); series[k]!.forEach((h, i) => { const x = xOf(thick[i]!); const y = yOf(h); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }); ctx.stroke(); }
   ctx.textAlign = 'left';
-  const leg = [['Aluminium', C.al], ['Water', C.water], ['Polyethylene (best per g/cm²)', C.poly]] as const;
-  leg.forEach(([t, c], i) => { ctx.fillStyle = c; ctx.fillText('— ' + t, pad.l + pw - 220, pad.t + 16 + i * 17); });
+  const leg = [['Hydrogen (best)', C.hydrogen], ['Methane', C.methane], ['Polyethylene (best solid)', C.poly], ['Water', C.water], ['Aluminium', C.al]] as const;
+  leg.forEach(([t, c], i) => { ctx.fillStyle = c; ctx.fillText('— ' + t, pad.l + pw - 200, pad.t + 16 + i * 17); });
   return save(canvas, 'shielding_curve.png');
 }
 
@@ -179,7 +179,7 @@ const free = computeFreeSpaceDose(W_SOLAR_MIN);
 const feFrac = (free.perSpecies.find((p) => p.Z === 26)?.doseEqFraction ?? 0) * 100;
 
 const thick: number[] = []; for (let t = 0; t <= 40 + 1e-9; t += 2) thick.push(t);
-const series: Record<string, number[]> = { aluminum: [], polyethylene: [], water: [] };
+const series: Record<string, number[]> = { aluminum: [], polyethylene: [], water: [], hydrogen: [], methane: [] };
 for (const m of Object.keys(series)) for (const t of thick) series[m]!.push(computeShieldedDose(m, t, W_SOLAR_MIN).doseEquivalent_mSv_day);
 const i20 = thick.indexOf(20);
 const polyBenefit20 = (1 - series.polyethylene![i20]! / series.aluminum![i20]!) * 100;
@@ -252,13 +252,14 @@ upper bounds (free space, primaries only) that exceed shielded measurements — 
 
 ## 3. Shielding: dose-equivalent vs material
 
-At equal areal density, hydrogen-rich **polyethylene shields better than aluminium**
-(more electrons per gram → more stopping per g/cm²); water sits between them, matching the
-⟨Z/A⟩ ordering. At 20 g/cm², polyethylene beats aluminium by **${fx(polyBenefit20, 1)}%** in this
-primary-only model.
+At equal areal density the five shields rank **exactly by hydrogen content** (⟨Z/A⟩) — more
+electrons per gram stop more per g/cm². Dose-equivalent increases strictly along
+**hydrogen < methane < polyethylene < water < aluminium** at every thickness from 5 to 40 g/cm²
+(validated). Hydrogen, the per-mass optimum, cuts dose-equivalent up to **${fx(validation.trend.maxBestBenefitPct, 1)}%**
+below aluminium; polyethylene — the best *solid* — beats aluminium by **${fx(polyBenefit20, 1)}%** at 20 g/cm² in this primary-only model.
 
-> Honest caveat: this primary-only model *under*-states polyethylene's real advantage, which
-> also comes from its lower nuclear fragmentation (fewer/lighter secondaries) — Phase 5.
+> Honest caveat: this primary-only model *under*-states the hydrogen-rich materials' real
+> advantage, which also comes from their lower nuclear fragmentation (fewer/lighter secondaries) — Phase 5.
 
 ![Shielding curve](${shieldPng})
 

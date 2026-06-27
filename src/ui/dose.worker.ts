@@ -5,6 +5,7 @@
 import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { computeRadComparison } from '../dose/radComparison.js';
+import { computeShieldingTrendSummary } from '../validation/validationSummary.js';
 import type { RadComparison } from '../dose/radComparison.js';
 import { electronicMassStoppingPower } from '../physics/stoppingPower.js';
 import { MATERIALS } from '../physics/materials.js';
@@ -52,7 +53,8 @@ export interface ValidationData {
   /** NIST PSTAR max % error over all energies (1–1000 MeV) */
   nistMaxAll: number;
   trendOk: boolean;
-  trendWorst: number;
+  /** max % the best shield (hydrogen) beats the worst (aluminium) at equal areal density */
+  trendBest: number;
   /** MSL/RAD comparison — the SAME function `npm run report` uses */
   rad: RadComparison;
   radSigma: { D: number; H: number; Q: number };
@@ -78,15 +80,8 @@ function runValidation(): ValidationData {
     }
   }
 
-  // 2. Shielding trend: polyethylene < aluminium at equal areal density.
-  let trendOk = true;
-  let trendWorst = 0;
-  for (const t of [10, 20, 30]) {
-    const al = computeShieldedDose('aluminum', t, W_SOLAR_MIN).doseEquivalent_mSv_day;
-    const poly = computeShieldedDose('polyethylene', t, W_SOLAR_MIN).doseEquivalent_mSv_day;
-    if (!(poly < al)) trendOk = false;
-    trendWorst = Math.max(trendWorst, (1 - poly / al) * 100);
-  }
+  // 2. Shielding trend: the full H2<CH4<PE<water<Al ranking — shared with `npm run report`.
+  const trend = computeShieldingTrendSummary();
 
   // 3. MSL/RAD cruise comparison (model vs measured, with ratios).
   const rad = computeRadComparison();
@@ -94,8 +89,8 @@ function runValidation(): ValidationData {
   return {
     nistMaxSolid,
     nistMaxAll,
-    trendOk,
-    trendWorst,
+    trendOk: trend.ok,
+    trendBest: trend.maxBestBenefitPct,
     rad,
     radSigma: { D: RAD_CRUISE.doseRate_sigma, H: RAD_CRUISE.doseEquivalent_sigma, Q: RAD_CRUISE.meanQ_sigma },
     cruiseW: W_CRUISE_2012,

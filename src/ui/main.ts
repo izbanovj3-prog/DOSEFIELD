@@ -200,8 +200,8 @@ function renderValidation(d: ValidationData): void {
     ) +
     check(
       d.trendOk,
-      'Polyethylene < aluminium at equal areal density',
-      `poly better by up to ${f(d.trendWorst, 1)}%`,
+      'Shields rank by hydrogen content: H₂ < CH₄ < PE < water < Al',
+      `hydrogen beats aluminium by up to ${f(d.trendBest, 1)}%`,
     ) +
     `<div style="margin-top:12px;background:#091020;border:1px solid var(--edge);border-radius:8px;padding:12px">
       <div style="font-size:11px;color:var(--accent);letter-spacing:1px;margin-bottom:6px">MSL/RAD CRUISE — MODEL vs MEASURED</div>

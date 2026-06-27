@@ -45,13 +45,14 @@ upper bounds (free space, primaries only) that exceed shielded measurements — 
 
 ## 3. Shielding: dose-equivalent vs material
 
-At equal areal density, hydrogen-rich **polyethylene shields better than aluminium**
-(more electrons per gram → more stopping per g/cm²); water sits between them, matching the
-⟨Z/A⟩ ordering. At 20 g/cm², polyethylene beats aluminium by **11.6%** in this
-primary-only model.
+At equal areal density the five shields rank **exactly by hydrogen content** (⟨Z/A⟩) — more
+electrons per gram stop more per g/cm². Dose-equivalent increases strictly along
+**hydrogen < methane < polyethylene < water < aluminium** at every thickness from 5 to 40 g/cm²
+(validated). Hydrogen, the per-mass optimum, cuts dose-equivalent up to **44.2%**
+below aluminium; polyethylene — the best *solid* — beats aluminium by **11.6%** at 20 g/cm² in this primary-only model.
 
-> Honest caveat: this primary-only model *under*-states polyethylene's real advantage, which
-> also comes from its lower nuclear fragmentation (fewer/lighter secondaries) — Phase 5.
+> Honest caveat: this primary-only model *under*-states the hydrogen-rich materials' real
+> advantage, which also comes from their lower nuclear fragmentation (fewer/lighter secondaries) — Phase 5.
 
 ![Shielding curve](plots/shielding_curve.png)
 
