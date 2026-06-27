@@ -13,8 +13,17 @@ export interface NistStoppingSummary {
   maxSolidPct: number;
 }
 
+/** Shields ordered best→worst (lowest dose-equivalent first), i.e. by hydrogen content / <Z/A>. */
+export const SHIELD_RANK = ['hydrogen', 'methane', 'polyethylene', 'water', 'aluminum'] as const;
+
 export interface ShieldingTrendSummary {
+  /** dose-equivalent is strictly increasing along SHIELD_RANK at every tested thickness */
   ok: boolean;
+  /** best→worst shield order (hydrogen-richest first) */
+  rank: readonly string[];
+  /** max % the best shield (hydrogen) beats the worst (aluminium) at equal areal density */
+  maxBestBenefitPct: number;
+  /** max % polyethylene beats aluminium — retained from the original Phase-3 claim */
   maxPolyBenefitPct: number;
 }
 
@@ -45,14 +54,18 @@ export function computeNistStoppingSummary(): NistStoppingSummary {
 
 export function computeShieldingTrendSummary(): ShieldingTrendSummary {
   let ok = true;
+  let maxBestBenefitPct = 0;
   let maxPolyBenefitPct = 0;
-  for (const t of [10, 20, 30]) {
-    const al = computeShieldedDose('aluminum', t, W_SOLAR_MIN).doseEquivalent_mSv_day;
-    const poly = computeShieldedDose('polyethylene', t, W_SOLAR_MIN).doseEquivalent_mSv_day;
-    if (!(poly < al)) ok = false;
-    maxPolyBenefitPct = Math.max(maxPolyBenefitPct, (1 - poly / al) * 100);
+  const polyI = SHIELD_RANK.indexOf('polyethylene');
+  const alI = SHIELD_RANK.indexOf('aluminum');
+  for (const t of [5, 10, 20, 30, 40]) {
+    const H = SHIELD_RANK.map((m) => computeShieldedDose(m, t, W_SOLAR_MIN).doseEquivalent_mSv_day);
+    // strictly increasing dose-equivalent along the rank = shielding ranks exactly by <Z/A>
+    for (let i = 1; i < H.length; i++) if (!(H[i]! > H[i - 1]!)) ok = false;
+    maxBestBenefitPct = Math.max(maxBestBenefitPct, (1 - H[0]! / H[H.length - 1]!) * 100);
+    maxPolyBenefitPct = Math.max(maxPolyBenefitPct, (1 - H[polyI]! / H[alI]!) * 100);
   }
-  return { ok, maxPolyBenefitPct };
+  return { ok, rank: SHIELD_RANK, maxBestBenefitPct, maxPolyBenefitPct };
 }
 
 export function computeValidationSummary(): ValidationSummary {
