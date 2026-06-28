@@ -5,6 +5,8 @@ import { computeShieldedDose } from '../src/dose/shieldedDose.js';
 import { computeFreeSpaceDose } from '../src/dose/doseModel.js';
 import { W_SOLAR_MIN } from '../data/gcr/matthia2013.js';
 import { computeShieldingTrendSummary, SHIELD_RANK } from '../src/validation/validationSummary.js';
+import { computeMultiLayerDose, computeMultiLayerFragmentedDose } from '../src/dose/multiLayerDose.js';
+import { computeFragmentedDose } from '../src/dose/fragmentedDose.js';
 
 const relErr = (a: number, b: number) => Math.abs(a - b) / b;
 
@@ -79,5 +81,33 @@ describe('VALIDATION #3b — full monotonic shielding ranking (by hydrogen conte
   }
   it('best shield (H2) beats worst (Al) by a wide margin (>40%)', () => {
     expect(summary.maxBestBenefitPct).toBeGreaterThan(40);
+  });
+});
+
+describe('multi-layer shielding (v2.0)', () => {
+  it('single-layer stack reduces to the validated computeShieldedDose (<0.5%)', () => {
+    const ml = computeMultiLayerDose([{ material: 'aluminum', thickness: 20 }], W_SOLAR_MIN).doseEquivalent_mSv_day;
+    const sl = computeShieldedDose('aluminum', 20, W_SOLAR_MIN).doseEquivalent_mSv_day;
+    expect(relErr(ml, sl)).toBeLessThan(0.005);
+  });
+  it('single-layer fragmented stack reduces to computeFragmentedDose', () => {
+    const ml = computeMultiLayerFragmentedDose([{ material: 'aluminum', thickness: 20 }], W_SOLAR_MIN).doseEquivalent_mSv_day;
+    const sl = computeFragmentedDose('aluminum', 20, W_SOLAR_MIN).doseEquivalent_mSv_day;
+    expect(relErr(ml, sl)).toBeLessThan(0.005);
+  });
+  it('a two-material stack lands between the equivalent single-material stacks', () => {
+    const two = computeMultiLayerDose(
+      [{ material: 'aluminum', thickness: 10 }, { material: 'polyethylene', thickness: 5 }],
+      W_SOLAR_MIN,
+    ).doseEquivalent_mSv_day;
+    const pe15 = computeShieldedDose('polyethylene', 15, W_SOLAR_MIN).doseEquivalent_mSv_day;
+    const al15 = computeShieldedDose('aluminum', 15, W_SOLAR_MIN).doseEquivalent_mSv_day;
+    expect(two).toBeGreaterThan(pe15); // worse than all-polyethylene
+    expect(two).toBeLessThan(al15); // better than all-aluminium
+  });
+  it('an empty stack returns the free-space dose', () => {
+    const empty = computeMultiLayerDose([{ material: 'aluminum', thickness: 0 }], W_SOLAR_MIN).doseEquivalent_mSv_day;
+    const free = computeFreeSpaceDose(W_SOLAR_MIN).doseEquivalent_mSv_day;
+    expect(relErr(empty, free)).toBeLessThan(1e-9);
   });
 });
