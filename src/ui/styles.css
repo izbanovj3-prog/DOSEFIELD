@@ -63,7 +63,9 @@ html, body {
 .controls { grid-column: 1; grid-row: 1; }
 .readout { grid-column: 2; grid-row: 1; }
 .chart { grid-column: 1 / -1; grid-row: 2; }
-.validation { grid-column: 1 / -1; grid-row: 3; }
+.timeline-panel { grid-column: 1 / -1; grid-row: 3; }
+.timeline-panel canvas { width: 100%; height: auto; display: block; }
+.validation { grid-column: 1 / -1; grid-row: 4; }
 
 /* ---- controls ---- */
 .control { margin-bottom: 20px; }
@@ -121,7 +123,7 @@ input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius
 
 @media (max-width: 820px) {
   .grid { grid-template-columns: 1fr; }
-  .controls, .readout, .chart, .validation { grid-column: 1; }
-  .controls { grid-row: auto; } .readout { grid-row: auto; } .chart { grid-row: auto; } .validation { grid-row: auto; }
+  .controls, .readout, .chart, .timeline-panel, .validation { grid-column: 1; }
+  .controls { grid-row: auto; } .readout { grid-row: auto; } .chart { grid-row: auto; } .timeline-panel { grid-row: auto; } .validation { grid-row: auto; }
   .big-number #rateValue { font-size: 48px; }
 }

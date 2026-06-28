@@ -158,11 +158,17 @@ function render(): void {
     note.textContent = `${totalMsv.toFixed(0)} mSv of 600 mSv over ${state.duration} d`;
     note.style.color = 'var(--dim)';
   }
-  $('footnote').textContent =
+  const baseFoot =
     state.mode === 'fragmentation'
       ? 'Free space, with simplified nuclear fragmentation (Bradt–Peters; charged fragments only — no secondary neutrons, not HZETRN). GCR: Matthiä 2013. Q: ICRP-60. Tissue: water.'
       : 'Free space, primaries only (no nuclear fragmentation). GCR: Matthiä 2013 (BON fit). Q: ICRP-60. Tissue: water.';
+  $('footnote').textContent =
+    baseFoot +
+    (state.singleLayer
+      ? ''
+      : ' · Two-layer stack — same CSDA engine, but unvalidated beyond the single-layer limit (no NASA layered measurement).');
   drawChart();
+  drawTimeline();
 }
 
 function drawChart(): void {
@@ -235,6 +241,83 @@ function drawChart(): void {
   ctx.fillStyle = '#e7f0ff';
   ctx.beginPath(); ctx.arc(mx, my, 4.5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = TRACE[state.material]; ctx.lineWidth = 2; ctx.stroke();
+}
+
+// Cumulative dose over the mission (Feature 3). Linear accumulation = constant GCR rate
+// (no solar-cycle variation or SPE spikes — labeled). Reference lines + career-limit crossing.
+function drawTimeline(): void {
+  const canvas = $<HTMLCanvasElement>('timeline');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 900;
+  const cssH = 320;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const pad = { l: 56, r: 16, t: 18, b: 36 };
+  const plotW = cssW - pad.l - pad.r;
+  const plotH = cssH - pad.t - pad.b;
+
+  const rate = readout().H; // mSv/day (constant)
+  const days = Math.max(1, state.duration);
+  const totalSv = (rate * days) / 1000;
+  const CAREER = NASA_CAREER_LIMIT_MSV / 1000; // 0.6 Sv
+  const ANNUAL = 0.05; // Sv — NCRP occupational reference, not a current NASA mission limit
+
+  const yMax = Math.max(CAREER * 1.08, totalSv * 1.12, ANNUAL * 1.4);
+  const xOf = (d: number) => pad.l + (d / days) * plotW;
+  const yOf = (sv: number) => pad.t + plotH - (Math.min(sv, yMax) / yMax) * plotH;
+
+  ctx.font = '11px ui-monospace, monospace';
+  const ystep = yMax > 0.5 ? 0.1 : 0.02;
+  for (let v = 0; v <= yMax + 1e-9; v += ystep) {
+    const y = yOf(v);
+    ctx.strokeStyle = 'rgba(40,63,99,0.4)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#6a7c97'; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
+  }
+  const xstep = days <= 30 ? 5 : days <= 200 ? 30 : 60;
+  for (let d = 0; d <= days + 1e-9; d += xstep) {
+    ctx.fillStyle = '#6a7c97'; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
+  }
+  ctx.fillStyle = '#8aa0bf'; ctx.textAlign = 'center';
+  ctx.fillText('mission day', pad.l + plotW / 2, cssH - 4);
+  ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('cumulative dose-equivalent  (Sv)', 0, 0); ctx.restore();
+
+  const refLine = (sv: number, color: string, label: string): void => {
+    if (sv > yMax) return;
+    const y = yOf(sv);
+    ctx.strokeStyle = color; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(label, pad.l + 6, y - 5);
+  };
+  refLine(ANNUAL, '#ff9f43', 'Annual Limit (50 mSv) · NCRP occupational');
+  refLine(CAREER, '#ff5a5a', 'NASA Career Limit (600 mSv)');
+
+  // cumulative-dose line (straight, constant rate)
+  ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.6;
+  ctx.beginPath(); ctx.moveTo(xOf(0), yOf(0)); ctx.lineTo(xOf(days), yOf(totalSv)); ctx.stroke();
+  ctx.fillStyle = '#e7f0ff';
+  ctx.beginPath(); ctx.arc(xOf(days), yOf(totalSv), 4, 0, Math.PI * 2); ctx.fill();
+
+  if (rate > 0 && totalSv > CAREER) {
+    const crossDay = (CAREER * 1000) / rate; // cumulative = 600 mSv
+    if (crossDay <= days) {
+      const x = xOf(crossDay);
+      ctx.strokeStyle = 'rgba(255,90,90,0.85)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#ff5a5a'; ctx.textAlign = 'center'; ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.fillText(`Limit reached on day ${Math.round(crossDay)}`, x, pad.t + plotH - 8);
+    }
+    ctx.fillStyle = '#ff5a5a'; ctx.textAlign = 'right'; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('⚠ Exceeds NASA career limit', cssW - pad.r, pad.t + 2);
+  }
 }
 
 function renderValidation(d: ValidationData): void {
@@ -442,7 +525,7 @@ $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
     btn.textContent = '▶ RUN VALIDATION';
   }, 600);
 });
-window.addEventListener('resize', () => drawChart());
+window.addEventListener('resize', () => { drawChart(); drawTimeline(); });
 
 setStatus('busy', 'COMPUTING');
 requestCurves();
