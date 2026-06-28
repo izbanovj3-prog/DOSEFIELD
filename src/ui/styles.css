@@ -37,6 +37,7 @@ html, body {
 .masthead { display: flex; align-items: center; justify-content: space-between; padding-bottom: 18px; border-bottom: 1px solid var(--edge); }
 .title-block h1 { margin: 0; font-size: 28px; letter-spacing: 7px; font-weight: 700; color: #eaf2ff; text-shadow: 0 0 18px rgba(54, 245, 176, 0.25); }
 .subtitle { margin: 4px 0 0; font-size: 11.5px; color: var(--dim); letter-spacing: 1px; }
+.version { font-size: 11px; color: var(--accent); letter-spacing: 1.5px; font-weight: 600; vertical-align: super; opacity: 0.85; }
 .status-lamp { display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 2px; color: var(--dim); padding: 6px 12px; border: 1px solid var(--edge); border-radius: 999px; background: var(--panel); }
 .status-lamp .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 10px currentColor; }
 .status-lamp.ready .dot { background: var(--accent); }
