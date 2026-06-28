@@ -6,6 +6,7 @@ import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { computeRadComparison } from '../dose/radComparison.js';
 import { computeShieldingTrendSummary } from '../validation/validationSummary.js';
+import { computeMultiLayerDose, computeMultiLayerFragmentedDose, type ShieldLayer } from '../dose/multiLayerDose.js';
 import type { RadComparison } from '../dose/radComparison.js';
 import { electronicMassStoppingPower } from '../physics/stoppingPower.js';
 import { MATERIALS } from '../physics/materials.js';
@@ -107,13 +108,19 @@ const ctx = self as unknown as {
 };
 
 ctx.onmessage = (e: MessageEvent) => {
-  const msg = e.data as { type: string; solar?: string; mode?: string };
+  const msg = e.data as { type: string; solar?: string; mode?: string; layers?: ShieldLayer[] };
   if (msg.type === 'curves') {
     const solar = msg.solar ?? 'min';
     const mode = msg.mode ?? 'primaries';
     const series = computeCurves(solar, mode);
     const thicknesses = series.aluminum!.map((p) => p.t);
     ctx.postMessage({ type: 'curves', solar, mode, thicknesses, series });
+  } else if (msg.type === 'multiLayer') {
+    // current two-layer stack dose (Feature 1) — same CSDA engine, off the UI thread.
+    const W = wFor(msg.solar ?? 'min');
+    const fn = (msg.mode ?? 'primaries') === 'fragmentation' ? computeMultiLayerFragmentedDose : computeMultiLayerDose;
+    const r = fn(msg.layers ?? [], W, CURVE_PERDECADE);
+    ctx.postMessage({ type: 'multiLayer', H: r.doseEquivalent_mSv_day, D: r.absorbedDose_mGy_day, Q: r.meanQ });
   } else if (msg.type === 'validate') {
     ctx.postMessage({ type: 'validate', data: runValidation() });
   }
