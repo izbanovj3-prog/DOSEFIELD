@@ -47,19 +47,49 @@
           <h2>Mission Configuration</h2>
 
           <div class="control">
-            <label>Shield material</label>
-            <div class="segmented" id="materialSeg">
-              <button data-mat="aluminum" class="active">Aluminium</button>
-              <button data-mat="polyethylene">Polyethylene</button>
-              <button data-mat="water">Water</button>
-              <button data-mat="hydrogen">Hydrogen</button>
-              <button data-mat="methane">Methane</button>
+            <label>Shielding configuration</label>
+            <div class="segmented" id="layerModeSeg">
+              <button data-layers="single" class="active">Single layer</button>
+              <button data-layers="double">Two layers</button>
+            </div>
+          </div>
+
+          <div class="layer-group" id="layer1Group">
+            <div class="control">
+              <label>Layer 1 · structural</label>
+              <div class="segmented" id="materialSeg">
+                <button data-mat="aluminum" class="active">Aluminium</button>
+                <button data-mat="polyethylene">Polyethylene</button>
+                <button data-mat="water">Water</button>
+                <button data-mat="hydrogen">Hydrogen</button>
+                <button data-mat="methane">Methane</button>
+              </div>
+            </div>
+            <div class="control">
+              <label>Areal density · <span id="thicknessVal" class="readback">10.0</span> g/cm²</label>
+              <input type="range" id="thickness" min="0" max="40" step="0.5" value="10" />
+            </div>
+          </div>
+
+          <div class="layer-group" id="layer2Group" hidden>
+            <div class="control">
+              <label>Layer 2 · inner lining</label>
+              <div class="segmented" id="material2Seg">
+                <button data-mat="aluminum">Aluminium</button>
+                <button data-mat="polyethylene" class="active">Polyethylene</button>
+                <button data-mat="water">Water</button>
+                <button data-mat="hydrogen">Hydrogen</button>
+                <button data-mat="methane">Methane</button>
+              </div>
+            </div>
+            <div class="control">
+              <label>Areal density · <span id="thickness2Val" class="readback">5.0</span> g/cm²</label>
+              <input type="range" id="thickness2" min="0" max="40" step="0.5" value="5" />
             </div>
           </div>
 
           <div class="control">
-            <label>Shield areal density · <span id="thicknessVal" class="readback">10.0</span> g/cm²</label>
-            <input type="range" id="thickness" min="0" max="40" step="0.5" value="10" />
+            <label>Total areal density · <span id="totalArealVal" class="readback">10.0</span> g/cm²</label>
           </div>
 
           <div class="control">

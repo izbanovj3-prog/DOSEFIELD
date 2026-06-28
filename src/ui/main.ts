@@ -9,14 +9,31 @@ const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
 const TRACE = { aluminum: '#ffb000', polyethylene: '#46e06a', water: '#38bdf8', hydrogen: '#ff79c6', methane: '#a78bfa' } as const;
 
-interface State {
+interface Layer {
   material: keyof typeof TRACE;
   thickness: number;
+}
+interface State {
+  material: keyof typeof TRACE; // Layer 1 (structural) material
+  thickness: number; // Layer 1 areal density (g/cm²)
+  layer2: Layer; // Layer 2 (inner lining)
+  singleLayer: boolean;
   solar: 'min' | 'max';
   mode: 'primaries' | 'fragmentation';
   duration: number;
 }
-const state: State = { material: 'aluminum', thickness: 10, solar: 'min', mode: 'primaries', duration: 360 };
+const state: State = {
+  material: 'aluminum',
+  thickness: 10,
+  layer2: { material: 'polyethylene', thickness: 5 },
+  singleLayer: true,
+  solar: 'min',
+  mode: 'primaries',
+  duration: 360,
+};
+// last two-layer readout from the worker (used when singleLayer = false)
+let ml = { H: 0, D: 0, Q: 0 };
+let mlTimer: number | undefined;
 
 // cache of computed curves per (solar condition, nuclear mode)
 const curveCache = new Map<string, CurveSeries>();
@@ -71,6 +88,10 @@ worker.onmessage = (e: MessageEvent) => {
       setStatus('ready', 'READY');
       render();
     }
+  } else if (msg.type === 'multiLayer') {
+    ml = { H: msg.H, D: msg.D, Q: msg.Q };
+    setStatus('ready', 'READY');
+    render();
   } else if (msg.type === 'validate') {
     renderValidation(msg.data);
     renderStrip(msg.data);
@@ -78,10 +99,39 @@ worker.onmessage = (e: MessageEvent) => {
 };
 
 // ---- rendering -------------------------------------------------------------
+/** Active shield stack: [layer1] or [layer1, layer2] (outermost first). */
+function layers(): { material: string; thickness: number }[] {
+  const a = { material: state.material, thickness: state.thickness };
+  return state.singleLayer ? [a] : [a, { material: state.layer2.material, thickness: state.layer2.thickness }];
+}
+
+/** Current dose readout: single-layer → instant curve interp; two-layer → last worker result. */
+function readout(): { H: number; D: number; Q: number } {
+  if (state.singleLayer) {
+    if (!curves) return { H: 0, D: 0, Q: 0 };
+    const c = interp(curves[state.material]!, state.thickness);
+    return { H: c.H, D: c.D, Q: c.Q };
+  }
+  return ml;
+}
+
+/** Update the total-areal readout and (two-layer) kick a debounced off-thread compute, then render. */
+function refreshReadout(): void {
+  $('totalArealVal').textContent = (state.thickness + (state.singleLayer ? 0 : state.layer2.thickness)).toFixed(1);
+  if (!state.singleLayer) {
+    setStatus('busy', 'COMPUTING');
+    clearTimeout(mlTimer);
+    mlTimer = window.setTimeout(
+      () => worker.postMessage({ type: 'multiLayer', layers: layers(), solar: state.solar, mode: state.mode }),
+      90,
+    );
+  }
+  render();
+}
+
 function render(): void {
   if (!curves) return;
-  const pts = curves[state.material]!;
-  const cur = interp(pts, state.thickness);
+  const cur = readout();
 
   $('rateValue').textContent = cur.H.toFixed(2);
   $('absVal').textContent = cur.D.toFixed(3);
@@ -168,10 +218,12 @@ function drawChart(): void {
   }
   ctx.globalAlpha = 1;
 
-  // current-thickness marker
-  const cur = interp(curves[state.material]!, state.thickness);
-  const mx = xOf(state.thickness);
-  const my = yOf(cur.H);
+  // current-config marker — single-layer: (thickness, dose) on the active curve; two-layer:
+  // (total areal density, two-layer dose) plotted against the single-material reference curves.
+  const rd = readout();
+  const markT = state.singleLayer ? state.thickness : state.thickness + state.layer2.thickness;
+  const mx = xOf(Math.min(markT, tMax));
+  const my = yOf(rd.H);
   ctx.strokeStyle = 'rgba(231,240,255,0.45)';
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(mx, pad.t); ctx.lineTo(mx, pad.t + plotH); ctx.stroke();
@@ -256,15 +308,38 @@ $('materialSeg').querySelectorAll('button').forEach((b) =>
     state.material = (b as HTMLElement).dataset.mat as keyof typeof TRACE;
     $('materialSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
-    render();
+    refreshReadout();
   }),
 );
+$('material2Seg').querySelectorAll('button').forEach((b) =>
+  b.addEventListener('click', () => {
+    state.layer2.material = (b as HTMLElement).dataset.mat as keyof typeof TRACE;
+    $('material2Seg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    refreshReadout();
+  }),
+);
+$('layerModeSeg').querySelectorAll('button').forEach((b) =>
+  b.addEventListener('click', () => {
+    state.singleLayer = (b as HTMLElement).dataset.layers === 'single';
+    $('layerModeSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
+    b.classList.add('active');
+    $('layer2Group').toggleAttribute('hidden', state.singleLayer);
+    refreshReadout();
+  }),
+);
+$<HTMLInputElement>('thickness2').addEventListener('input', (e) => {
+  state.layer2.thickness = parseFloat((e.target as HTMLInputElement).value);
+  $('thickness2Val').textContent = state.layer2.thickness.toFixed(1);
+  refreshReadout();
+});
 $('solarSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.solar = (b as HTMLElement).dataset.solar as 'min' | 'max';
     $('solarSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     requestCurves();
+    refreshReadout();
   }),
 );
 $('modeSeg').querySelectorAll('button').forEach((b) =>
@@ -273,12 +348,13 @@ $('modeSeg').querySelectorAll('button').forEach((b) =>
     $('modeSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
     b.classList.add('active');
     requestCurves();
+    refreshReadout();
   }),
 );
 $<HTMLInputElement>('thickness').addEventListener('input', (e) => {
   state.thickness = parseFloat((e.target as HTMLInputElement).value);
   $('thicknessVal').textContent = state.thickness.toFixed(1);
-  render();
+  refreshReadout();
 });
 $<HTMLInputElement>('duration').addEventListener('input', (e) => {
   state.duration = parseInt((e.target as HTMLInputElement).value, 10);
