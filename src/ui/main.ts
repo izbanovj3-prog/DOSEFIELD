@@ -21,6 +21,7 @@ interface State {
   solar: 'min' | 'max';
   mode: 'primaries' | 'fragmentation';
   duration: number;
+  preset: string; // active mission preset, or 'custom'
 }
 const state: State = {
   material: 'aluminum',
@@ -30,10 +31,12 @@ const state: State = {
   solar: 'min',
   mode: 'primaries',
   duration: 360,
+  preset: 'custom',
 };
 // last two-layer readout from the worker (used when singleLayer = false)
 let ml = { H: 0, D: 0, Q: 0 };
 let mlTimer: number | undefined;
+let applyingPreset = false; // guards the auto-→Custom fallback while a preset sets fields
 
 // cache of computed curves per (solar condition, nuclear mode)
 const curveCache = new Map<string, CurveSeries>();
@@ -117,6 +120,7 @@ function readout(): { H: number; D: number; Q: number } {
 
 /** Update the total-areal readout and (two-layer) kick a debounced off-thread compute, then render. */
 function refreshReadout(): void {
+  markCustom();
   $('totalArealVal').textContent = (state.thickness + (state.singleLayer ? 0 : state.layer2.thickness)).toFixed(1);
   if (!state.singleLayer) {
     setStatus('busy', 'COMPUTING');
@@ -302,6 +306,71 @@ function renderStrip(d: ValidationData): void {
   $('vsRad').innerHTML = `${r.model.H.toFixed(2)} vs ${r.measured.H.toFixed(2)} mSv/day · <span class="vs-ok">${r.ratioH.toFixed(2)}×</span>`;
 }
 
+// ---- mission presets (Feature 2) -------------------------------------------
+// Illustrative shield stacks for orientation — NOT actual spacecraft specs (labeled in the UI).
+const PRESETS: Record<
+  string,
+  {
+    duration: number;
+    solar: 'min' | 'max';
+    mode: 'primaries' | 'fragmentation';
+    single: boolean;
+    l1: { mat: keyof typeof TRACE; t: number };
+    l2: { mat: keyof typeof TRACE; t: number };
+  }
+> = {
+  'mars-cruise': { duration: 360, solar: 'min', mode: 'fragmentation', single: false, l1: { mat: 'aluminum', t: 10 }, l2: { mat: 'polyethylene', t: 5 } },
+  'lunar-gateway': { duration: 180, solar: 'max', mode: 'primaries', single: false, l1: { mat: 'aluminum', t: 8 }, l2: { mat: 'polyethylene', t: 3 } },
+  'artemis-transit': { duration: 10, solar: 'min', mode: 'fragmentation', single: true, l1: { mat: 'aluminum', t: 6 }, l2: { mat: 'polyethylene', t: 5 } },
+};
+
+function setSeg(segId: string, attr: string, val: string): void {
+  $(segId).querySelectorAll('button').forEach((x) => x.classList.toggle('active', (x as HTMLElement).dataset[attr] === val));
+}
+function setActivePreset(key: string): void {
+  state.preset = key;
+  setSeg('presetSeg', 'preset', key);
+}
+/** When the user edits any field manually, fall back to the Custom preset. */
+function markCustom(): void {
+  if (!applyingPreset && state.preset !== 'custom') setActivePreset('custom');
+}
+function applyPreset(key: string): void {
+  const p = PRESETS[key];
+  if (!p) return;
+  applyingPreset = true;
+  state.duration = p.duration;
+  state.solar = p.solar;
+  state.mode = p.mode;
+  state.singleLayer = p.single;
+  state.material = p.l1.mat;
+  state.thickness = p.l1.t;
+  state.layer2 = { material: p.l2.mat, thickness: p.l2.t };
+  $<HTMLInputElement>('duration').value = String(p.duration);
+  $('durationVal').textContent = String(p.duration);
+  $<HTMLInputElement>('thickness').value = String(p.l1.t);
+  $('thicknessVal').textContent = p.l1.t.toFixed(1);
+  $<HTMLInputElement>('thickness2').value = String(p.l2.t);
+  $('thickness2Val').textContent = p.l2.t.toFixed(1);
+  setSeg('solarSeg', 'solar', p.solar);
+  setSeg('modeSeg', 'mode', p.mode);
+  setSeg('layerModeSeg', 'layers', p.single ? 'single' : 'double');
+  setSeg('materialSeg', 'mat', p.l1.mat);
+  setSeg('material2Seg', 'mat', p.l2.mat);
+  $('layer2Group').toggleAttribute('hidden', p.single);
+  setActivePreset(key);
+  requestCurves(); // solar/mode may have changed → refresh the chart curves
+  refreshReadout();
+  applyingPreset = false;
+}
+$('presetSeg').querySelectorAll('button').forEach((b) =>
+  b.addEventListener('click', () => {
+    const key = (b as HTMLElement).dataset.preset!;
+    if (key === 'custom') setActivePreset('custom');
+    else applyPreset(key);
+  }),
+);
+
 // ---- wiring ----------------------------------------------------------------
 $('materialSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
@@ -357,6 +426,7 @@ $<HTMLInputElement>('thickness').addEventListener('input', (e) => {
   refreshReadout();
 });
 $<HTMLInputElement>('duration').addEventListener('input', (e) => {
+  markCustom();
   state.duration = parseInt((e.target as HTMLInputElement).value, 10);
   $('durationVal').textContent = String(state.duration);
   render();

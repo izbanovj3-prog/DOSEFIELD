@@ -47,6 +47,16 @@
           <h2>Mission Configuration</h2>
 
           <div class="control">
+            <label>Mission preset <span class="preset-note">· illustrative configs, not spacecraft specs</span></label>
+            <div class="segmented" id="presetSeg">
+              <button data-preset="mars-cruise">Mars Cruise</button>
+              <button data-preset="lunar-gateway">Lunar Gateway</button>
+              <button data-preset="artemis-transit">Artemis Transit</button>
+              <button data-preset="custom" class="active">Custom</button>
+            </div>
+          </div>
+
+          <div class="control">
             <label>Shielding configuration</label>
             <div class="segmented" id="layerModeSeg">
               <button data-layers="single" class="active">Single layer</button>

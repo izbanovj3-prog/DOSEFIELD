@@ -72,6 +72,7 @@ html, body {
 /* ---- multi-layer (v2.0) ---- */
 .layer-group { border: 1px solid var(--edge); border-radius: 9px; padding: 14px 13px 0; margin-bottom: 18px; background: rgba(9, 16, 32, 0.45); }
 .layer-group > .control:first-child > label { color: var(--accent); letter-spacing: 0.8px; }
+.preset-note { color: var(--dim); font-weight: 400; letter-spacing: 0; text-transform: none; }
 .segmented { display: flex; gap: 6px; flex-wrap: wrap; }
 .segmented button { flex: 1; min-width: fit-content; background: #0a1322; color: var(--dim); border: 1px solid var(--edge); border-radius: 7px; padding: 9px 8px; font-family: var(--mono); font-size: 11px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px; }
 .segmented button:hover { border-color: var(--edge-bright); color: var(--text); }
