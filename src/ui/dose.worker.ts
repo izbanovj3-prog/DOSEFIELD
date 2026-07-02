@@ -4,15 +4,9 @@
  */
 import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
-import { computeRadComparison } from '../dose/radComparison.js';
-import { computeShieldingTrendSummary } from '../validation/validationSummary.js';
+import { computeValidationSummary } from '../validation/validationSummary.js';
 import { computeMultiLayerDose, computeMultiLayerFragmentedDose, type ShieldLayer } from '../dose/multiLayerDose.js';
-import type { RadComparison } from '../dose/radComparison.js';
-import { electronicMassStoppingPower } from '../physics/stoppingPower.js';
-import { MATERIALS } from '../physics/materials.js';
-import { PSTAR_DATASETS } from '../../data/pstar/index.js';
-import { RAD_CRUISE } from '../../data/rad/zeitlin2013.js';
-import { W_SOLAR_MIN, W_SOLAR_MAX, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
+import { W_SOLAR_MIN, W_SOLAR_MAX } from '../../data/gcr/matthia2013.js';
 
 const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water', 'hydrogen', 'methane'] as const;
 const T_MAX = 40;
@@ -48,58 +42,8 @@ function computeCurves(solar: string, mode: string): CurveSeries {
   return series;
 }
 
-export interface ValidationData {
-  /** NIST PSTAR max % error in the ≥10 MeV Bethe-valid region (the headline 1.55%) */
-  nistMaxSolid: number;
-  /** NIST PSTAR max % error over all energies (1–1000 MeV) */
-  nistMaxAll: number;
-  trendOk: boolean;
-  /** max % the best shield (hydrogen) beats the worst (aluminium) at equal areal density */
-  trendBest: number;
-  /** MSL/RAD comparison — the SAME function `npm run report` uses */
-  rad: RadComparison;
-  radSigma: { D: number; H: number; Q: number };
-  cruiseW: number;
-  cruiseShield: number;
-  phiLo: number;
-  phiHi: number;
-}
-
-// Every number below comes from the same code paths as `npm run report` (generateReport.ts),
-// so the in-UI validation matches the generated report exactly. Nothing is hardcoded.
-function runValidation(): ValidationData {
-  // 1. NIST PSTAR — max % error, all energies and the ≥10 MeV region (Bethe valid).
-  let nistMaxAll = 0;
-  let nistMaxSolid = 0;
-  for (const key of Object.keys(PSTAR_DATASETS) as (keyof typeof PSTAR_DATASETS)[]) {
-    const ds = PSTAR_DATASETS[key];
-    const mat = MATERIALS[key]!;
-    for (const p of ds.points) {
-      const e = Math.abs((electronicMassStoppingPower(p.T_MeV, mat) - p.electronic) / p.electronic) * 100;
-      nistMaxAll = Math.max(nistMaxAll, e);
-      if (p.T_MeV >= 10) nistMaxSolid = Math.max(nistMaxSolid, e);
-    }
-  }
-
-  // 2. Shielding trend: the full H2<CH4<PE<water<Al ranking — shared with `npm run report`.
-  const trend = computeShieldingTrendSummary();
-
-  // 3. MSL/RAD cruise comparison (model vs measured, with ratios).
-  const rad = computeRadComparison();
-
-  return {
-    nistMaxSolid,
-    nistMaxAll,
-    trendOk: trend.ok,
-    trendBest: trend.maxBestBenefitPct,
-    rad,
-    radSigma: { D: RAD_CRUISE.doseRate_sigma, H: RAD_CRUISE.doseEquivalent_sigma, Q: RAD_CRUISE.meanQ_sigma },
-    cruiseW: W_CRUISE_2012,
-    cruiseShield: RAD_CRUISE.shielding_gcm2,
-    phiLo: RAD_CRUISE.phi_MV_low,
-    phiHi: RAD_CRUISE.phi_MV_high,
-  };
-}
+// The validation panel is fed by computeValidationSummary() — the SAME single source
+// `npm run report` (generateReport.ts) uses. Nothing is computed inline, nothing hardcoded.
 
 // Cast away the Window-typed global so we don't need the WebWorker lib (which conflicts with DOM).
 const ctx = self as unknown as {
@@ -122,6 +66,6 @@ ctx.onmessage = (e: MessageEvent) => {
     const r = fn(msg.layers ?? [], W, CURVE_PERDECADE);
     ctx.postMessage({ type: 'multiLayer', H: r.doseEquivalent_mSv_day, D: r.absorbedDose_mGy_day, Q: r.meanQ });
   } else if (msg.type === 'validate') {
-    ctx.postMessage({ type: 'validate', data: runValidation() });
+    ctx.postMessage({ type: 'validate', data: computeValidationSummary() });
   }
 };

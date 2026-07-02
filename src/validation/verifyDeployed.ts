@@ -5,15 +5,13 @@
  * to the documented validated values.
  *
  * UI data paths (see src/ui/dose.worker.ts):
- *  - Validation panel  → electronicMassStoppingPower (NIST) + computeRadComparison (RAD),
- *    at the functions' DEFAULT resolution — byte-identical to generateReport.ts.
+ *  - Validation panel  → computeValidationSummary() (validationSummary.ts) — the single
+ *    source shared with generateReport.ts, at the functions' DEFAULT resolution.
  *  - Dose curves/readouts → computeShieldedDose / computeFragmentedDose at perDecade = 50
  *    (the worker's CURVE_PERDECADE, chosen for snappy recompute; ~0.4% coarser than the
  *    report's default, NOT a different model).
  */
-import { electronicMassStoppingPower } from '../physics/stoppingPower.js';
-import { MATERIALS } from '../physics/materials.js';
-import { PSTAR_DATASETS } from '../../data/pstar/index.js';
+import { computeNistStoppingSummary } from './validationSummary.js';
 import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { computeRadComparison } from '../dose/radComparison.js';
@@ -22,17 +20,6 @@ import { W_SOLAR_MIN, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
 
 const UI_PERDECADE = 50; // == worker CURVE_PERDECADE
 
-function nistMaxSolid(): number {
-  let m = 0;
-  for (const key of Object.keys(PSTAR_DATASETS) as (keyof typeof PSTAR_DATASETS)[]) {
-    const ds = PSTAR_DATASETS[key];
-    const mat = MATERIALS[key]!;
-    for (const p of ds.points)
-      if (p.T_MeV >= 10)
-        m = Math.max(m, Math.abs((electronicMassStoppingPower(p.T_MeV, mat) - p.electronic) / p.electronic) * 100);
-  }
-  return m;
-}
 function polyAdvantage(W: number, frag: boolean, pd?: number): number {
   const f = frag ? computeFragmentedDose : computeShieldedDose;
   const al = f('aluminum', 20, W, pd as number).doseEquivalent_mSv_day;
@@ -54,7 +41,7 @@ const rows: Row[] = [];
 const rad = computeRadComparison(); // exactly what the UI validation panel calls
 
 // --- validation-panel quantities: UI path === report path (same functions, default res) ---
-rows.push({ quantity: 'NIST PSTAR max err ≥10 MeV [%]', ui: nistMaxSolid(), ref: 1.55, tol: 3 });
+rows.push({ quantity: 'NIST PSTAR max err ≥10 MeV [%]', ui: computeNistStoppingSummary().maxSolidPct, ref: 1.55, tol: 3 });
 rows.push({ quantity: 'RAD H_model [mSv/day]', ui: rad.model.H, ref: 1.47, tol: 2 });
 rows.push({ quantity: 'RAD ⟨Q⟩_model primaries', ui: rad.model.Q, ref: 4.78, tol: 2 });
 rows.push({ quantity: 'RAD measured H [mSv/day]', ui: rad.measured.H, ref: 1.75, tol: 0.5 });

@@ -3,7 +3,8 @@
  * the slider readout interpolates the active curve (instant), and the canvas plots all three.
  */
 import './styles.css';
-import type { CurvePoint, CurveSeries, ValidationData } from './dose.worker.js';
+import type { CurvePoint, CurveSeries } from './dose.worker.js';
+import type { ValidationSummary } from '../validation/validationSummary.js';
 
 const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
@@ -320,7 +321,7 @@ function drawTimeline(): void {
   }
 }
 
-function renderValidation(d: ValidationData): void {
+function renderValidation(d: ValidationSummary): void {
   const f = (x: number, n = 2): string => x.toFixed(n);
   const check = (ok: boolean, label: string, detail: string): string =>
     `<div class="val-row ${ok ? 'pass' : 'fail'}"><span class="vr-icon">${ok ? '✔' : '✘'}</span>` +
@@ -333,14 +334,14 @@ function renderValidation(d: ValidationData): void {
     `<td style="padding:6px 8px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums">${ratio}×</td></tr>`;
   $('validationResults').innerHTML =
     check(
-      d.nistMaxSolid <= 5,
+      d.nist.maxSolidPct <= 5,
       'Proton stopping power vs NIST PSTAR',
-      `max err ≥10 MeV ${f(d.nistMaxSolid)}% · all energies ${f(d.nistMaxAll)}%`,
+      `max err ≥10 MeV ${f(d.nist.maxSolidPct)}% · all energies ${f(d.nist.maxAllPct)}%`,
     ) +
     check(
-      d.trendOk,
+      d.trend.ok,
       'Shields rank by hydrogen content: H₂ < CH₄ < PE < water < Al',
-      `hydrogen beats aluminium by up to ${f(d.trendBest, 1)}%`,
+      `hydrogen beats aluminium by up to ${f(d.trend.maxBestBenefitPct, 1)}%`,
     ) +
     `<div style="margin-top:12px;background:#091020;border:1px solid var(--edge);border-radius:8px;padding:12px">
       <div style="font-size:11px;color:var(--accent);letter-spacing:1px;margin-bottom:6px">MSL/RAD CRUISE — MODEL vs MEASURED</div>
@@ -380,11 +381,11 @@ function setHeroSubhead(series: CurveSeries): void {
       : `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — ${Math.round((totalMsv / NASA_CAREER_LIMIT_MSV) * 100)}% of NASA’s ${NASA_CAREER_LIMIT_MSV} mSv career limit.`;
 }
 
-// Always-on validation strip + the hero's NIST figure — sourced from the SAME runValidation()
-// data that `npm run report` / generateReport.ts use. No literals typed into the markup.
-function renderStrip(d: ValidationData): void {
-  $('heroNist').textContent = `${d.nistMaxSolid.toFixed(2)}%`;
-  $('vsNist').innerHTML = `<span class="vs-ok">${d.nistMaxSolid.toFixed(2)}%</span> max error`;
+// Always-on validation strip + the hero's NIST figure — sourced from the SAME
+// computeValidationSummary() that `npm run report` / generateReport.ts use. No literals typed into the markup.
+function renderStrip(d: ValidationSummary): void {
+  $('heroNist').textContent = `${d.nist.maxSolidPct.toFixed(2)}%`;
+  $('vsNist').innerHTML = `<span class="vs-ok">${d.nist.maxSolidPct.toFixed(2)}%</span> max error`;
   const r = d.rad;
   $('vsRad').innerHTML = `${r.model.H.toFixed(2)} vs ${r.measured.H.toFixed(2)} mSv/day · <span class="vs-ok">${r.ratioH.toFixed(2)}×</span>`;
 }
