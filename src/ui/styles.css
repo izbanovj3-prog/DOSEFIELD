@@ -29,7 +29,9 @@
   --methane: #a78bfa;
   --mark: #e7f0ff;
   --mono: "JetBrains Mono", "Consolas", "Roboto Mono", ui-monospace, monospace;
-  --sans: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Briefing prose is set in a serif (Spectral): the written mission-report register,
+     a real contrast axis against the telemetry mono. No third family. */
+  --serif: "Spectral", "Georgia", "Times New Roman", serif;
 }
 
 * { box-sizing: border-box; }
@@ -105,11 +107,11 @@ body::before {
   margin-top: 20px; align-items: start;
 }
 .hero-subhead {
-  font-family: var(--sans); font-size: clamp(17px, 1.9vw, 24px); font-weight: 650; line-height: 1.38;
-  letter-spacing: -0.01em; color: var(--ink); margin: 2px 0 0; text-wrap: balance;
+  font-family: var(--serif); font-size: clamp(19px, 2vw, 26px); font-weight: 600; line-height: 1.42;
+  color: var(--ink); margin: 2px 0 0; text-wrap: balance;
 }
-.hero-subhead .hero-x { font-family: var(--mono); font-size: 0.94em; color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hero-plain { font-family: var(--sans); font-size: 13px; line-height: 1.7; color: var(--body); margin: 0; max-width: 72ch; text-wrap: pretty; }
+.hero-subhead .hero-x { font-family: var(--mono); font-size: 0.88em; color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hero-plain { font-family: var(--serif); font-size: 14px; line-height: 1.75; color: var(--body); margin: 0; max-width: 68ch; text-wrap: pretty; }
 .hero-scope { font-size: 10.5px; line-height: 1.7; color: var(--dim); margin: 10px 0 0; text-wrap: pretty; }
 .hero-num { color: var(--accent); font-variant-numeric: tabular-nums; }
 .valstrip { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
@@ -338,7 +340,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .rad-table td.rt-meas { color: var(--dim); }
 .rad-table td.rt-ratio { color: var(--accent); }
 .rad-table tbody tr + tr td { border-top: 1px solid rgba(29, 44, 74, 0.6); }
-.limitations { grid-column: 1; font-family: var(--sans); font-size: 12px; line-height: 1.65; color: var(--dim); max-width: 72ch; text-wrap: pretty; padding-top: 4px; }
+.limitations { grid-column: 1; font-family: var(--serif); font-size: 13px; line-height: 1.7; color: var(--dim); max-width: 68ch; text-wrap: pretty; padding-top: 4px; }
 .limitations .lim-head { color: var(--text); font-weight: 600; }
 .limitations .lim-warn { color: var(--warn); }
 
