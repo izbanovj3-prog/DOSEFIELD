@@ -148,6 +148,10 @@ function render(): void {
   const totalMsv = cur.H * state.duration;
   const pct = (totalMsv / NASA_CAREER_LIMIT_MSV) * 100;
   $('careerPct').textContent = pct.toFixed(0) + '%';
+  // presentation only: nominal < 50% of the NASA-STD-3001 career limit ≤ caution ≤ 100% < exceed
+  const band = totalMsv > NASA_CAREER_LIMIT_MSV ? 'exceed' : totalMsv >= NASA_CAREER_LIMIT_MSV / 2 ? 'caution' : 'nominal';
+  $('totalVal').setAttribute('data-band', band);
+  $('careerPct').setAttribute('data-band', band);
   const fill = $('careerFill');
   fill.style.width = Math.min(100, pct) + '%';
   fill.style.background = pct > 100 ? 'var(--warn)' : 'linear-gradient(90deg, var(--accent), var(--water))';
@@ -198,7 +202,7 @@ function drawChart(): void {
 
   // grid + axes
   ctx.strokeStyle = 'rgba(40,63,99,0.5)';
-  ctx.fillStyle = '#6a7c97';
+  ctx.fillStyle = '#7f94b0';
   ctx.font = '11px ui-monospace, monospace';
   ctx.lineWidth = 1;
   for (let h = 0; h <= hMax + 1e-9; h += 0.5) {
@@ -212,7 +216,7 @@ function drawChart(): void {
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
     ctx.textAlign = 'center'; ctx.fillText(String(t), x, cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#8aa0bf'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#9db1cd'; ctx.textAlign = 'center';
   ctx.fillText('shield areal density  (g/cm²)', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose-equivalent  (mSv/day)', 0, 0); ctx.restore();
@@ -278,13 +282,13 @@ function drawTimeline(): void {
     const y = yOf(v);
     ctx.strokeStyle = 'rgba(40,63,99,0.4)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#6a7c97'; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
+    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
   }
   const xstep = days <= 30 ? 5 : days <= 200 ? 30 : 60;
   for (let d = 0; d <= days + 1e-9; d += xstep) {
-    ctx.fillStyle = '#6a7c97'; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
+    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#8aa0bf'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#9db1cd'; ctx.textAlign = 'center';
   ctx.fillText('mission day', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('cumulative dose-equivalent  (Sv)', 0, 0); ctx.restore();
@@ -328,10 +332,7 @@ function renderValidation(d: ValidationSummary): void {
     `<span>${label}</span><span class="vr-detail">${detail}</span></div>`;
   const r = d.rad;
   const radRow = (q: string, model: string, meas: string, ratio: string): string =>
-    `<tr><td style="padding:6px 8px;color:var(--dim)">${q}</td>` +
-    `<td style="padding:6px 8px;text-align:right;color:var(--text);font-variant-numeric:tabular-nums">${model}</td>` +
-    `<td style="padding:6px 8px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums">${meas}</td>` +
-    `<td style="padding:6px 8px;text-align:right;color:var(--accent);font-variant-numeric:tabular-nums">${ratio}×</td></tr>`;
+    `<tr><td class="rt-q">${q}</td><td>${model}</td><td class="rt-meas">${meas}</td><td class="rt-ratio">${ratio}×</td></tr>`;
   $('validationResults').innerHTML =
     check(
       d.nist.maxSolidPct <= 5,
@@ -343,15 +344,15 @@ function renderValidation(d: ValidationSummary): void {
       'Shields rank by hydrogen content: H₂ < CH₄ < PE < water < Al',
       `hydrogen beats aluminium by up to ${f(d.trend.maxBestBenefitPct, 1)}%`,
     ) +
-    `<div style="margin-top:12px;background:#091020;border:1px solid var(--edge);border-radius:8px;padding:12px">
-      <div style="font-size:11px;color:var(--accent);letter-spacing:1px;margin-bottom:6px">MSL/RAD CRUISE — MODEL vs MEASURED</div>
-      <div style="font-size:10.5px;color:var(--dim);margin-bottom:8px">φ≈${d.phiLo}–${d.phiHi} MV → Matthiä W≈${d.cruiseW}, behind ${d.cruiseShield} g/cm² Al-equiv · set independently of the measurement</div>
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead><tr style="color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px">
-          <th style="text-align:left;padding:4px 8px;font-weight:400">quantity</th>
-          <th style="text-align:right;padding:4px 8px;font-weight:400">model</th>
-          <th style="text-align:right;padding:4px 8px;font-weight:400">measured (RAD)</th>
-          <th style="text-align:right;padding:4px 8px;font-weight:400">ratio</th></tr></thead>
+    `<div class="rad-box">
+      <div class="rad-kicker">MSL/RAD CRUISE — MODEL vs MEASURED</div>
+      <div class="rad-note">φ≈${d.phiLo}–${d.phiHi} MV → Matthiä W≈${d.cruiseW}, behind ${d.cruiseShield} g/cm² Al-equiv · set independently of the measurement</div>
+      <table class="rad-table">
+        <thead><tr>
+          <th>quantity</th>
+          <th>model</th>
+          <th>measured (RAD)</th>
+          <th>ratio</th></tr></thead>
         <tbody>
           ${radRow('absorbed dose [mGy/d]', f(r.model.D, 3), `${f(r.measured.D, 3)} ± ${d.radSigma.D}`, f(r.ratioD))}
           ${radRow('dose-equivalent [mSv/d]', f(r.model.H), `${f(r.measured.H)} ± ${d.radSigma.H}`, f(r.ratioH))}
@@ -359,9 +360,9 @@ function renderValidation(d: ValidationSummary): void {
         </tbody>
       </table>
     </div>
-    <div style="margin-top:12px;font-size:11px;line-height:1.65;color:var(--dim)">
-      <span style="color:var(--text)">Limitations.</span> 1-D deterministic CSDA · GCR primaries + simplified Bradt–Peters fragmentation ·
-      <span style="color:var(--warn)">no secondary-neutron / target-fragment transport</span>, so absorbed dose is under-predicted (ratio ${f(r.ratioD)}×) — the honest scope limit. Not a substitute for HZETRN / OLTARIS.
+    <div class="limitations">
+      <span class="lim-head">Limitations.</span> 1-D deterministic CSDA · GCR primaries + simplified Bradt–Peters fragmentation ·
+      <span class="lim-warn">no secondary-neutron / target-fragment transport</span>, so absorbed dose is under-predicted (ratio ${f(r.ratioD)}×) — the honest scope limit. Not a substitute for HZETRN / OLTARIS.
     </div>`;
 }
 
@@ -409,7 +410,17 @@ const PRESETS: Record<
 };
 
 function setSeg(segId: string, attr: string, val: string): void {
-  $(segId).querySelectorAll('button').forEach((x) => x.classList.toggle('active', (x as HTMLElement).dataset[attr] === val));
+  $(segId).querySelectorAll('button').forEach((x) => {
+    const on = (x as HTMLElement).dataset[attr] === val;
+    x.classList.toggle('active', on);
+    x.setAttribute('aria-pressed', String(on));
+  });
+}
+/** Reflect a range input's value into its --fill custom property (filled-track slider). */
+function syncFill(el: HTMLInputElement): void {
+  const min = parseFloat(el.min);
+  const pct = ((parseFloat(el.value) - min) / (parseFloat(el.max) - min)) * 100;
+  el.style.setProperty('--fill', `${pct}%`);
 }
 function setActivePreset(key: string): void {
   state.preset = key;
@@ -436,6 +447,7 @@ function applyPreset(key: string): void {
   $('thicknessVal').textContent = p.l1.t.toFixed(1);
   $<HTMLInputElement>('thickness2').value = String(p.l2.t);
   $('thickness2Val').textContent = p.l2.t.toFixed(1);
+  (['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
   setSeg('solarSeg', 'solar', p.solar);
   setSeg('modeSeg', 'mode', p.mode);
   setSeg('layerModeSeg', 'layers', p.single ? 'single' : 'double');
@@ -459,24 +471,21 @@ $('presetSeg').querySelectorAll('button').forEach((b) =>
 $('materialSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.material = (b as HTMLElement).dataset.mat as keyof typeof TRACE;
-    $('materialSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
-    b.classList.add('active');
+    setSeg('materialSeg', 'mat', state.material);
     refreshReadout();
   }),
 );
 $('material2Seg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.layer2.material = (b as HTMLElement).dataset.mat as keyof typeof TRACE;
-    $('material2Seg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
-    b.classList.add('active');
+    setSeg('material2Seg', 'mat', state.layer2.material);
     refreshReadout();
   }),
 );
 $('layerModeSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.singleLayer = (b as HTMLElement).dataset.layers === 'single';
-    $('layerModeSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
-    b.classList.add('active');
+    setSeg('layerModeSeg', 'layers', state.singleLayer ? 'single' : 'double');
     $('layer2Group').toggleAttribute('hidden', state.singleLayer);
     refreshReadout();
   }),
@@ -484,13 +493,13 @@ $('layerModeSeg').querySelectorAll('button').forEach((b) =>
 $<HTMLInputElement>('thickness2').addEventListener('input', (e) => {
   state.layer2.thickness = parseFloat((e.target as HTMLInputElement).value);
   $('thickness2Val').textContent = state.layer2.thickness.toFixed(1);
+  syncFill(e.target as HTMLInputElement);
   refreshReadout();
 });
 $('solarSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.solar = (b as HTMLElement).dataset.solar as 'min' | 'max';
-    $('solarSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
-    b.classList.add('active');
+    setSeg('solarSeg', 'solar', state.solar);
     requestCurves();
     refreshReadout();
   }),
@@ -498,8 +507,7 @@ $('solarSeg').querySelectorAll('button').forEach((b) =>
 $('modeSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.mode = (b as HTMLElement).dataset.mode as 'primaries' | 'fragmentation';
-    $('modeSeg').querySelectorAll('button').forEach((x) => x.classList.remove('active'));
-    b.classList.add('active');
+    setSeg('modeSeg', 'mode', state.mode);
     requestCurves();
     refreshReadout();
   }),
@@ -507,12 +515,14 @@ $('modeSeg').querySelectorAll('button').forEach((b) =>
 $<HTMLInputElement>('thickness').addEventListener('input', (e) => {
   state.thickness = parseFloat((e.target as HTMLInputElement).value);
   $('thicknessVal').textContent = state.thickness.toFixed(1);
+  syncFill(e.target as HTMLInputElement);
   refreshReadout();
 });
 $<HTMLInputElement>('duration').addEventListener('input', (e) => {
   markCustom();
   state.duration = parseInt((e.target as HTMLInputElement).value, 10);
   $('durationVal').textContent = String(state.duration);
+  syncFill(e.target as HTMLInputElement);
   render();
 });
 $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
@@ -528,6 +538,7 @@ $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
 });
 window.addEventListener('resize', () => { drawChart(); drawTimeline(); });
 
+(['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
 setStatus('busy', 'COMPUTING');
 requestCurves();
 worker.postMessage({ type: 'validate' }); // populate the validation panel on load

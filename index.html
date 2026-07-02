@@ -4,129 +4,156 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DOSEFIELD · Deep-Space Dosimeter</title>
+    <meta
+      name="description"
+      content="Scientifically-honest 1D deep-space radiation dose &amp; shielding model — GCR ion spectra to dose-equivalent behind spacecraft shielding, validated against NIST PSTAR and NASA MSL/RAD."
+    />
+    <meta name="theme-color" content="#0a0e1a" />
+    <meta property="og:title" content="DOSEFIELD · Deep-Space Dosimeter" />
+    <meta
+      property="og:description"
+      content="1D deep-space radiation dose &amp; shielding model from first principles — validated against NIST PSTAR and NASA MSL/RAD. Every constant cited, nothing tuned."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://izbanovj3-prog.github.io/DOSEFIELD/" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0e1a'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%2300d4ff'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='%2300d4ff' stroke-opacity='.55' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%2300d4ff' stroke-opacity='.22' stroke-width='2'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&display=swap"
+    />
     <link rel="stylesheet" href="/src/ui/styles.css" />
   </head>
   <body>
     <div id="app">
       <header class="masthead">
-        <div class="title-block">
+        <div class="wordmark">
           <h1>DOSEFIELD <span class="version">v2.0</span></h1>
           <p class="subtitle">1D deep-space radiation dose &amp; shielding model · GCR → dose-equivalent</p>
         </div>
         <div class="status-lamp" id="statusLamp"><span class="dot"></span><span id="statusText">INIT</span></div>
       </header>
 
-      <section class="hero" aria-label="DOSEFIELD overview">
-        <p class="hero-subhead" id="heroSubhead">Computing the default-mission dose…</p>
-        <p class="hero-plain">
-          DOSEFIELD turns galactic-cosmic-ray ion spectra into absorbed dose and dose-equivalent
-          behind spacecraft shielding, from first principles — Bethe–Bloch stopping power, ICRP-60
-          quality factors, a cited GCR model. Every constant is sourced and cited, nothing is tuned
-          to the answer, and the result is validated against NASA’s MSL/RAD Mars-cruise measurement.
-        </p>
-        <p class="hero-scope">
-          Deterministic 1-D slab · stopping power within <span class="hero-num" id="heroNist">—</span>
-          of NIST PSTAR (≥10&nbsp;MeV) · integral cruise dose within ~2× of MSL/RAD · primaries + simplified
-          Bradt–Peters fragmentation, no secondary-neutron transport — not a substitute for HZETRN / OLTARIS.
-        </p>
-        <div class="valstrip" id="valStrip" aria-live="polite">
-          <div class="vs-item">
-            <span class="vs-label">Stopping power vs NIST PSTAR (≥10&nbsp;MeV)</span>
-            <span class="vs-val" id="vsNist">—</span>
+      <section class="hero" aria-label="Mission briefing">
+        <div class="hero-main">
+          <p class="hero-subhead" id="heroSubhead">Computing the default-mission dose…</p>
+          <div class="valstrip" id="valStrip" aria-live="polite">
+            <div class="vs-item">
+              <span class="vs-label">Stopping power vs NIST PSTAR (≥10&nbsp;MeV)</span>
+              <span class="vs-val" id="vsNist">—</span>
+            </div>
+            <div class="vs-item">
+              <span class="vs-label">Cruise dose-equivalent vs NASA MSL/RAD</span>
+              <span class="vs-val" id="vsRad">—</span>
+            </div>
           </div>
-          <div class="vs-item">
-            <span class="vs-label">Cruise dose-equivalent vs NASA MSL/RAD</span>
-            <span class="vs-val" id="vsRad">—</span>
-          </div>
+        </div>
+        <div class="hero-side">
+          <p class="hero-plain">
+            DOSEFIELD turns galactic-cosmic-ray ion spectra into absorbed dose and dose-equivalent
+            behind spacecraft shielding, from first principles — Bethe–Bloch stopping power, ICRP-60
+            quality factors, a cited GCR model. Every constant is sourced and cited, nothing is tuned
+            to the answer, and the result is validated against NASA’s MSL/RAD Mars-cruise measurement.
+          </p>
+          <p class="hero-scope">
+            Deterministic 1-D slab · stopping power within <span class="hero-num" id="heroNist">—</span>
+            of NIST PSTAR (≥10&nbsp;MeV) · integral cruise dose within ~2× of MSL/RAD · primaries + simplified
+            Bradt–Peters fragmentation, no secondary-neutron transport — not a substitute for HZETRN / OLTARIS.
+          </p>
         </div>
       </section>
 
-      <main class="grid">
+      <nav class="preset-bar" aria-label="Mission presets">
+        <span class="preset-title">Mission preset</span>
+        <div class="segmented presets" id="presetSeg" role="group" aria-label="Mission preset">
+          <button data-preset="mars-cruise" aria-pressed="false">Mars Cruise</button>
+          <button data-preset="lunar-gateway" aria-pressed="false">Lunar Gateway</button>
+          <button data-preset="artemis-transit" aria-pressed="false">Artemis Transit</button>
+          <button data-preset="custom" class="active" aria-pressed="true">Custom</button>
+        </div>
+        <span class="preset-note">illustrative configs — not spacecraft specs</span>
+      </nav>
+
+      <main class="deck">
         <!-- CONTROLS -->
-        <section class="panel controls">
+        <aside class="panel controls" aria-label="Mission configuration">
           <h2>Mission Configuration</h2>
 
           <div class="control">
-            <label>Mission preset <span class="preset-note">· illustrative configs, not spacecraft specs</span></label>
-            <div class="segmented" id="presetSeg">
-              <button data-preset="mars-cruise">Mars Cruise</button>
-              <button data-preset="lunar-gateway">Lunar Gateway</button>
-              <button data-preset="artemis-transit">Artemis Transit</button>
-              <button data-preset="custom" class="active">Custom</button>
-            </div>
-          </div>
-
-          <div class="control">
             <label>Shielding configuration</label>
-            <div class="segmented" id="layerModeSeg">
-              <button data-layers="single" class="active">Single layer</button>
-              <button data-layers="double">Two layers</button>
+            <div class="segmented switch" id="layerModeSeg" role="group" aria-label="Shielding configuration">
+              <button data-layers="single" class="active" aria-pressed="true">Single layer</button>
+              <button data-layers="double" aria-pressed="false">Two layers</button>
             </div>
           </div>
 
           <div class="layer-group" id="layer1Group">
             <div class="control">
               <label>Layer 1 · structural</label>
-              <div class="segmented" id="materialSeg">
-                <button data-mat="aluminum" class="active">Aluminium</button>
-                <button data-mat="polyethylene">Polyethylene</button>
-                <button data-mat="water">Water</button>
-                <button data-mat="hydrogen">Hydrogen</button>
-                <button data-mat="methane">Methane</button>
+              <div class="segmented matgrid" id="materialSeg" role="group" aria-label="Layer 1 material">
+                <button data-mat="aluminum" class="active" aria-pressed="true">Aluminium</button>
+                <button data-mat="polyethylene" aria-pressed="false">Polyethylene</button>
+                <button data-mat="water" aria-pressed="false">Water</button>
+                <button data-mat="hydrogen" aria-pressed="false">Hydrogen</button>
+                <button data-mat="methane" aria-pressed="false">Methane</button>
               </div>
             </div>
             <div class="control">
               <label>Areal density · <span id="thicknessVal" class="readback">10.0</span> g/cm²</label>
-              <input type="range" id="thickness" min="0" max="40" step="0.5" value="10" />
+              <input type="range" id="thickness" min="0" max="40" step="0.5" value="10" autocomplete="off" aria-label="Layer 1 areal density, grams per square centimetre" />
             </div>
           </div>
 
           <div class="layer-group" id="layer2Group" hidden>
             <div class="control">
               <label>Layer 2 · inner lining</label>
-              <div class="segmented" id="material2Seg">
-                <button data-mat="aluminum">Aluminium</button>
-                <button data-mat="polyethylene" class="active">Polyethylene</button>
-                <button data-mat="water">Water</button>
-                <button data-mat="hydrogen">Hydrogen</button>
-                <button data-mat="methane">Methane</button>
+              <div class="segmented matgrid" id="material2Seg" role="group" aria-label="Layer 2 material">
+                <button data-mat="aluminum" aria-pressed="false">Aluminium</button>
+                <button data-mat="polyethylene" class="active" aria-pressed="true">Polyethylene</button>
+                <button data-mat="water" aria-pressed="false">Water</button>
+                <button data-mat="hydrogen" aria-pressed="false">Hydrogen</button>
+                <button data-mat="methane" aria-pressed="false">Methane</button>
               </div>
             </div>
             <div class="control">
               <label>Areal density · <span id="thickness2Val" class="readback">5.0</span> g/cm²</label>
-              <input type="range" id="thickness2" min="0" max="40" step="0.5" value="5" />
+              <input type="range" id="thickness2" min="0" max="40" step="0.5" value="5" autocomplete="off" aria-label="Layer 2 areal density, grams per square centimetre" />
             </div>
           </div>
 
-          <div class="control">
+          <div class="control total-line">
             <label>Total areal density · <span id="totalArealVal" class="readback">10.0</span> g/cm²</label>
           </div>
 
           <div class="control">
             <label>Solar condition</label>
-            <div class="segmented" id="solarSeg">
-              <button data-solar="min" class="active">Solar MIN (worst GCR)</button>
-              <button data-solar="max">Solar MAX</button>
+            <div class="segmented switch" id="solarSeg" role="group" aria-label="Solar condition">
+              <button data-solar="min" class="active" aria-pressed="true">Solar MIN (worst GCR)</button>
+              <button data-solar="max" aria-pressed="false">Solar MAX</button>
             </div>
           </div>
 
           <div class="control">
             <label>Nuclear model</label>
-            <div class="segmented" id="modeSeg">
-              <button data-mode="primaries" class="active">Primaries only</button>
-              <button data-mode="fragmentation">+ Fragmentation</button>
+            <div class="segmented switch" id="modeSeg" role="group" aria-label="Nuclear model">
+              <button data-mode="primaries" class="active" aria-pressed="true">Primaries only</button>
+              <button data-mode="fragmentation" aria-pressed="false">+ Fragmentation</button>
             </div>
           </div>
 
           <div class="control">
             <label>Mission duration · <span id="durationVal" class="readback">360</span> days</label>
-            <input type="range" id="duration" min="30" max="1000" step="10" value="360" />
+            <input type="range" id="duration" min="30" max="1000" step="10" value="360" autocomplete="off" aria-label="Mission duration, days" />
           </div>
 
           <p class="footnote" id="footnote">
             Free space, primaries only. GCR: Matthiä 2013 (BON fit). Q: ICRP-60. Tissue: water.
           </p>
-        </section>
+        </aside>
 
         <!-- READOUT -->
         <section class="panel readout">
@@ -153,21 +180,33 @@
         <!-- CHART -->
         <section class="panel chart">
           <h2>Dose-Equivalent vs Shield Areal Density</h2>
-          <canvas id="chart" width="900" height="420"></canvas>
+          <canvas
+            id="chart"
+            width="900"
+            height="420"
+            role="img"
+            aria-label="Line chart: dose-equivalent in millisievert per day versus shield areal density from 0 to 40 grams per square centimetre, one curve per material (aluminium, polyethylene, water, hydrogen, methane), with the current configuration marked."
+          ></canvas>
           <div class="legend">
-            <span class="lg lg-al">■ Aluminium</span>
-            <span class="lg lg-poly">■ Polyethylene</span>
-            <span class="lg lg-water">■ Water</span>
-            <span class="lg lg-h">■ Hydrogen</span>
-            <span class="lg lg-ch4">■ Methane</span>
-            <span class="lg lg-mark">▮ current</span>
+            <span class="lg lg-al">Aluminium</span>
+            <span class="lg lg-poly">Polyethylene</span>
+            <span class="lg lg-water">Water</span>
+            <span class="lg lg-h">Hydrogen</span>
+            <span class="lg lg-ch4">Methane</span>
+            <span class="lg lg-mark">current</span>
           </div>
         </section>
 
         <!-- TIMELINE (v2.0) -->
         <section class="panel timeline-panel">
           <h2>Cumulative Dose Over Mission</h2>
-          <canvas id="timeline" width="900" height="320"></canvas>
+          <canvas
+            id="timeline"
+            width="900"
+            height="320"
+            role="img"
+            aria-label="Line chart: cumulative dose-equivalent in sievert over the mission days at the current dose rate, with the NASA 600 millisievert career limit and the NCRP 50 millisievert occupational reference marked."
+          ></canvas>
         </section>
 
         <!-- VALIDATION -->
@@ -181,8 +220,11 @@
       </main>
 
       <footer class="colophon">
-        Validated against NIST PSTAR stopping-power tables and NASA MSL/RAD measurements ·
-        deterministic 1D CSDA · fragmentation approximated (not a substitute for HZETRN).
+        <span class="colophon-text">
+          Validated against NIST PSTAR stopping-power tables and NASA MSL/RAD measurements ·
+          deterministic 1D CSDA · fragmentation approximated (not a substitute for HZETRN).
+        </span>
+        <span class="badge">Built for NASA Stardance Challenge</span>
       </footer>
     </div>
 
