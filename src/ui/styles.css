@@ -8,17 +8,20 @@
 
 :root {
   color-scheme: dark;
-  --bg: #0a0e1a;
-  --panel: #0d1526;
-  --panel-2: #111c33;
-  --well: #060b16;
-  --edge: #1d2c4a;
-  --edge-bright: #31476f;
-  --ink: #eaf4ff;
-  --text: #c9d8ee;
+  /* Neutral ramp: one hue family (~225°, faint chroma toward the accent per
+     tinted-neutral practice), five stops from void to ink. Hand-set values,
+     not a framework palette. Glow is reserved for things that are physically
+     lit: the status lamp, the live dose figure, active indicator dots. */
+  --bg: #0a0e1a; /* L≈7 void */
+  --panel: #0d1526; /* L≈10 surface */
+  --well: #060b16; /* L≈5 inset data well */
+  --edge: #1d2c4a; /* hairlines */
+  --edge-bright: #31476f; /* hover / primary-panel border */
+  --ink: #eaf4ff; /* headings, hero numerals */
+  --text: #c9d8ee; /* data values */
   --body: #a4b8d6; /* prose — ≥4.5:1 on bg/panel */
   --dim: #7a8fb2; /* labels — ≥4.5:1 on panel/well */
-  --accent: #00d4ff; /* electric cyan — the one interface accent */
+  --accent: #00d4ff; /* electric cyan — interactive + live-data accent, nothing else */
   --go: #46e06a; /* pass / ready (matches polyethylene trace) */
   --amber: #ffb000; /* caution (matches aluminium trace) */
   --warn: #ff5a5a; /* limit exceeded (matches canvas career line) */
@@ -88,7 +91,6 @@ body::before {
 }
 .wordmark h1 {
   margin: 0; font-size: 26px; letter-spacing: 0.34em; font-weight: 800; color: var(--ink);
-  text-shadow: 0 0 22px rgba(0, 212, 255, 0.35);
 }
 .subtitle { margin: 5px 0 0; font-size: 10.5px; color: var(--dim); letter-spacing: 0.14em; text-transform: uppercase; }
 .version { font-size: 10px; color: var(--accent); letter-spacing: 0.12em; font-weight: 600; vertical-align: super; }
@@ -144,7 +146,6 @@ body::before {
 .presets button:active { transform: translateY(1px); }
 .presets button.active {
   color: var(--accent); border-color: rgba(0, 212, 255, 0.55); background: rgba(0, 212, 255, 0.09);
-  box-shadow: 0 0 14px rgba(0, 212, 255, 0.18), inset 0 0 10px rgba(0, 212, 255, 0.07);
 }
 
 /* ---- deck grid ------------------------------------------------------------- */
@@ -207,7 +208,6 @@ body::before {
 .segmented button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .segmented button.active {
   background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.6); color: var(--accent);
-  box-shadow: inset 0 0 12px rgba(0, 212, 255, 0.08);
 }
 
 /* rocker-switch variant (two options) */
@@ -215,7 +215,7 @@ body::before {
 .switch button { display: flex; align-items: center; justify-content: center; gap: 7px; border: none; background: transparent; border-radius: 2px; padding: 8px 6px; }
 .switch button::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.3; flex: none; transition: opacity 0.15s, box-shadow 0.15s; }
 .switch button:hover { color: var(--text); }
-.switch button.active { background: linear-gradient(180deg, rgba(0, 212, 255, 0.16), rgba(0, 212, 255, 0.07)); color: var(--accent); box-shadow: 0 0 12px rgba(0, 212, 255, 0.12); }
+.switch button.active { background: rgba(0, 212, 255, 0.1); color: var(--accent); }
 .switch button.active::before { opacity: 1; box-shadow: 0 0 8px currentColor; }
 
 /* material element cards — card color == chart trace color */
@@ -242,9 +242,8 @@ body::before {
 .matgrid button.active {
   border-color: var(--mat); color: var(--text);
   background: color-mix(in srgb, var(--mat) 11%, transparent);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--mat) 28%, transparent), inset 0 0 10px color-mix(in srgb, var(--mat) 10%, transparent);
 }
-.matgrid button.active::before { opacity: 1; text-shadow: 0 0 10px var(--mat); }
+.matgrid button.active::before { opacity: 1; }
 
 /* sliders — glowing energy fill */
 input[type="range"] {
@@ -252,13 +251,13 @@ input[type="range"] {
   background: linear-gradient(90deg, #00637a, var(--accent) var(--fill, 50%), #101c33 var(--fill, 50%));
 }
 input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  -webkit-appearance: none; width: 17px; height: 17px; border-radius: 50%;
   background: var(--well); border: 2px solid var(--accent); cursor: pointer;
-  box-shadow: 0 0 12px rgba(0, 212, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.14);
 }
 input[type="range"]::-moz-range-thumb {
-  width: 16px; height: 16px; border-radius: 50%; background: var(--well); border: 2px solid var(--accent);
-  cursor: pointer; box-shadow: 0 0 12px rgba(0, 212, 255, 0.55);
+  width: 15px; height: 15px; border-radius: 50%; background: var(--well); border: 2px solid var(--accent);
+  cursor: pointer; box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.14);
 }
 input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
@@ -268,7 +267,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .big-number { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 16px; }
 .big-number #rateValue {
   font-size: 68px; font-weight: 700; color: var(--ink); line-height: 1;
-  text-shadow: 0 0 26px rgba(0, 212, 255, 0.4); font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 24px rgba(0, 212, 255, 0.26); font-variant-numeric: tabular-nums;
 }
 .big-number .unit { font-size: 14px; color: var(--dim); }
 .sub-metrics { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
@@ -298,7 +297,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 /* ---- chart legend ------------------------------------------------------------ */
 .legend { display: flex; gap: 16px; margin-top: 11px; font-size: 10.5px; color: var(--dim); flex-wrap: wrap; }
 .lg { display: inline-flex; align-items: center; gap: 7px; }
-.lg::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: currentColor; box-shadow: 0 0 6px currentColor; }
+.lg::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: currentColor; }
 .lg-mark::before { width: 8px; height: 8px; border-radius: 50%; }
 .lg-al { color: var(--al); } .lg-poly { color: var(--poly); } .lg-water { color: var(--water); } .lg-h { color: var(--hydrogen); } .lg-ch4 { color: var(--methane); } .lg-mark { color: var(--mark); }
 
@@ -308,7 +307,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
   border-radius: 2px; padding: 10px 22px; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em;
   cursor: pointer; transition: background-color 0.15s, box-shadow 0.15s;
 }
-.run-btn:hover { background: rgba(0, 212, 255, 0.18); box-shadow: 0 0 18px rgba(0, 212, 255, 0.25); }
+.run-btn:hover { background: rgba(0, 212, 255, 0.18); }
 .run-btn:active { transform: translateY(1px); }
 .run-btn:disabled { opacity: 0.5; cursor: wait; }
 
@@ -331,7 +330,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 
 .val-row { grid-column: 1; display: grid; grid-template-columns: 18px 1fr auto; align-items: baseline; gap: 9px; font-size: 12px; padding: 5px 2px; }
 .val-row .vr-icon { font-size: 12px; }
-.val-row.pass .vr-icon { color: var(--go); text-shadow: 0 0 8px rgba(70, 224, 106, 0.6); }
+.val-row.pass .vr-icon { color: var(--go); }
 .val-row.fail .vr-icon { color: var(--warn); }
 .val-row.pending .vr-icon { color: var(--dim); }
 .val-row .vr-detail { color: var(--dim); font-size: 10.5px; font-variant-numeric: tabular-nums; text-align: right; }
