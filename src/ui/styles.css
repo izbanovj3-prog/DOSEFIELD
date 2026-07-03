@@ -39,6 +39,7 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
+button, input[type="range"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   margin: 0;
@@ -362,19 +363,10 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 }
 .badge::before { content: "✦ "; }
 
-/* ---- entrance (one-time, subtle; static under reduced motion) ---------------- */
-@media (prefers-reduced-motion: no-preference) {
-  .masthead, .hero, .preset-bar, .panel, .colophon { animation: rise 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
-  .hero { animation-delay: 0.05s; }
-  .preset-bar { animation-delay: 0.09s; }
-  .deck > .panel:nth-child(1) { animation-delay: 0.13s; }
-  .deck > .panel:nth-child(2) { animation-delay: 0.17s; }
-  .deck > .panel:nth-child(3) { animation-delay: 0.21s; }
-  .deck > .panel:nth-child(4) { animation-delay: 0.25s; }
-  .deck > .panel:nth-child(5) { animation-delay: 0.29s; }
-  .colophon { animation-delay: 0.33s; }
-}
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } }
+/* ---- motion --------------------------------------------------------------------
+   No entrance choreography: instruments don't animate in, they are already on.
+   Motion belongs to the things that are alive — the console types its checks,
+   the caret and status lamp blink, the star field barely breathes. */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
