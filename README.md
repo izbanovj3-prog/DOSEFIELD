@@ -7,7 +7,7 @@ physics, with no parameter tuned to the answer.**
 ### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
 [![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
-&nbsp; CI runs typecheck · 103 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
+&nbsp; CI runs typecheck · 107 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
 
 > ### The headline
 > **A Mars round-trip exceeds NASA's 600 mSv career radiation limit.** NASA's MSL/RAD instrument
@@ -150,6 +150,28 @@ parameter-free results that move the model **toward** RAD:
 secondary **neutrons** / target fragments that carry much of the shielded dose. That is HZETRN's
 job and is deliberately out of scope; Phase 5 isolates the ⟨Q⟩-softening and material-ordering.
 
+### v2.0 — multi-layer shielding, mission presets, cumulative-dose timeline
+
+Three product features built on the same validated CSDA engine — no new physics, no new
+approximations beyond what's already labeled above.
+
+- **Multi-layer shielding** — a shield stack (e.g. an aluminium structural layer plus a
+  polyethylene inner lining), integrated sequentially outermost→innermost in the same
+  residual-energy space as the single slab —
+  [`src/dose/multiLayerDose.ts`](src/dose/multiLayerDose.ts). Reduces *exactly* to the
+  single-slab result for a one-layer stack (tested to 0.05%/0.00%). **Honest caveat:
+  unvalidated beyond the single-layer limit** — there is no NASA layered measurement to check
+  a two-layer stack against, and the UI labels the result as such.
+- **Mission presets** — Mars Cruise / Lunar Gateway / Artemis Transit: illustrative shield
+  stacks for orientation, explicitly labeled in the UI as **not actual spacecraft specs**.
+- **Cumulative-dose timeline** — a second hand-rolled canvas chart plotting dose-equivalent
+  accumulated over the mission duration against the NASA-STD-3001 600 mSv career limit and
+  the NCRP 50 mSv occupational reference, with a limit-crossing-day marker.
+
+All three are covered by the existing test suite (multi-layer's single-layer-equivalence
+invariant is asserted in `test/phase3.test.ts`); none of them touch or relax the Phase 1–5
+validation gates.
+
 ## Project structure
 
 ```
@@ -190,13 +212,15 @@ npm run validate:phase3   # shielding sweep + poly<Al trend
 npm run validate:phase4   # model vs measured MSL/RAD cruise dose
 npm run validate:phase5   # simplified fragmentation → movement toward RAD
 npm run report            # auto-generate report/ (markdown + 4 PNG plots)
-npm test                  # vitest regression lock (103 tests)
+npm test                  # vitest regression lock (107 tests)
 ```
 
 ## Data sources
 
 - **NIST PSTAR** — stopping power & range tables for protons,
-  <https://physics.nist.gov/PhysRefData/Star/Text/PSTAR.html> (accessed 2026-06-16).
+  <https://physics.nist.gov/PhysRefData/Star/Text/PSTAR.html>. Aluminium, water, and
+  polyethylene tables accessed 2026-06-16; hydrogen and methane tables accessed 2026-06-27
+  (see per-material source comments in [`data/pstar/`](data/pstar/)).
 - **Sternheimer density-effect parameters** — PDG Atomic & Nuclear Properties (2023),
   from R.M. Sternheimer, M.J. Berger, S.M. Seltzer, *At. Data Nucl. Data Tables* **30**, 261 (1984).
 - **GCR spectrum** — D. Matthiä, T. Berger, A.I. Mrigakshi, G. Reitz, "A ready-to-use galactic
@@ -211,9 +235,23 @@ npm test                  # vitest regression lock (103 tests)
 ## Status: all phases complete
 
 The required MVP (Phases 1–4) and the optional Phase 5 are **done and validated against NIST PSTAR
-and NASA MSL/RAD**. Possible future extensions (explicitly *not* attempted here): explicit neutron /
-target-fragment transport (the absorbed-dose gap), multi-generation fragmentation cascades, 3-D
-geometry, and energy-dependent nuclear cross-sections — i.e. the territory HZETRN/OLTARIS occupy.
+and NASA MSL/RAD**; the v2.0 product features (multi-layer shielding, mission presets, dose
+timeline — above) ship on top without touching the validation gates. Possible future extensions
+(explicitly *not* attempted here): explicit neutron / target-fragment transport (the absorbed-dose
+gap), multi-generation fragmentation cascades, 3-D geometry, and energy-dependent nuclear
+cross-sections — i.e. the territory HZETRN/OLTARIS occupy.
+
+## Author
+
+**Zhanbolat Izbanov**¹
+¹ Republican Physics and Mathematics School (RFMSH), Almaty, Kazakhstan
+
+Built independently (Grade 10) as a NASA Stardance Challenge entry.
+
+Suggested citation: Izbanov, Z. (2026). *DOSEFIELD: a validated 1-D deep-space radiation dose
+model*. <https://github.com/izbanovj3-prog/DOSEFIELD>. For a journal submission, match the
+author/affiliation line to the venue's own submission template — it may require a different
+format than the one above.
 
 ## License
 
