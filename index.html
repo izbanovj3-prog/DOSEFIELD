@@ -75,6 +75,7 @@
           <button data-preset="artemis-transit" aria-pressed="false">Artemis Transit</button>
           <button data-preset="custom" class="active" aria-pressed="true">Custom</button>
         </div>
+        <button id="copyLink" class="tool-btn" title="Copy a shareable link to this exact configuration">⧉ Copy link</button>
         <span class="preset-note">illustrative configs — not spacecraft specs</span>
       </nav>
 
@@ -174,6 +175,24 @@
             </div>
             <div class="career-bar"><div class="career-fill" id="careerFill"></div></div>
             <div class="career-note" id="careerNote"></div>
+          </div>
+
+          <details class="organs">
+            <summary>Organ dose estimates (ICRP-60)</summary>
+            <div class="organ-rows" id="organRows">
+              <p class="val-hint">Computing organ depth-doses…</p>
+            </div>
+            <p class="footnote organ-foot">
+              Approximate 1-D estimates: dose at 0.007&nbsp;/&nbsp;0.3&nbsp;/&nbsp;5 g/cm² water depth behind the
+              shield stack (NASA shallow / eye / BFO depth-dose convention); Q(L) per ICRP-60. Bars compare the
+              worst 30 days of absorbed dose with NASA-STD-3001 30-day limits (mGy-Eq; RBE not modeled).
+              Chronic GCR sits far below these deterministic limits — they exist mainly for solar-particle
+              events, which DOSEFIELD does not model. Refer to HZETRN/OLTARIS for organ-level mission planning.
+            </p>
+          </details>
+
+          <div class="readout-tools">
+            <button id="exportReport" class="tool-btn" title="Download this configuration and its computed doses as a plain-text report">⬇ Export report</button>
           </div>
         </section>
 

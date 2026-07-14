@@ -13,6 +13,26 @@ const T_MAX = 40;
 const T_STEP = 1;
 const CURVE_PERDECADE = 50;
 
+// Organ dose estimates (v2.1) — the NASA/NCRP shallow–eye–deep depth-dose convention:
+// dose at 0.007 / 0.3 / 5 cm tissue depth (water-equivalent) approximates skin /
+// ocular-lens / blood-forming-organ dose. The body layer is just one more water slab
+// through the SAME validated multi-layer CSDA engine — no new physics, no new tuning.
+// (ICRP-60 tissue weights wT are deliberately NOT used here: wT builds effective dose
+// E = Σ wT·H_T from organ doses — multiplying a dose BY wT does not give an organ dose.)
+const ORGAN_DEPTHS = [
+  { key: 'bfo', depth: 5 },
+  { key: 'eye', depth: 0.3 },
+  { key: 'skin', depth: 0.007 },
+] as const;
+
+export interface OrganDose {
+  key: string;
+  /** dose-equivalent at organ depth, mSv/day */
+  H: number;
+  /** absorbed dose at organ depth, mGy/day */
+  D: number;
+}
+
 export interface CurvePoint {
   t: number;
   H: number; // dose-equivalent mSv/day
@@ -65,6 +85,15 @@ ctx.onmessage = (e: MessageEvent) => {
     const fn = (msg.mode ?? 'primaries') === 'fragmentation' ? computeMultiLayerFragmentedDose : computeMultiLayerDose;
     const r = fn(msg.layers ?? [], W, CURVE_PERDECADE);
     ctx.postMessage({ type: 'multiLayer', H: r.doseEquivalent_mSv_day, D: r.absorbedDose_mGy_day, Q: r.meanQ });
+  } else if (msg.type === 'organs') {
+    // organ depth-doses for the current stack: shield layers + a water "body" slab per organ
+    const W = wFor(msg.solar ?? 'min');
+    const fn = (msg.mode ?? 'primaries') === 'fragmentation' ? computeMultiLayerFragmentedDose : computeMultiLayerDose;
+    const organs: OrganDose[] = ORGAN_DEPTHS.map((o) => {
+      const r = fn([...(msg.layers ?? []), { material: 'water', thickness: o.depth }], W, CURVE_PERDECADE);
+      return { key: o.key, H: r.doseEquivalent_mSv_day, D: r.absorbedDose_mGy_day };
+    });
+    ctx.postMessage({ type: 'organs', organs });
   } else if (msg.type === 'validate') {
     ctx.postMessage({ type: 'validate', data: computeValidationSummary() });
   }

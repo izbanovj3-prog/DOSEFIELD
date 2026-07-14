@@ -38,6 +38,11 @@ const state: State = {
 let ml = { H: 0, D: 0, Q: 0 };
 let mlTimer: number | undefined;
 let applyingPreset = false; // guards the auto-→Custom fallback while a preset sets fields
+// last organ depth-doses from the worker (v2.1) — null until the first compute lands
+let organs: Record<string, { H: number; D: number }> | null = null;
+let organTimer: number | undefined;
+// last validation summary — reused by the exported report so it only prints computed numbers
+let lastVal: ValidationSummary | null = null;
 
 // cache of computed curves per (solar condition, nuclear mode)
 const curveCache = new Map<string, CurveSeries>();
@@ -96,7 +101,12 @@ worker.onmessage = (e: MessageEvent) => {
     ml = { H: msg.H, D: msg.D, Q: msg.Q };
     setStatus('ready', 'READY');
     render();
+  } else if (msg.type === 'organs') {
+    organs = {};
+    for (const o of msg.organs as { key: string; H: number; D: number }[]) organs[o.key] = { H: o.H, D: o.D };
+    renderOrgans();
   } else if (msg.type === 'validate') {
+    lastVal = msg.data;
     renderValidation(msg.data);
     renderStrip(msg.data);
   }
@@ -119,6 +129,15 @@ function readout(): { H: number; D: number; Q: number } {
   return ml;
 }
 
+/** Debounced off-thread organ depth-dose compute (rates change only with the physics config). */
+function requestOrgans(): void {
+  clearTimeout(organTimer);
+  organTimer = window.setTimeout(
+    () => worker.postMessage({ type: 'organs', layers: layers(), solar: state.solar, mode: state.mode }),
+    120,
+  );
+}
+
 /** Update the total-areal readout and (two-layer) kick a debounced off-thread compute, then render. */
 function refreshReadout(): void {
   markCustom();
@@ -131,6 +150,8 @@ function refreshReadout(): void {
       90,
     );
   }
+  requestOrgans();
+  syncURL();
   render();
 }
 
@@ -172,8 +193,46 @@ function render(): void {
     (state.singleLayer
       ? ''
       : ' · Two-layer stack — same CSDA engine, but unvalidated beyond the single-layer limit (no NASA layered measurement).');
+  renderOrgans();
   drawChart();
   drawTimeline();
+}
+
+// ---- organ dose estimates (v2.1) --------------------------------------------
+// NASA/NCRP depth-dose convention: skin / eye lens / BFO ≈ dose at 0.007 / 0.3 / 5 g/cm²
+// water depth behind the shield stack. Bars compare the WORST 30 days of absorbed dose with
+// the NASA-STD-3001 30-day limits (250 / 1000 / 1500 mGy-Eq for BFO / lens / skin) — absorbed
+// mGy is shown as a proxy for gray-equivalent because RBE is not modeled (labeled below).
+const ORGANS_UI = [
+  { key: 'bfo', name: 'Blood-forming organs', depth: '5', limit30d: 250 },
+  { key: 'eye', name: 'Eye lens', depth: '0.3', limit30d: 1000 },
+  { key: 'skin', name: 'Skin', depth: '0.007', limit30d: 1500 },
+] as const;
+
+function renderOrgans(): void {
+  const el = $('organRows');
+  if (!el) return;
+  if (!organs) {
+    el.innerHTML = '<p class="val-hint">Computing organ depth-doses…</p>';
+    return;
+  }
+  const f = (x: number, n = 2): string => x.toFixed(n);
+  el.innerHTML = ORGANS_UI.map((o) => {
+    const d = organs![o.key];
+    if (!d) return '';
+    const totalMsv = d.H * state.duration;
+    const d30 = d.D * Math.min(30, state.duration); // worst 30 days (constant rate; capped by mission length)
+    const pct = (d30 / o.limit30d) * 100;
+    const band = pct > 100 ? 'exceed' : pct >= 50 ? 'caution' : 'nominal';
+    return `<div class="organ-row">
+      <div class="organ-head">
+        <span class="o-name">${o.name} · ${o.depth} g/cm² depth</span>
+        <span class="o-nums">${f(d.H)} mSv/d · mission ${totalMsv.toFixed(0)} mSv</span>
+      </div>
+      <div class="organ-bar"><div class="organ-fill" data-band="${band}" style="width:${Math.min(100, pct).toFixed(1)}%"></div></div>
+      <div class="organ-limit">worst 30 d: ${f(d30, 1)} mGy vs ${o.limit30d} mGy-Eq NASA 30-day limit · ${pct.toFixed(1)}%</div>
+    </div>`;
+  }).join('');
 }
 
 function drawChart(): void {
@@ -430,6 +489,25 @@ function setActivePreset(key: string): void {
 function markCustom(): void {
   if (!applyingPreset && state.preset !== 'custom') setActivePreset('custom');
 }
+/** Push the whole `state` into the controls: values, readbacks, fills, segments, layer-2 visibility. */
+function reflectControls(): void {
+  $<HTMLInputElement>('duration').value = String(state.duration);
+  $('durationVal').textContent = String(state.duration);
+  $<HTMLInputElement>('thickness').value = String(state.thickness);
+  $('thicknessVal').textContent = state.thickness.toFixed(1);
+  $<HTMLInputElement>('thickness2').value = String(state.layer2.thickness);
+  $('thickness2Val').textContent = state.layer2.thickness.toFixed(1);
+  (['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
+  setSeg('presetSeg', 'preset', state.preset);
+  setSeg('solarSeg', 'solar', state.solar);
+  setSeg('modeSeg', 'mode', state.mode);
+  setSeg('layerModeSeg', 'layers', state.singleLayer ? 'single' : 'double');
+  setSeg('materialSeg', 'mat', state.material);
+  setSeg('material2Seg', 'mat', state.layer2.material);
+  $('layer2Group').toggleAttribute('hidden', state.singleLayer);
+  $('totalArealVal').textContent = (state.thickness + (state.singleLayer ? 0 : state.layer2.thickness)).toFixed(1);
+}
+
 function applyPreset(key: string): void {
   const p = PRESETS[key];
   if (!p) return;
@@ -441,22 +519,70 @@ function applyPreset(key: string): void {
   state.material = p.l1.mat;
   state.thickness = p.l1.t;
   state.layer2 = { material: p.l2.mat, thickness: p.l2.t };
-  $<HTMLInputElement>('duration').value = String(p.duration);
-  $('durationVal').textContent = String(p.duration);
-  $<HTMLInputElement>('thickness').value = String(p.l1.t);
-  $('thicknessVal').textContent = p.l1.t.toFixed(1);
-  $<HTMLInputElement>('thickness2').value = String(p.l2.t);
-  $('thickness2Val').textContent = p.l2.t.toFixed(1);
-  (['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
-  setSeg('solarSeg', 'solar', p.solar);
-  setSeg('modeSeg', 'mode', p.mode);
-  setSeg('layerModeSeg', 'layers', p.single ? 'single' : 'double');
-  setSeg('materialSeg', 'mat', p.l1.mat);
-  setSeg('material2Seg', 'mat', p.l2.mat);
-  $('layer2Group').toggleAttribute('hidden', p.single);
-  setActivePreset(key);
+  state.preset = key;
+  reflectControls();
   requestCurves(); // solar/mode may have changed → refresh the chart curves
   refreshReadout();
+  applyingPreset = false;
+}
+
+// ---- shareable URL (v2.1) ----------------------------------------------------
+// The whole mission config round-trips through query params:
+//   ?preset=mars&mat1=Al&den1=10&layers=2&mat2=PE&den2=5&solar=min&model=frag&days=360
+const MAT_CODE: Record<string, string> = { aluminum: 'Al', polyethylene: 'PE', water: 'H2O', hydrogen: 'H2', methane: 'CH4' };
+const CODE_MAT: Record<string, keyof typeof TRACE> = { Al: 'aluminum', PE: 'polyethylene', H2O: 'water', H2: 'hydrogen', CH4: 'methane' };
+const PRESET_CODE: Record<string, string> = { 'mars-cruise': 'mars', 'lunar-gateway': 'gateway', 'artemis-transit': 'artemis', custom: 'custom' };
+const CODE_PRESET: Record<string, string> = { mars: 'mars-cruise', gateway: 'lunar-gateway', artemis: 'artemis-transit', custom: 'custom' };
+
+function buildQuery(): string {
+  const q = new URLSearchParams();
+  q.set('preset', PRESET_CODE[state.preset] ?? 'custom');
+  q.set('mat1', MAT_CODE[state.material]!);
+  q.set('den1', String(state.thickness));
+  q.set('layers', state.singleLayer ? '1' : '2');
+  if (!state.singleLayer) {
+    q.set('mat2', MAT_CODE[state.layer2.material]!);
+    q.set('den2', String(state.layer2.thickness));
+  }
+  q.set('solar', state.solar);
+  q.set('model', state.mode === 'fragmentation' ? 'frag' : 'prim');
+  q.set('days', String(state.duration));
+  return q.toString();
+}
+
+/** Keep the URL in sync with the config — replaceState for silent updates, pushState on Copy link. */
+function syncURL(push = false): void {
+  const url = `${location.pathname}?${buildQuery()}`;
+  if (push) history.pushState(null, '', url);
+  else history.replaceState(null, '', url);
+}
+
+/** snap a URL-provided areal density onto the slider grid (0.5 g/cm² steps, 0–40) */
+const snapDen = (v: number): number => Math.min(40, Math.max(0, Math.round(v * 2) / 2));
+
+/** Restore the config from query params on load (missing/invalid params keep their defaults). */
+function applyURLParams(): void {
+  const q = new URLSearchParams(location.search);
+  const known = ['preset', 'mat1', 'den1', 'mat2', 'den2', 'layers', 'solar', 'model', 'days'];
+  if (!known.some((k) => q.has(k))) return;
+  applyingPreset = true;
+  const m1 = CODE_MAT[q.get('mat1') ?? ''];
+  if (m1) state.material = m1;
+  const m2 = CODE_MAT[q.get('mat2') ?? ''];
+  if (m2) state.layer2.material = m2;
+  const den1 = parseFloat(q.get('den1') ?? '');
+  if (Number.isFinite(den1)) state.thickness = snapDen(den1);
+  const den2 = parseFloat(q.get('den2') ?? '');
+  if (Number.isFinite(den2)) state.layer2.thickness = snapDen(den2);
+  if (q.has('layers')) state.singleLayer = q.get('layers') !== '2';
+  const solar = q.get('solar');
+  if (solar === 'min' || solar === 'max') state.solar = solar;
+  const model = q.get('model');
+  if (model) state.mode = model === 'frag' ? 'fragmentation' : 'primaries';
+  const days = parseInt(q.get('days') ?? '', 10);
+  if (Number.isFinite(days)) state.duration = Math.min(1000, Math.max(30, Math.round(days / 10) * 10));
+  state.preset = CODE_PRESET[q.get('preset') ?? ''] ?? 'custom';
+  reflectControls();
   applyingPreset = false;
 }
 $('presetSeg').querySelectorAll('button').forEach((b) =>
@@ -523,8 +649,113 @@ $<HTMLInputElement>('duration').addEventListener('input', (e) => {
   state.duration = parseInt((e.target as HTMLInputElement).value, 10);
   $('durationVal').textContent = String(state.duration);
   syncFill(e.target as HTMLInputElement);
+  syncURL();
   render();
 });
+// ---- copy shareable link (v2.1) ----------------------------------------------
+$<HTMLButtonElement>('copyLink').addEventListener('click', () => {
+  syncURL(true); // pushState so the copied config is a real history entry
+  const btn = $<HTMLButtonElement>('copyLink');
+  const done = (): void => {
+    const prev = btn.textContent;
+    btn.textContent = 'Copied ✓';
+    setTimeout(() => { btn.textContent = prev; }, 1300);
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(location.href).then(done, () => fallbackCopy(done));
+  } else {
+    fallbackCopy(done);
+  }
+});
+function fallbackCopy(done: () => void): void {
+  const ta = document.createElement('textarea');
+  ta.value = location.href;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); done(); } finally { ta.remove(); }
+}
+
+// ---- export mission report (v2.1) ----------------------------------------------
+// Plain-text report built ONLY from numbers computed this session (readout, organ
+// depth-doses, cached validation summary) — nothing typed in, per the integrity rules.
+const MAT_LABEL: Record<string, string> = {
+  aluminum: 'Aluminium', polyethylene: 'Polyethylene', water: 'Water', hydrogen: 'Liquid hydrogen', methane: 'Methane',
+};
+const PRESET_LABEL: Record<string, string> = {
+  'mars-cruise': 'Mars Cruise', 'lunar-gateway': 'Lunar Gateway', 'artemis-transit': 'Artemis Transit', custom: 'Custom',
+};
+
+function buildReportText(): string {
+  const cur = readout();
+  const totalMsv = cur.H * state.duration;
+  const rule = '-'.repeat(52);
+  const L: string[] = [];
+  L.push('DOSEFIELD - Mission Radiation Report');
+  L.push(`Generated: ${new Date().toISOString().slice(0, 10)}`);
+  L.push(rule);
+  L.push(`Mission preset:   ${PRESET_LABEL[state.preset] ?? state.preset} (illustrative config, not spacecraft specs)`);
+  L.push(`Shield layer 1:   ${MAT_LABEL[state.material]} - ${state.thickness.toFixed(1)} g/cm2`);
+  if (!state.singleLayer) L.push(`Shield layer 2:   ${MAT_LABEL[state.layer2.material]} - ${state.layer2.thickness.toFixed(1)} g/cm2`);
+  L.push(`Total density:    ${(state.thickness + (state.singleLayer ? 0 : state.layer2.thickness)).toFixed(1)} g/cm2`);
+  L.push(`Solar condition:  ${state.solar === 'min' ? 'MIN (worst-case GCR)' : 'MAX'}`);
+  L.push(`Nuclear model:    ${state.mode === 'fragmentation' ? 'Primaries + simplified fragmentation (Bradt-Peters)' : 'Primaries only'}`);
+  L.push(`Duration:         ${state.duration} days`);
+  L.push(rule);
+  L.push('DOSE RESULTS (behind shield, free space)');
+  L.push(`Daily rate:       ${cur.H.toFixed(2)} mSv/day dose-equivalent`);
+  L.push(`Mission total:    ${(totalMsv / 1000).toFixed(2)} Sv (${totalMsv.toFixed(0)} mSv)`);
+  L.push(`Absorbed dose:    ${cur.D.toFixed(3)} mGy/day`);
+  L.push(`Mean quality <Q>: ${cur.Q.toFixed(2)}`);
+  L.push(`NASA career limit (600 mSv effective): ${((totalMsv / NASA_CAREER_LIMIT_MSV) * 100).toFixed(0)}%`);
+  L.push(rule);
+  L.push('ORGAN ESTIMATES (approximate; NASA depth-dose convention + ICRP-60 Q)');
+  if (organs) {
+    for (const o of ORGANS_UI) {
+      const d = organs[o.key];
+      if (!d) continue;
+      const d30 = d.D * Math.min(30, state.duration);
+      L.push(`${(o.name + ' (' + o.depth + ' g/cm2):').padEnd(34)}${d.H.toFixed(2)} mSv/day - mission ${(d.H * state.duration).toFixed(0)} mSv`);
+      L.push(`${''.padEnd(34)}worst 30 d ${d30.toFixed(1)} mGy vs ${o.limit30d} mGy-Eq NASA 30-day limit (${((d30 / o.limit30d) * 100).toFixed(1)}%)`);
+    }
+  } else {
+    L.push('(organ depth-doses not computed yet)');
+  }
+  L.push('Organ estimates are approximate: 1-D depth-dose at 0.007 / 0.3 / 5 g/cm2 water');
+  L.push('(skin / eye lens / BFO convention); absorbed mGy shown as a proxy for gray-');
+  L.push('equivalent (RBE not modeled). Refer to HZETRN/OLTARIS for organ-level planning.');
+  L.push(rule);
+  L.push('MODEL');
+  L.push('GCR spectrum:     Matthia et al. 2013 (Badhwar-O\'Neill fit)');
+  L.push('Stopping power:   Bethe-Bloch + Sternheimer density effect (CSDA)');
+  L.push('Fragmentation:    Bradt-Peters charge-changing (simplified, single-collision)');
+  if (lastVal) {
+    L.push(`Validation:       NIST PSTAR max err ${lastVal.nist.maxSolidPct.toFixed(2)}% (>=10 MeV); MSL/RAD H ratio ${lastVal.rad.ratioH.toFixed(2)} (within the ~2x bar)`);
+  } else {
+    L.push('Validation:       NIST PSTAR + NASA MSL/RAD (within ~2x) - see the live validation suite');
+  }
+  if (!state.singleLayer) L.push('Note: the two-layer stack is unvalidated beyond the single-layer limit.');
+  L.push(rule);
+  L.push('Built for NASA Stardance Challenge - https://izbanovj3-prog.github.io/DOSEFIELD/');
+  return L.join('\n') + '\n';
+}
+
+$<HTMLButtonElement>('exportReport').addEventListener('click', () => {
+  const blob = new Blob([buildReportText()], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `dosefield_report_${PRESET_CODE[state.preset] ?? 'custom'}_${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+  const btn = $<HTMLButtonElement>('exportReport');
+  const prev = btn.textContent;
+  btn.textContent = 'Saved ✓';
+  setTimeout(() => { btn.textContent = prev; }, 1300);
+});
+
 $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
   const btn = $<HTMLButtonElement>('runValidation');
   btn.disabled = true;
@@ -538,7 +769,10 @@ $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
 });
 window.addEventListener('resize', () => { drawChart(); drawTimeline(); });
 
+applyURLParams(); // restore a shared configuration before the first compute
 (['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
 setStatus('busy', 'COMPUTING');
 requestCurves();
+if (!state.singleLayer) worker.postMessage({ type: 'multiLayer', layers: layers(), solar: state.solar, mode: state.mode });
+requestOrgans();
 worker.postMessage({ type: 'validate' }); // populate the validation panel on load
