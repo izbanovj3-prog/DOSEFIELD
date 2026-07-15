@@ -133,6 +133,33 @@ absorbed dose is *under*-predicted (missing spacecraft secondaries) while ⟨Q�
 (no fragmentation to break HZE ions into lower-LET fragments) — partly cancelling in H. Both point
 to Phase 5. Measured: Zeitlin et al., *Science* 340 (2013) 1080; Guo et al., *A&A* 577 (2015) A58.
 
+#### On the remaining absorbed-dose gap
+
+The model computes **0.31 mGy/day** of absorbed dose behind the RAD configuration against the
+measured **0.46 ± 0.03 mGy/day** (ratio 0.67), and **1.47 vs 1.75 ± 0.30 mSv/day** of
+dose-equivalent (ratio 0.84). The gap is understood, and its structure is itself evidence that
+nothing was tuned:
+
+- **The missing dose is the secondary charged-particle field, not neutrons alone.** RAD counts
+  everything the spacecraft shell produces — secondary protons, target fragments, neutrons —
+  while this model transports primaries (plus simplified projectile fragmentation). The neutron
+  component was measured directly during the same cruise: **6 ± 2 µGy/day and 30 ± 10 µSv/day**
+  (Köhler et al. 2015, spectrum extrapolated to 0.1–1000 MeV) — only **~1–2%** of the measured
+  totals. The bulk of the gap is therefore carried by secondary *charged* particles and target
+  fragments produced in the shielding.
+- **The two errors are coherent and partially cancel.** Absorbed dose is *under*-predicted
+  (missing secondary production) while ⟨Q⟩ is *over*-predicted at 4.78 vs 3.82 (no fragmentation
+  softening of the HZE LET spectrum); their product H = ⟨Q⟩·D lands closer to the measurement
+  (0.84×) than either factor alone.
+- **Shielding uncertainty does not rescue the absorbed dose.** Over the plausible 10–20 g/cm²
+  Al-equivalent bracket the model spans 0.33–0.30 mGy/day — the D gap survives the geometry
+  uncertainty, exactly as expected if the missing physics is particle *production* rather than
+  slab thickness. (Dose-equivalent at the thin end, 1.67 mSv/day, is within the measurement's
+  ±0.30.)
+
+Closing this gap requires full secondary-particle transport — HZETRN / OLTARIS territory,
+deliberately outside this model's scope. It stays labeled, not patched.
+
 ### Phase 5 — simplified nuclear fragmentation (optional, post-MVP)
 
 A simplified projectile-fragmentation model (Bradt–Peters charge-changing cross-sections,
@@ -230,6 +257,9 @@ npm test                  # vitest regression lock (107 tests)
 - **Effective charge** — W.H. Barkas, *Nuclear Research Emulsions* (1963).
 - **MSL/RAD measurements** — C. Zeitlin et al., *Science* **340** (2013) 1080, doi:10.1126/science.1235989;
   J. Guo et al., *A&A* **577** (2015) A58, doi:10.1051/0004-6361/201525680.
+- **MSL/RAD cruise neutron spectrum** — J. Köhler et al., "Measurements of the neutron spectrum
+  in transit to Mars on the Mars Science Laboratory", *Life Sci. Space Res.* **5** (2015) 6–12,
+  doi:10.1016/j.lssr.2015.03.001.
 - **Physical constants** — CODATA 2018.
 
 ## Status: all phases complete
