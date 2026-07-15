@@ -156,6 +156,7 @@ body::before {
   grid-template-areas:
     "config chart    readout"
     "config timeline timeline"
+    "spectrum spectrum spectrum"
     "validation validation validation";
   gap: 14px;
   margin-top: 14px;
@@ -164,6 +165,8 @@ body::before {
 .readout { grid-area: readout; }
 .chart { grid-area: chart; }
 .timeline-panel { grid-area: timeline; }
+.spectrum-panel { grid-area: spectrum; }
+.spectrum-panel canvas { width: 100%; height: auto; display: block; }
 .validation { grid-area: validation; }
 
 /* Surfaces are flat; hierarchy comes from density and border weight, not gradients.
@@ -263,6 +266,7 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 .footnote { font-size: 10px; color: var(--dim); line-height: 1.65; margin: 18px 0 0; border-top: 1px dashed var(--edge); padding-top: 11px; }
+.range-ends { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9px; color: var(--dim); letter-spacing: 0.02em; }
 
 /* ---- cockpit readout -------------------------------------------------------- */
 .big-number { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 16px; }
@@ -301,6 +305,13 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .lg::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: currentColor; }
 .lg-mark::before { width: 8px; height: 8px; border-radius: 50%; }
 .lg-al { color: var(--al); } .lg-poly { color: var(--poly); } .lg-water { color: var(--water); } .lg-h { color: var(--hydrogen); } .lg-ch4 { color: var(--methane); } .lg-mark { color: var(--mark); }
+
+/* ---- dose spectrum chart (v2.2) ---- */
+.spec-note { font-size: 10px; color: var(--dim); margin: -6px 0 12px; line-height: 1.6; text-wrap: pretty; }
+#specIonLegend { display: inline-flex; gap: 14px; }
+.lg-spec-h { color: #4da3ff; } .lg-spec-he { color: #46e06a; } .lg-spec-c { color: #ffb000; } .lg-spec-o { color: #38bdf8; } .lg-spec-fe { color: #ff5a5a; }
+.legend .tool-btn { margin-left: auto; padding: 5px 10px; }
+.tool-btn.active { border-color: rgba(0, 212, 255, 0.6); color: var(--accent); background: rgba(0, 212, 255, 0.09); }
 
 /* ---- validation console -------------------------------------------------------- */
 .run-btn {
@@ -380,6 +391,31 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .organ-limit { font-size: 9.5px; color: var(--dim); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .organ-foot { margin-top: 13px; }
 
+/* ---- automated self-checks (v2.2) --------------------------------------------- */
+.selfchecks { margin-top: 14px; border-top: 1px dashed var(--edge); padding-top: 12px; }
+.selfchecks summary {
+  cursor: pointer; font-size: 10.5px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase;
+  user-select: none; transition: color 0.15s;
+}
+.selfchecks summary:hover { color: var(--text); }
+.sc-sum { text-transform: none; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
+.sc-sum[data-state="pass"] { color: var(--go); }
+.sc-sum[data-state="fail"] { color: var(--warn); }
+.selfcheck-rows { margin-top: 10px; display: flex; flex-direction: column; gap: 2px; }
+.sc-foot { margin-top: 11px; }
+
+/* fixed status dot — green only while every invariant holds */
+.selfcheck-lamp {
+  position: fixed; right: 14px; bottom: 14px; z-index: 10;
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--dim); border: 1px solid var(--edge-bright);
+}
+.selfcheck-lamp[data-state="pass"] { background: var(--go); box-shadow: 0 0 9px var(--go); border-color: transparent; }
+.selfcheck-lamp[data-state="fail"] { background: var(--warn); box-shadow: 0 0 9px var(--warn); border-color: transparent; }
+@media (prefers-reduced-motion: no-preference) {
+  .selfcheck-lamp[data-state="fail"] { animation: pulse 0.9s infinite; }
+}
+
 /* ---- footer ----------------------------------------------------------------- */
 .colophon {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
@@ -409,6 +445,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
       "config readout"
       "config chart"
       "config timeline"
+      "spectrum spectrum"
       "validation validation";
   }
   .controls { align-self: start; }
@@ -418,7 +455,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 @media (max-width: 780px) {
   .deck {
     grid-template-columns: 1fr;
-    grid-template-areas: "config" "readout" "chart" "timeline" "validation";
+    grid-template-areas: "config" "readout" "chart" "timeline" "spectrum" "validation";
   }
   .hero { grid-template-columns: 1fr; gap: 18px; }
   .hero-side { border-left: none; padding-left: 0; margin-left: 0; border-top: 1px solid var(--edge); padding-top: 16px; }

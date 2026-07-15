@@ -3,23 +3,32 @@
  * the slider readout interpolates the active curve (instant), and the canvas plots all three.
  */
 import './styles.css';
-import type { CurvePoint, CurveSeries } from './dose.worker.js';
+import type { CurvePoint, CurveSeries, SpectrumData, SelfCheck } from './dose.worker.js';
 import type { ValidationSummary } from '../validation/validationSummary.js';
 
 const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
 const TRACE = { aluminum: '#ffb000', polyethylene: '#46e06a', water: '#38bdf8', hydrogen: '#ff79c6', methane: '#a78bfa' } as const;
+// spectrum chart per-ion colours (H, He, C, O, Fe)
+const SPEC_COLORS: Record<string, string> = { H: '#4da3ff', He: '#46e06a', C: '#ffb000', O: '#38bdf8', Fe: '#ff5a5a' };
+const SPEC_ION_KEYS = ['H', 'He', 'C', 'O', 'Fe'] as const;
 
 interface Layer {
   material: keyof typeof TRACE;
   thickness: number;
 }
+// Matthiä-2013 solar-modulation parameter W is the model's own control: W=0 is the
+// least-modulated / worst-case-GCR solar minimum, W=130 a strong solar maximum. It is
+// continuous, so the slider spans it directly — the old MIN/MAX toggle was just its endpoints.
+const W_MIN = 0;
+const W_MAX = 130;
+
 interface State {
   material: keyof typeof TRACE; // Layer 1 (structural) material
   thickness: number; // Layer 1 areal density (g/cm²)
   layer2: Layer; // Layer 2 (inner lining)
   singleLayer: boolean;
-  solar: 'min' | 'max';
+  W: number; // solar modulation (Matthiä 2013), 0 = solar min … 130 = solar max
   mode: 'primaries' | 'fragmentation';
   duration: number;
   preset: string; // active mission preset, or 'custom'
@@ -29,7 +38,7 @@ const state: State = {
   thickness: 10,
   layer2: { material: 'polyethylene', thickness: 5 },
   singleLayer: true,
-  solar: 'min',
+  W: 0,
   mode: 'primaries',
   duration: 360,
   preset: 'custom',
@@ -43,10 +52,18 @@ let organs: Record<string, { H: number; D: number }> | null = null;
 let organTimer: number | undefined;
 // last validation summary — reused by the exported report so it only prints computed numbers
 let lastVal: ValidationSummary | null = null;
+// incident dose spectrum dH/dT (v2.2) — depends on W only (pre-shield); null until first compute
+let spectrum: SpectrumData | null = null;
+let showIons = false; // spectrum chart: overlay individual H/He/C/O/Fe lines
+let specTimer: number | undefined;
+// automated self-checks (v2.2)
+let selfChecks: SelfCheck[] | null = null;
+let checkTimer: number | undefined;
+let curveTimer: number | undefined;
 
-// cache of computed curves per (solar condition, nuclear mode)
+// cache of computed curves per (modulation W, nuclear mode)
 const curveCache = new Map<string, CurveSeries>();
-const curveKey = (): string => `${state.solar}:${state.mode}`;
+const curveKey = (): string => `${state.W}:${state.mode}`;
 let curves: CurveSeries | null = null;
 let heroSet = false; // hero subhead is computed once, from the default-config curve
 
@@ -73,6 +90,7 @@ function interp(pts: CurvePoint[], t: number): CurvePoint {
   return { t, H: a.H + (b.H - a.H) * f, D: a.D + (b.D - a.D) * f, Q: a.Q + (b.Q - a.Q) * f };
 }
 
+/** Fetch the dose-vs-thickness curves for the current (W, mode): instant if cached, else off-thread. */
 function requestCurves(): void {
   const cached = curveCache.get(curveKey());
   if (cached) {
@@ -81,18 +99,46 @@ function requestCurves(): void {
     return;
   }
   setStatus('busy', 'COMPUTING');
-  worker.postMessage({ type: 'curves', solar: state.solar, mode: state.mode });
+  worker.postMessage({ type: 'curves', W: state.W, mode: state.mode });
+}
+
+/** Debounced curve request — used while dragging the continuous W slider. */
+function scheduleCurves(): void {
+  const cached = curveCache.get(curveKey());
+  if (cached) {
+    curves = cached;
+    render();
+    return;
+  }
+  setStatus('busy', 'COMPUTING');
+  clearTimeout(curveTimer);
+  curveTimer = window.setTimeout(() => worker.postMessage({ type: 'curves', W: state.W, mode: state.mode }), 140);
+}
+
+/** Debounced incident-spectrum request (depends on W only, before shielding). */
+function requestSpectrum(): void {
+  clearTimeout(specTimer);
+  specTimer = window.setTimeout(() => worker.postMessage({ type: 'spectrum', W: state.W }), 140);
+}
+
+/** Debounced self-check request — carries the live rate/duration for the arithmetic checks. */
+function requestSelfChecks(): void {
+  clearTimeout(checkTimer);
+  checkTimer = window.setTimeout(() => {
+    const r = readout();
+    worker.postMessage({ type: 'selfcheck', W: state.W, rate: r.H, days: state.duration });
+  }, 200);
 }
 
 worker.onmessage = (e: MessageEvent) => {
   const msg = e.data;
   if (msg.type === 'curves') {
-    curveCache.set(`${msg.solar}:${msg.mode}`, msg.series);
-    if (!heroSet && msg.solar === 'min' && msg.mode === 'primaries') {
+    curveCache.set(`${msg.W}:${msg.mode}`, msg.series);
+    if (!heroSet && msg.W === W_MIN && msg.mode === 'primaries') {
       setHeroSubhead(msg.series);
       heroSet = true;
     }
-    if (msg.solar === state.solar && msg.mode === state.mode) {
+    if (msg.W === state.W && msg.mode === state.mode) {
       curves = msg.series;
       setStatus('ready', 'READY');
       render();
@@ -105,6 +151,11 @@ worker.onmessage = (e: MessageEvent) => {
     organs = {};
     for (const o of msg.organs as { key: string; H: number; D: number }[]) organs[o.key] = { H: o.H, D: o.D };
     renderOrgans();
+  } else if (msg.type === 'spectrum') {
+    if (msg.W === state.W) { spectrum = msg as SpectrumData; drawSpectrum(); }
+  } else if (msg.type === 'selfcheck') {
+    selfChecks = msg.checks as SelfCheck[];
+    renderSelfChecks();
   } else if (msg.type === 'validate') {
     lastVal = msg.data;
     renderValidation(msg.data);
@@ -133,7 +184,7 @@ function readout(): { H: number; D: number; Q: number } {
 function requestOrgans(): void {
   clearTimeout(organTimer);
   organTimer = window.setTimeout(
-    () => worker.postMessage({ type: 'organs', layers: layers(), solar: state.solar, mode: state.mode }),
+    () => worker.postMessage({ type: 'organs', layers: layers(), W: state.W, mode: state.mode }),
     120,
   );
 }
@@ -146,7 +197,7 @@ function refreshReadout(): void {
     setStatus('busy', 'COMPUTING');
     clearTimeout(mlTimer);
     mlTimer = window.setTimeout(
-      () => worker.postMessage({ type: 'multiLayer', layers: layers(), solar: state.solar, mode: state.mode }),
+      () => worker.postMessage({ type: 'multiLayer', layers: layers(), W: state.W, mode: state.mode }),
       90,
     );
   }
@@ -196,6 +247,7 @@ function render(): void {
   renderOrgans();
   drawChart();
   drawTimeline();
+  requestSelfChecks();
 }
 
 // ---- organ dose estimates (v2.1) --------------------------------------------
@@ -384,6 +436,119 @@ function drawTimeline(): void {
   }
 }
 
+// ---- dose spectrum dH/dT chart (v2.2) ------------------------------------------
+// Log–log plot of the differential dose-equivalent contribution per ion energy for the
+// INCIDENT (pre-shield) GCR field. Same integrand as the free-space dose — the chart just
+// resolves in energy what the readout integrates. Depends on W only, labeled as such.
+function fmtEnergy(T: number): string {
+  if (T >= 1000) return `${(T / 1000).toFixed(T >= 10000 ? 0 : 1)}k`;
+  return String(Math.round(T));
+}
+
+function drawSpectrum(): void {
+  const canvas = $<HTMLCanvasElement>('spectrum');
+  if (!canvas || !spectrum) return;
+  const dpr = window.devicePixelRatio || 1;
+  const cssW = canvas.clientWidth || 900;
+  const cssH = 340;
+  canvas.width = cssW * dpr;
+  canvas.height = cssH * dpr;
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  const pad = { l: 64, r: 16, t: 20, b: 40 };
+  const plotW = cssW - pad.l - pad.r;
+  const plotH = cssH - pad.t - pad.b;
+
+  // x: 10 … 1e5 MeV/n (4 decades); y: 5 decades down from the total's maximum
+  const vMax = Math.max(...spectrum.total);
+  const expHi = Math.ceil(Math.log10(vMax));
+  const Y_DECADES = 5;
+  const expLo = expHi - Y_DECADES;
+  const xOf = (T: number): number => pad.l + ((Math.log10(T) - 1) / 4) * plotW;
+  const yOf = (v: number): number => {
+    const lv = Math.log10(Math.max(v, Math.pow(10, expLo)));
+    return pad.t + plotH - ((lv - expLo) / Y_DECADES) * plotH;
+  };
+
+  ctx.font = '11px ui-monospace, monospace';
+  ctx.lineWidth = 1;
+  // y grid: one line per decade
+  for (let ex = expLo; ex <= expHi; ex++) {
+    const y = yOf(Math.pow(10, ex));
+    ctx.strokeStyle = 'rgba(40,63,99,0.5)';
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
+    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'right';
+    ctx.fillText(`1e${ex}`, pad.l - 8, y + 4);
+  }
+  // x grid: decades 10 … 1e5
+  for (let ex = 1; ex <= 5; ex++) {
+    const T = Math.pow(10, ex);
+    const x = xOf(T);
+    ctx.strokeStyle = 'rgba(40,63,99,0.28)';
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
+    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'center';
+    ctx.fillText(fmtEnergy(T), x, cssH - pad.b + 18);
+  }
+  ctx.fillStyle = '#9db1cd'; ctx.textAlign = 'center';
+  ctx.fillText('ion kinetic energy  (MeV/n, log)', pad.l + plotW / 2, cssH - 4);
+  ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('dose contribution  (mSv/day per decade, log)', 0, 0); ctx.restore();
+
+  const trace = (ys: number[], color: string, width: number, alpha = 1): void => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.globalAlpha = alpha;
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i < spectrum!.T.length; i++) {
+      const v = ys[i]!;
+      if (v <= 0) continue; // log axis: skip empty bins
+      const x = xOf(spectrum!.T[i]!);
+      const y = yOf(v);
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  };
+
+  // per-ion overlays first (under the total)
+  if (showIons) {
+    for (const k of SPEC_ION_KEYS) trace(spectrum.perIon[k] ?? [], SPEC_COLORS[k]!, 1.3, 0.8);
+  }
+  // total — the headline trace
+  trace(spectrum.total, '#e7f0ff', 2.4);
+
+  // peak-contribution marker (drawn label instead of a hover tooltip — hand-rolled canvas)
+  const px = xOf(spectrum.peakT);
+  ctx.strokeStyle = 'rgba(0,212,255,0.55)';
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, pad.t + plotH); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#00d4ff'; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
+  ctx.fillText(`peak contribution: ${fmtEnergy(spectrum.peakT)} MeV/n`, px + (px > pad.l + plotW * 0.7 ? -6 : 6), pad.t + 12);
+}
+
+// ---- automated self-checks (v2.2) ------------------------------------------------
+function renderSelfChecks(): void {
+  if (!selfChecks) return;
+  const allPass = selfChecks.every((c) => c.pass);
+  const nPass = selfChecks.filter((c) => c.pass).length;
+  const lamp = $('selfLamp');
+  lamp.dataset.state = allPass ? 'pass' : 'fail';
+  lamp.title = `Automated self-checks: ${nPass}/${selfChecks.length} pass — see Validation Suite`;
+  $('selfSummary').textContent = `${nPass}/${selfChecks.length} pass`;
+  $('selfSummary').dataset.state = allPass ? 'pass' : 'fail';
+  $('selfCheckRows').innerHTML = selfChecks
+    .map(
+      (c) =>
+        `<div class="val-row ${c.pass ? 'pass' : 'fail'}"><span class="vr-icon">${c.pass ? '✔' : '✘'}</span>` +
+        `<span>${c.name}</span><span class="vr-detail">${c.detail}</span></div>`,
+    )
+    .join('');
+}
+
 function renderValidation(d: ValidationSummary): void {
   const f = (x: number, n = 2): string => x.toFixed(n);
   const check = (ok: boolean, label: string, detail: string): string =>
@@ -456,16 +621,16 @@ const PRESETS: Record<
   string,
   {
     duration: number;
-    solar: 'min' | 'max';
+    W: number; // Matthiä solar modulation (0 = solar min, 130 = solar max)
     mode: 'primaries' | 'fragmentation';
     single: boolean;
     l1: { mat: keyof typeof TRACE; t: number };
     l2: { mat: keyof typeof TRACE; t: number };
   }
 > = {
-  'mars-cruise': { duration: 360, solar: 'min', mode: 'fragmentation', single: false, l1: { mat: 'aluminum', t: 10 }, l2: { mat: 'polyethylene', t: 5 } },
-  'lunar-gateway': { duration: 180, solar: 'max', mode: 'primaries', single: false, l1: { mat: 'aluminum', t: 8 }, l2: { mat: 'polyethylene', t: 3 } },
-  'artemis-transit': { duration: 10, solar: 'min', mode: 'fragmentation', single: true, l1: { mat: 'aluminum', t: 6 }, l2: { mat: 'polyethylene', t: 5 } },
+  'mars-cruise': { duration: 360, W: W_MIN, mode: 'fragmentation', single: false, l1: { mat: 'aluminum', t: 10 }, l2: { mat: 'polyethylene', t: 5 } },
+  'lunar-gateway': { duration: 180, W: W_MAX, mode: 'primaries', single: false, l1: { mat: 'aluminum', t: 8 }, l2: { mat: 'polyethylene', t: 3 } },
+  'artemis-transit': { duration: 10, W: W_MIN, mode: 'fragmentation', single: true, l1: { mat: 'aluminum', t: 6 }, l2: { mat: 'polyethylene', t: 5 } },
 };
 
 function setSeg(segId: string, attr: string, val: string): void {
@@ -497,9 +662,10 @@ function reflectControls(): void {
   $('thicknessVal').textContent = state.thickness.toFixed(1);
   $<HTMLInputElement>('thickness2').value = String(state.layer2.thickness);
   $('thickness2Val').textContent = state.layer2.thickness.toFixed(1);
-  (['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
+  $<HTMLInputElement>('wSlider').value = String(state.W);
+  $('wVal').textContent = String(state.W);
+  (['thickness', 'thickness2', 'duration', 'wSlider'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
   setSeg('presetSeg', 'preset', state.preset);
-  setSeg('solarSeg', 'solar', state.solar);
   setSeg('modeSeg', 'mode', state.mode);
   setSeg('layerModeSeg', 'layers', state.singleLayer ? 'single' : 'double');
   setSeg('materialSeg', 'mat', state.material);
@@ -513,7 +679,7 @@ function applyPreset(key: string): void {
   if (!p) return;
   applyingPreset = true;
   state.duration = p.duration;
-  state.solar = p.solar;
+  state.W = p.W;
   state.mode = p.mode;
   state.singleLayer = p.single;
   state.material = p.l1.mat;
@@ -521,14 +687,16 @@ function applyPreset(key: string): void {
   state.layer2 = { material: p.l2.mat, thickness: p.l2.t };
   state.preset = key;
   reflectControls();
-  requestCurves(); // solar/mode may have changed → refresh the chart curves
+  requestCurves(); // W/mode may have changed → refresh the chart curves
+  requestSpectrum();
   refreshReadout();
   applyingPreset = false;
 }
 
-// ---- shareable URL (v2.1) ----------------------------------------------------
+// ---- shareable URL (v2.1; v2.2 adds w=) ----------------------------------------
 // The whole mission config round-trips through query params:
-//   ?preset=mars&mat1=Al&den1=10&layers=2&mat2=PE&den2=5&solar=min&model=frag&days=360
+//   ?preset=mars&mat1=Al&den1=10&layers=2&mat2=PE&den2=5&w=0&model=frag&days=360
+// Legacy links with solar=min|max (pre-v2.2) still restore: they map to W=0|130.
 const MAT_CODE: Record<string, string> = { aluminum: 'Al', polyethylene: 'PE', water: 'H2O', hydrogen: 'H2', methane: 'CH4' };
 const CODE_MAT: Record<string, keyof typeof TRACE> = { Al: 'aluminum', PE: 'polyethylene', H2O: 'water', H2: 'hydrogen', CH4: 'methane' };
 const PRESET_CODE: Record<string, string> = { 'mars-cruise': 'mars', 'lunar-gateway': 'gateway', 'artemis-transit': 'artemis', custom: 'custom' };
@@ -544,7 +712,7 @@ function buildQuery(): string {
     q.set('mat2', MAT_CODE[state.layer2.material]!);
     q.set('den2', String(state.layer2.thickness));
   }
-  q.set('solar', state.solar);
+  q.set('w', String(state.W));
   q.set('model', state.mode === 'fragmentation' ? 'frag' : 'prim');
   q.set('days', String(state.duration));
   return q.toString();
@@ -563,7 +731,7 @@ const snapDen = (v: number): number => Math.min(40, Math.max(0, Math.round(v * 2
 /** Restore the config from query params on load (missing/invalid params keep their defaults). */
 function applyURLParams(): void {
   const q = new URLSearchParams(location.search);
-  const known = ['preset', 'mat1', 'den1', 'mat2', 'den2', 'layers', 'solar', 'model', 'days'];
+  const known = ['preset', 'mat1', 'den1', 'mat2', 'den2', 'layers', 'w', 'solar', 'model', 'days'];
   if (!known.some((k) => q.has(k))) return;
   applyingPreset = true;
   const m1 = CODE_MAT[q.get('mat1') ?? ''];
@@ -575,8 +743,13 @@ function applyURLParams(): void {
   const den2 = parseFloat(q.get('den2') ?? '');
   if (Number.isFinite(den2)) state.layer2.thickness = snapDen(den2);
   if (q.has('layers')) state.singleLayer = q.get('layers') !== '2';
-  const solar = q.get('solar');
-  if (solar === 'min' || solar === 'max') state.solar = solar;
+  const w = parseInt(q.get('w') ?? '', 10);
+  if (Number.isFinite(w)) state.W = Math.min(W_MAX, Math.max(W_MIN, w));
+  else {
+    const solar = q.get('solar'); // legacy pre-v2.2 links
+    if (solar === 'min') state.W = W_MIN;
+    else if (solar === 'max') state.W = W_MAX;
+  }
   const model = q.get('model');
   if (model) state.mode = model === 'frag' ? 'fragmentation' : 'primaries';
   const days = parseInt(q.get('days') ?? '', 10);
@@ -622,14 +795,15 @@ $<HTMLInputElement>('thickness2').addEventListener('input', (e) => {
   syncFill(e.target as HTMLInputElement);
   refreshReadout();
 });
-$('solarSeg').querySelectorAll('button').forEach((b) =>
-  b.addEventListener('click', () => {
-    state.solar = (b as HTMLElement).dataset.solar as 'min' | 'max';
-    setSeg('solarSeg', 'solar', state.solar);
-    requestCurves();
-    refreshReadout();
-  }),
-);
+$<HTMLInputElement>('wSlider').addEventListener('input', (e) => {
+  markCustom();
+  state.W = parseInt((e.target as HTMLInputElement).value, 10);
+  $('wVal').textContent = String(state.W);
+  syncFill(e.target as HTMLInputElement);
+  scheduleCurves(); // debounced — the curve set is the heavy compute
+  requestSpectrum();
+  refreshReadout();
+});
 $('modeSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
     state.mode = (b as HTMLElement).dataset.mode as 'primaries' | 'fragmentation';
@@ -699,7 +873,7 @@ function buildReportText(): string {
   L.push(`Shield layer 1:   ${MAT_LABEL[state.material]} - ${state.thickness.toFixed(1)} g/cm2`);
   if (!state.singleLayer) L.push(`Shield layer 2:   ${MAT_LABEL[state.layer2.material]} - ${state.layer2.thickness.toFixed(1)} g/cm2`);
   L.push(`Total density:    ${(state.thickness + (state.singleLayer ? 0 : state.layer2.thickness)).toFixed(1)} g/cm2`);
-  L.push(`Solar condition:  ${state.solar === 'min' ? 'MIN (worst-case GCR)' : 'MAX'}`);
+  L.push(`Solar modulation: W = ${state.W} (Matthia 2013; 0 = solar min / worst GCR, 130 = solar max)`);
   L.push(`Nuclear model:    ${state.mode === 'fragmentation' ? 'Primaries + simplified fragmentation (Bradt-Peters)' : 'Primaries only'}`);
   L.push(`Duration:         ${state.duration} days`);
   L.push(rule);
@@ -767,12 +941,21 @@ $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
     btn.textContent = '▶ RUN VALIDATION';
   }, 600);
 });
-window.addEventListener('resize', () => { drawChart(); drawTimeline(); });
+$<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
+  showIons = !showIons;
+  const btn = $<HTMLButtonElement>('ionToggle');
+  btn.setAttribute('aria-pressed', String(showIons));
+  btn.classList.toggle('active', showIons);
+  $('specIonLegend').toggleAttribute('hidden', !showIons);
+  drawSpectrum();
+});
+window.addEventListener('resize', () => { drawChart(); drawTimeline(); drawSpectrum(); });
 
 applyURLParams(); // restore a shared configuration before the first compute
-(['thickness', 'thickness2', 'duration'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
+(['thickness', 'thickness2', 'duration', 'wSlider'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
 setStatus('busy', 'COMPUTING');
 requestCurves();
-if (!state.singleLayer) worker.postMessage({ type: 'multiLayer', layers: layers(), solar: state.solar, mode: state.mode });
+if (!state.singleLayer) worker.postMessage({ type: 'multiLayer', layers: layers(), W: state.W, mode: state.mode });
 requestOrgans();
+requestSpectrum();
 worker.postMessage({ type: 'validate' }); // populate the validation panel on load

@@ -131,11 +131,18 @@
           </div>
 
           <div class="control">
-            <label>Solar condition</label>
-            <div class="segmented switch" id="solarSeg" role="group" aria-label="Solar condition">
-              <button data-solar="min" class="active" aria-pressed="true">Solar MIN (worst GCR)</button>
-              <button data-solar="max" aria-pressed="false">Solar MAX</button>
-            </div>
+            <label>Solar modulation · W = <span id="wVal" class="readback">0</span> <span class="preset-note">· Matthiä 2013</span></label>
+            <input
+              type="range"
+              id="wSlider"
+              min="0"
+              max="130"
+              step="5"
+              value="0"
+              autocomplete="off"
+              aria-label="Solar modulation W (Matthiä 2013), 0 = solar minimum with worst-case GCR, 130 = strong solar maximum"
+            />
+            <div class="range-ends"><span>W&nbsp;=&nbsp;0 · worst GCR (solar min)</span><span>W&nbsp;=&nbsp;130 · solar max</span></div>
           </div>
 
           <div class="control">
@@ -228,6 +235,30 @@
           ></canvas>
         </section>
 
+        <!-- DOSE SPECTRUM (v2.2) -->
+        <section class="panel spectrum-panel">
+          <h2>Dose Rate Contribution by Ion Energy</h2>
+          <p class="spec-note">Incident GCR spectrum (before shielding) · dose-equivalent contribution per decade of ion energy, dH/dlog₁₀T · updates with solar modulation W · its integral over the axis equals the free-space dose rate (verified to &lt;0.01%)</p>
+          <canvas
+            id="spectrum"
+            width="900"
+            height="340"
+            role="img"
+            aria-label="Log-log line chart: dose-equivalent contribution per decade of ion kinetic energy from 10 to 100,000 MeV per nucleon for the incident GCR field, with the peak-contribution energy marked."
+          ></canvas>
+          <div class="legend">
+            <span class="lg lg-mark">total (all Z = 1–28)</span>
+            <span id="specIonLegend" hidden>
+              <span class="lg lg-spec-h">H</span>
+              <span class="lg lg-spec-he">He</span>
+              <span class="lg lg-spec-c">C</span>
+              <span class="lg lg-spec-o">O</span>
+              <span class="lg lg-spec-fe">Fe</span>
+            </span>
+            <button id="ionToggle" class="tool-btn" aria-pressed="false">Show H·He·C·O·Fe</button>
+          </div>
+        </section>
+
         <!-- VALIDATION -->
         <section class="panel validation">
           <h2>Validation Suite</h2>
@@ -235,6 +266,18 @@
           <div id="validationResults" class="val-results">
             <p class="val-hint">Runs the live physics checks behind this model.</p>
           </div>
+
+          <details class="selfchecks" open>
+            <summary>Automated self-checks · <span id="selfSummary" class="sc-sum">running…</span></summary>
+            <div id="selfCheckRows" class="selfcheck-rows">
+              <p class="val-hint">Model invariants re-verified on every configuration change.</p>
+            </div>
+            <p class="footnote sc-foot">
+              Physics invariants checked live in the worker: thick-shield dose reduction, solar-modulation
+              monotonicity, dose–duration linearity, material ordering, unit consistency. The dot in the
+              page corner is green only while all five hold.
+            </p>
+          </details>
         </section>
       </main>
 
@@ -246,6 +289,8 @@
         <span class="badge">Built for NASA Stardance Challenge</span>
       </footer>
     </div>
+
+    <div class="selfcheck-lamp" id="selfLamp" data-state="pending" title="Automated self-checks: running…" aria-live="polite"></div>
 
     <script type="module" src="/src/ui/main.ts"></script>
   </body>
