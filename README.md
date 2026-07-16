@@ -180,6 +180,27 @@ nothing was tuned:
 Closing this gap requires full secondary-particle transport — HZETRN / OLTARIS territory,
 deliberately outside this model's scope. It stays labeled, not patched.
 
+#### Limitations, structured
+
+Every omission, its expected direction, and its magnitude — citable, computed, or explicitly
+marked as not quantified in this work. Nothing on this list is hidden in the UI: each item is
+labeled where it matters.
+
+| omission / approximation | direction of effect | magnitude | source |
+|---|---|---|---|
+| Secondary charged particles & target fragments not transported | absorbed dose **under**-predicted | the 0.67× RAD gap itself (0.31 vs 0.46 mGy/day, computed) | this work vs Guo et al. 2015 |
+| Secondary neutrons not transported | dose **under**-predicted | small: 6 ± 2 µGy/day, 30 ± 10 µSv/day measured in-cruise (~1–2% of totals) | Köhler et al. 2015 |
+| No fragmentation softening of HZE LET (primaries mode) | ⟨Q⟩ **over**-predicted | 4.78 vs 3.82 measured (1.25×, computed); Phase 5 moves it to 4.41 | this work vs Zeitlin et al. 2013 |
+| Shell, Barkas (z³), Bloch (z⁴) corrections omitted | stopping power error grows at low E | ≤1.55% (≥10 MeV), ≤4.03% (all E ≥1 MeV) — computed vs PSTAR every CI run | NIST PSTAR |
+| High-Z shield materials excluded | n/a (deliberately not offered) | lead/titanium failed validation at 50.7%/22% — rejected, not shipped | this work vs NIST PSTAR |
+| Heavy-ion stopping via z_eff² scaling | few-% level at low E/n | not separately quantified in this work (subsumed in the RAD comparison) | Barkas 1963 convention |
+| Straight-ahead 1-D slab geometry (single thickness) | RAD sat behind an anisotropic distribution (most solid angle <10 g/cm²) | H over the 10–20 g/cm² bracket: 1.67–1.37 mSv/day (computed); D gap survives the bracket | Guo et al. 2015 shielding model |
+| GCR spectra for Z ≥ 3 not directly constrained by AMS comparison | unknown sign | assumed comparable to H (±14%) — stated assumption | Norbury et al. 2018 covers H, He only |
+| Constant GCR rate over the mission (no solar-cycle variation, no SPE) | mission totals are snapshots at fixed W | direction known, magnitude scenario-dependent — not quantified in this work | labeled in UI timeline |
+| Thin-target tissue dose (point dose in water) | no body self-shielding in the headline number | organ panel adds 0.007/0.3/5 g/cm² depth-doses (computed); full phantom out of scope | NASA/NCRP depth convention |
+| ICRP-60 Q(L) rather than ICRP-103 wR | convention choice, not an error | not applicable — definitional; stated to match RAD's Q-based reporting | ICRP-60; Zeitlin et al. 2013 |
+| Multi-layer stacks beyond the single-layer limit | unvalidated (no NASA layered measurement) | reduces exactly to the validated single slab at the limit (0.05%/0.00%, tested) | this work |
+
 ### Phase 5 — simplified nuclear fragmentation (optional, post-MVP)
 
 A simplified projectile-fragmentation model (Bradt–Peters charge-changing cross-sections,
