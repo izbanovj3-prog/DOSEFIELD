@@ -199,6 +199,18 @@
             </p>
           </details>
 
+          <details class="organs">
+            <summary>Sensitivity — what moves this number</summary>
+            <div class="organ-rows" id="sensRows"></div>
+            <p class="footnote organ-foot">
+              Each row: the mission total recomputed after the stated change, relative to the current
+              configuration — read from the same curves the chart plots (no extra model runs, no
+              approximations beyond the chart's own 1 g/cm² grid). Duration is exactly linear by model
+              construction (constant GCR rate, no solar-cycle variation). Solar modulation W has no row
+              because its effect requires a full recompute — drag the W slider to see it live.
+            </p>
+          </details>
+
           <div class="readout-tools">
             <button id="exportReport" class="tool-btn" title="Download this configuration and its computed doses as a plain-text report">⬇ Export report</button>
           </div>

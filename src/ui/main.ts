@@ -256,9 +256,72 @@ function render(): void {
       ? ''
       : ' · Two-layer stack — same CSDA engine, but unvalidated beyond the single-layer limit (no NASA layered measurement).');
   renderOrgans();
+  renderSensitivity();
   drawChart();
   drawTimeline();
   requestSelfChecks();
+}
+
+// ---- sensitivity panel (Phase B) ---------------------------------------------
+// "What assumption matters most" — each row re-reads the SAME cached curves the chart
+// plots (no new physics runs): mission total after the stated change vs the current one.
+function renderSensitivity(): void {
+  const el = $('sensRows');
+  if (!el || !curves) return;
+  const cur = readout().H * state.duration;
+  if (!(cur > 0)) {
+    el.innerHTML = '';
+    return;
+  }
+  const rows: { label: string; pct: number; note: string }[] = [];
+
+  if (state.singleLayer) {
+    // areal density +20% (clamped to the modeled 0–40 g/cm² range)
+    const t2 = Math.min(40, state.thickness * 1.2);
+    if (t2 > state.thickness + 1e-9) {
+      const H2 = interp(curves[state.material]!, t2).H;
+      rows.push({
+        label: `Areal density +20% (${state.thickness.toFixed(1)} → ${t2.toFixed(1)} g/cm²)`,
+        pct: ((H2 * state.duration) / cur - 1) * 100,
+        note: 'same curve the chart plots',
+      });
+    }
+    // switch to the best-ranked material at the same areal density
+    const bestKey = 'hydrogen' as const; // validated rank: H₂ < CH₄ < PE < water < Al
+    if (state.material !== bestKey) {
+      const Hb = interp(curves[bestKey]!, state.thickness).H;
+      rows.push({
+        label: `Material → liquid hydrogen @ ${state.thickness.toFixed(1)} g/cm²`,
+        pct: ((Hb * state.duration) / cur - 1) * 100,
+        note: 'validated H-content ranking',
+      });
+    }
+  } else {
+    rows.push({
+      label: 'Layer sensitivities: switch to single-layer view',
+      pct: NaN,
+      note: 'two-layer doses come from the worker, not the plotted curves — no stale numbers shown',
+    });
+  }
+
+  rows.push({ label: 'Mission duration +20%', pct: 20, note: 'exactly linear by construction' });
+
+  const fmt = (p: number): string => `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`;
+  const maxAbs = Math.max(20, ...rows.filter((r) => Number.isFinite(r.pct)).map((r) => Math.abs(r.pct)));
+  el.innerHTML = rows
+    .map((r) => {
+      if (!Number.isFinite(r.pct)) {
+        return `<div class="organ-row"><div class="organ-head"><span class="o-name">${r.label}</span><span class="o-nums">—</span></div><div class="organ-limit">${r.note}</div></div>`;
+      }
+      const w = (Math.abs(r.pct) / maxAbs) * 100;
+      const band = r.pct > 0 ? 'exceed' : 'nominal'; // red = raises dose, green = lowers it
+      return `<div class="organ-row">
+        <div class="organ-head"><span class="o-name">${r.label}</span><span class="o-nums">${fmt(r.pct)} mission total</span></div>
+        <div class="organ-bar"><div class="organ-fill" data-band="${band}" style="width:${w.toFixed(1)}%"></div></div>
+        <div class="organ-limit">${r.note}</div>
+      </div>`;
+    })
+    .join('');
 }
 
 // ---- organ dose estimates (v2.1) --------------------------------------------
