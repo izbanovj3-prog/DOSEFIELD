@@ -201,6 +201,30 @@ labeled where it matters.
 | ICRP-60 Q(L) rather than ICRP-103 wR | convention choice, not an error | not applicable — definitional; stated to match RAD's Q-based reporting | ICRP-60; Zeitlin et al. 2013 |
 | Multi-layer stacks beyond the single-layer limit | unvalidated (no NASA layered measurement) | reduces exactly to the validated single slab at the limit (0.05%/0.00%, tested) | this work |
 
+#### Where this sits among published transport codes
+
+Only real published values with real citations; a cell reads *not available* where no verified
+published number for that configuration was found — it is not estimated to fill the table.
+**The two configurations are different and not directly comparable** (cruise: inside the
+spacecraft, ≈16 g/cm² Al-eq; surface: Gale crater under atmosphere + planetary shadowing) —
+the surface rows are context for how full 3-D codes fare against the same instrument, not a
+benchmark for this model.
+
+| configuration | model | D [mGy/d] | H [mSv/d] | source |
+|---|---|---|---|---|
+| MSL **cruise** (≈16 g/cm² Al-eq, 2011–12) | **DOSEFIELD** (1-D, primaries) — computed | 0.31 | 1.47 | this work |
+| MSL cruise, same | measured, MSL/RAD | 0.458 ± 0.032 | 1.75 ± 0.30 | Zeitlin et al. 2013; Guo et al. 2015 |
+| MSL cruise, same | HZETRN / OLTARIS / GEANT4 / PHITS | *not available* | *not available* | no verified published per-code cruise value found |
+| Mars **surface** (Gale, GCR) | GEANT4, PHITS, HZETRN/OLTARIS (range over codes) | 0.16–0.20 (tissue) | 0.51–0.60 | Matthiä et al. 2016 |
+| Mars surface, same | measured, MSL/RAD | 0.21 ± 0.04 | 0.64 ± 0.12 | Matthiä et al. 2016 |
+
+Reading the context honestly: on their own surface benchmark the full 3-D transport codes land
+at 0.76–0.95× of the measured tissue dose and 0.80–0.94× of the measured dose-equivalent, and
+the 2016 blind-challenge workshop across seven codes found "differences of factors of two are
+not uncommon" (Hassler & Norbury 2017). A 1-D primary-particle model at 0.67×/0.84× on its own
+(cruise) benchmark is exactly where such a model should sit — with its missing physics
+identified and quantified above, rather than absorbed into fitted parameters.
+
 ### Phase 5 — simplified nuclear fragmentation (optional, post-MVP)
 
 A simplified projectile-fragmentation model (Bradt–Peters charge-changing cross-sections,
@@ -301,6 +325,15 @@ npm test                  # vitest regression lock (107 tests)
 - **MSL/RAD cruise neutron spectrum** — J. Köhler et al., "Measurements of the neutron spectrum
   in transit to Mars on the Mars Science Laboratory", *Life Sci. Space Res.* **5** (2015) 6–12,
   doi:10.1016/j.lssr.2015.03.001.
+- **GCR-model accuracy vs AMS-02** — J.W. Norbury, K. Whitman, K. Lee, T.C. Slaba, F.F. Badavi,
+  "Comparison of space radiation GCR models to recent AMS data", *Life Sci. Space Res.* **18**
+  (2018) 64–71.
+- **Stopping-power accuracy** — ICRU Report 49 (1993), as quoted in the NIST STAR documentation
+  (collision stopping powers: 1–2% elements, 1–4% compounds, high-energy region).
+- **Transport-code context** — D. Matthiä et al., "The Martian surface radiation environment —
+  a comparison of models and MSL/RAD measurements", *J. Space Weather Space Clim.* **6** (2016)
+  A13, doi:10.1051/swsc/2016008; D.M. Hassler & J.W. Norbury, MSL/RAD modeling workshop
+  proceedings, *Life Sci. Space Res.* **14** (2017) 1–2.
 - **Physical constants** — CODATA 2018.
 
 ## Status: all phases complete
