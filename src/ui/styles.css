@@ -275,6 +275,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
   text-shadow: 0 0 24px rgba(0, 212, 255, 0.26); font-variant-numeric: tabular-nums;
 }
 .big-number .unit { font-size: 14px; color: var(--dim); }
+.unc-line { font-size: 10px; color: var(--dim); margin: -8px 0 14px; line-height: 1.6; font-variant-numeric: tabular-nums; text-wrap: pretty; }
 .sub-metrics { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
 .metric {
   background: var(--well); border: 1px solid var(--edge); border-radius: 3px; padding: 10px 13px;
@@ -304,6 +305,8 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .lg { display: inline-flex; align-items: center; gap: 7px; }
 .lg::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: currentColor; }
 .lg-mark::before { width: 8px; height: 8px; border-radius: 50%; }
+.lg-band { color: var(--dim); }
+.lg-band::before { height: 9px; border-radius: 1px; background: rgba(0, 212, 255, 0.18); box-shadow: none; }
 .lg-al { color: var(--al); } .lg-poly { color: var(--poly); } .lg-water { color: var(--water); } .lg-h { color: var(--hydrogen); } .lg-ch4 { color: var(--methane); } .lg-mark { color: var(--mark); }
 
 /* ---- dose spectrum chart (v2.2) ---- */

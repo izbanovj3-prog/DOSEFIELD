@@ -20,6 +20,7 @@ import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { interactionMFP } from '../physics/fragmentation.js';
 import { computeValidationSummary } from '../validation/validationSummary.js';
+import { doseRelUncertainty } from '../validation/uncertainty.js';
 import type { RadComparison } from '../dose/radComparison.js';
 import { RAD_CRUISE } from '../../data/rad/zeitlin2013.js';
 import { W_SOLAR_MIN, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
@@ -174,6 +175,8 @@ console.log('Computing report data…');
 const validation = computeValidationSummary();
 const nistMaxAll = validation.nist.maxAllPct;
 const nistMaxSolid = validation.nist.maxSolidPct;
+// Phase A: input-uncertainty band from THIS RUN's computed PSTAR deviation (see uncertainty.ts)
+const bandRel = doseRelUncertainty(nistMaxSolid / 100);
 
 const free = computeFreeSpaceDose(W_SOLAR_MIN);
 const feFrac = (free.perSpecies.find((p) => p.Z === 26)?.doseEqFraction ?? 0) * 100;
@@ -278,6 +281,14 @@ behind ≈${RAD_CRUISE.shielding_gcm2} g/cm² Al-equivalent shielding — set **
 
 Model dose-equivalent over the W/shielding brackets: **${fx(rad.H_lo)}–${fx(rad.H_hi)} mSv/day** — the
 measured **${fx(rad.measured.H)} mSv/day** lies inside this range.
+
+With propagated input uncertainty the model value reads **H = ${fx(rad.model.H)} ±
+${fx(rad.model.H * bandRel)} mSv/day** (±${fx(bandRel * 100, 1)}%, 1σ-style; quadrature of GCR-flux
+±14% — DLR-model deviation vs AMS-02 in the dose-dominant <1.5 GeV/n range, Norbury et al. 2018,
+*Life Sci. Space Res.* 18, 64, Table 1 — and stopping-power ±4% — ICRU-49 compound bound — plus
+this run's computed ${fx(nistMaxSolid)}% PSTAR deviation). The band is **input uncertainty only**:
+it deliberately excludes the un-modeled secondary production discussed below, which is a scope
+limit, not an input error.
 
 ![RAD comparison](${radPng})
 

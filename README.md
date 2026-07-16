@@ -133,6 +133,26 @@ absorbed dose is *under*-predicted (missing spacecraft secondaries) while ⟨Q�
 (no fragmentation to break HZE ions into lower-LET fragments) — partly cancelling in H. Both point
 to Phase 5. Measured: Zeitlin et al., *Science* 340 (2013) 1080; Guo et al., *A&A* 577 (2015) A58.
 
+#### Propagated input uncertainty
+
+The dose-equivalent carries a **1σ-style input-uncertainty band of ≈15%**, propagated in
+quadrature from cited sources (implemented in
+[`src/validation/uncertainty.ts`](src/validation/uncertainty.ts), displayed live in the UI as a
+shaded band and a ± readout):
+
+- **GCR flux ±14%** — the DLR (Matthiä 2013) model's absolute relative difference vs AMS-02
+  hydrogen data in the dose-dominant < 1.5 GeV/n range (Norbury et al. 2018, *Life Sci. Space
+  Res.* **18**, 64–71, Table 1; 5.3% at 1.5–4 GeV/n, 2.7% at 4–20 GeV/n; helium ≤ 2.8%
+  everywhere). Taking the largest dose-relevant value for all species is conservative; the
+  Z ≥ 3 spectra are not constrained by that comparison and are *assumed* comparable — a stated
+  assumption, not a measurement.
+- **Stopping power ±4%** — ICRU Report 49's stated accuracy for compounds in the high-energy
+  region (via the NIST STAR documentation), plus this run's computed ≤1.55% implementation
+  deviation vs PSTAR, in quadrature.
+- **Not included, deliberately:** the un-modeled secondary-particle production (that is the
+  0.67× scope gap below, a model-form limit — not an input error), and ICRP-60 Q(L), which is
+  a regulatory convention with no measurement uncertainty to propagate.
+
 #### On the remaining absorbed-dose gap
 
 The model computes **0.31 mGy/day** of absorbed dose behind the RAD configuration against the

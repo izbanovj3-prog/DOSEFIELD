@@ -72,6 +72,14 @@ behind ≈16 g/cm² Al-equivalent shielding — set **independently** of the mea
 Model dose-equivalent over the W/shielding brackets: **1.25–1.77 mSv/day** — the
 measured **1.75 mSv/day** lies inside this range.
 
+With propagated input uncertainty the model value reads **H = 1.47 ±
+0.22 mSv/day** (±14.6%, 1σ-style; quadrature of GCR-flux
+±14% — DLR-model deviation vs AMS-02 in the dose-dominant <1.5 GeV/n range, Norbury et al. 2018,
+*Life Sci. Space Res.* 18, 64, Table 1 — and stopping-power ±4% — ICRU-49 compound bound — plus
+this run's computed 1.55% PSTAR deviation). The band is **input uncertainty only**:
+it deliberately excludes the un-modeled secondary production discussed below, which is a scope
+limit, not an input error.
+
 ![RAD comparison](plots/rad_comparison.png)
 
 **Honest error discussion.** The model is within the ~2× bar the project sets for a

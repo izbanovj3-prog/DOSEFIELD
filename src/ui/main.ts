@@ -61,6 +61,9 @@ let selfChecks: SelfCheck[] | null = null;
 let checkTimer: number | undefined;
 let curveTimer: number | undefined;
 
+// Phase A: relative input-uncertainty band (from the worker; see src/validation/uncertainty.ts)
+let bandRel = 0;
+
 // cache of computed curves per (modulation W, nuclear mode)
 const curveCache = new Map<string, CurveSeries>();
 const curveKey = (): string => `${state.W}:${state.mode}`;
@@ -133,6 +136,7 @@ function requestSelfChecks(): void {
 worker.onmessage = (e: MessageEvent) => {
   const msg = e.data;
   if (msg.type === 'curves') {
+    if (typeof msg.bandRel === 'number') bandRel = msg.bandRel;
     curveCache.set(`${msg.W}:${msg.mode}`, msg.series);
     if (!heroSet && msg.W === W_MIN && msg.mode === 'primaries') {
       setHeroSubhead(msg.series);
@@ -213,6 +217,13 @@ function render(): void {
   $('rateValue').textContent = cur.H.toFixed(2);
   $('absVal').textContent = cur.D.toFixed(3);
   $('qVal').textContent = cur.Q.toFixed(2);
+
+  // Phase A: 1σ-style input band on the headline rate (GCR flux ⊕ stopping power ⊕ this
+  // run's PSTAR deviation). Explicitly NOT model-form error — the 0.67× gap is separate.
+  $('uncLine').textContent =
+    bandRel > 0
+      ? `± ${(cur.H * bandRel).toFixed(2)} mSv/day input uncertainty (±${(bandRel * 100).toFixed(1)}% — GCR flux ⊕ stopping power; excludes un-modeled secondaries)`
+      : '';
 
   const totalSv = (cur.H * state.duration) / 1000;
   $('totalVal').textContent = totalSv.toFixed(2);
@@ -331,6 +342,21 @@ function drawChart(): void {
   ctx.fillText('shield areal density  (g/cm²)', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose-equivalent  (mSv/day)', 0, 0); ctx.restore();
+
+  // Phase A: shaded ±input-uncertainty band around the ACTIVE material's curve
+  // (H·(1±bandRel); input propagation only — the un-modeled-secondaries gap is separate).
+  if (bandRel > 0) {
+    const pts = curves[state.material]!;
+    ctx.fillStyle = 'rgba(0, 212, 255, 0.09)';
+    ctx.beginPath();
+    pts.forEach((p, i) => { const x = xOf(p.t); const y = yOf(Math.min(p.H * (1 + bandRel), hMax)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
+    for (let i = pts.length - 1; i >= 0; i--) {
+      const p = pts[i]!;
+      ctx.lineTo(xOf(p.t), yOf(p.H * (1 - bandRel)));
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
 
   // traces
   for (const m of ['aluminum', 'polyethylene', 'water', 'hydrogen', 'methane'] as const) {

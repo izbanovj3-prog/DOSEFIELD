@@ -5,7 +5,8 @@
 import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { computeFreeSpaceDose } from '../dose/doseModel.js';
-import { computeValidationSummary } from '../validation/validationSummary.js';
+import { computeValidationSummary, computeNistStoppingSummary } from '../validation/validationSummary.js';
+import { doseRelUncertainty } from '../validation/uncertainty.js';
 import { computeMultiLayerDose, computeMultiLayerFragmentedDose, type ShieldLayer } from '../dose/multiLayerDose.js';
 import { GCR_SPECIES, differentialFluxMatthia, W_SOLAR_MIN, W_SOLAR_MAX } from '../../data/gcr/matthia2013.js';
 import { WATER } from '../physics/materials.js';
@@ -20,6 +21,11 @@ const CURVE_PERDECADE = 50;
 const MEV_PER_G_TO_GY = 1.602176634e-10;
 const SECONDS_PER_DAY = 86400;
 const FOUR_PI = 4 * Math.PI;
+
+// Phase A: relative input-uncertainty band (GCR flux ⊕ stopping power ⊕ THIS RUN's computed
+// PSTAR deviation — see src/validation/uncertainty.ts for the cited sources and what the
+// band deliberately excludes). Deterministic → computed once at worker start.
+const BAND_REL = doseRelUncertainty(computeNistStoppingSummary().maxSolidPct / 100);
 
 // Organ dose estimates (v2.1) — the NASA/NCRP shallow–eye–deep depth-dose convention:
 // dose at 0.007 / 0.3 / 5 cm tissue depth (water-equivalent) approximates skin /
@@ -206,7 +212,7 @@ ctx.onmessage = (e: MessageEvent) => {
     const mode = msg.mode ?? 'primaries';
     const series = computeCurves(W, mode);
     const thicknesses = series.aluminum!.map((p) => p.t);
-    ctx.postMessage({ type: 'curves', W, mode, thicknesses, series });
+    ctx.postMessage({ type: 'curves', W, mode, thicknesses, series, bandRel: BAND_REL });
   } else if (msg.type === 'multiLayer') {
     // current two-layer stack dose — same CSDA engine, off the UI thread.
     const fn = (msg.mode ?? 'primaries') === 'fragmentation' ? computeMultiLayerFragmentedDose : computeMultiLayerDose;
