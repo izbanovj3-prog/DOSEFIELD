@@ -4,6 +4,7 @@
  */
 import './styles.css';
 import { renderProvenance } from './provenance.js';
+import { renderVersion } from './version.js';
 import type { CurvePoint, CurveSeries, SpectrumData, SelfCheck } from './dose.worker.js';
 import type { ValidationSummary } from '../validation/validationSummary.js';
 
@@ -1170,6 +1171,7 @@ $<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
 });
 window.addEventListener('resize', () => { drawChart(); drawTimeline(); drawSpectrum(); });
 
+renderVersion();
 renderProvenance(document.getElementById('provenance'));
 applyURLParams(); // restore a shared configuration before the first compute
 (['thickness', 'thickness2', 'duration', 'wSlider'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
