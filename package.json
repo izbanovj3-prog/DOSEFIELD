@@ -6,6 +6,7 @@
   "description": "Scientifically-honest 1D deep-space radiation dose & shielding model. Phase 1: Bethe stopping power + CSDA range, validated against NIST PSTAR.",
   "scripts": {
     "dev": "vite",
+    "prebuild": "tsx scripts/writeBuildInfo.ts",
     "build": "vite build",
     "preview": "vite preview",
     "validate:phase1": "tsx src/validation/runPhase1.ts",
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@napi-rs/canvas": "^1.0.0",
     "@types/node": "^22.10.2",
+    "marked": "^18.0.6",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "vite": "^6.0.7",

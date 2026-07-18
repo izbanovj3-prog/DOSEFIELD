@@ -35,7 +35,10 @@
           <h1>DOSEFIELD <span class="version">v2.0</span></h1>
           <p class="subtitle">1D deep-space radiation dose &amp; shielding model · GCR → dose-equivalent</p>
         </div>
-        <div class="status-lamp" id="statusLamp"><span class="dot"></span><span id="statusText">INIT</span></div>
+        <div class="mast-right">
+          <nav class="site-nav"><a href="./methods.html">Methods &amp; Limitations</a></nav>
+          <div class="status-lamp" id="statusLamp"><span class="dot"></span><span id="statusText">INIT</span></div>
+        </div>
       </header>
 
       <section class="hero" aria-label="Mission briefing">
@@ -62,7 +65,8 @@
           <p class="hero-scope">
             Deterministic 1-D slab · stopping power within <span class="hero-num" id="heroNist">—</span>
             of NIST PSTAR (≥10&nbsp;MeV) · integral cruise dose within ~2× of MSL/RAD · primaries + simplified
-            Bradt–Peters fragmentation, no secondary-neutron transport — not a substitute for HZETRN / OLTARIS.
+            Bradt–Peters fragmentation, no secondary-neutron transport —
+            <a class="scope-link" href="./methods.html#limitations">full methods &amp; limitations</a>; not a substitute for HZETRN / OLTARIS.
           </p>
         </div>
       </section>
@@ -209,6 +213,7 @@
               construction (constant GCR rate, no solar-cycle variation). Solar modulation W has no row
               because its effect requires a full recompute — drag the W slider to see it live.
             </p>
+            <button id="exportSens" class="tool-btn" title="Download the sensitivity comparison as a print-resolution PNG">⬇ PNG (print)</button>
           </details>
 
           <div class="readout-tools">
@@ -219,6 +224,7 @@
         <!-- CHART -->
         <section class="panel chart">
           <h2>Dose-Equivalent vs Shield Areal Density</h2>
+          <button id="exportDose" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">⬇ PNG</button>
           <canvas
             id="chart"
             width="900"
@@ -240,6 +246,7 @@
         <!-- TIMELINE (v2.0) -->
         <section class="panel timeline-panel">
           <h2>Cumulative Dose Over Mission</h2>
+          <button id="exportTimeline" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">⬇ PNG</button>
           <canvas
             id="timeline"
             width="900"
@@ -252,6 +259,7 @@
         <!-- DOSE SPECTRUM (v2.2) -->
         <section class="panel spectrum-panel">
           <h2>Dose Rate Contribution by Ion Energy</h2>
+          <button id="exportSpectrum" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">⬇ PNG</button>
           <p class="spec-note">Incident GCR spectrum (before shielding) · dose-equivalent contribution per decade of ion energy, dH/dlog₁₀T · updates with solar modulation W · its integral over the axis equals the free-space dose rate (verified to &lt;0.01%)</p>
           <canvas
             id="spectrum"
@@ -302,6 +310,7 @@
         </span>
         <span class="badge">Built for NASA Stardance Challenge</span>
       </footer>
+      <p class="provenance" id="provenance"></p>
     </div>
 
     <div class="selfcheck-lamp" id="selfLamp" data-state="pending" title="Automated self-checks: running…" aria-live="polite"></div>

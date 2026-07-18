@@ -3,6 +3,7 @@
  * the slider readout interpolates the active curve (instant), and the canvas plots all three.
  */
 import './styles.css';
+import { renderProvenance } from './provenance.js';
 import type { CurvePoint, CurveSeries, SpectrumData, SelfCheck } from './dose.worker.js';
 import type { ValidationSummary } from '../validation/validationSummary.js';
 
@@ -265,15 +266,14 @@ function render(): void {
 // ---- sensitivity panel (Phase B) ---------------------------------------------
 // "What assumption matters most" — each row re-reads the SAME cached curves the chart
 // plots (no new physics runs): mission total after the stated change vs the current one.
-function renderSensitivity(): void {
-  const el = $('sensRows');
-  if (!el || !curves) return;
+interface SensRow { label: string; pct: number; note: string }
+
+/** Sensitivity rows — computed once, consumed by both the HTML panel and the print export. */
+function sensitivityRows(): SensRow[] | null {
+  if (!curves) return null;
   const cur = readout().H * state.duration;
-  if (!(cur > 0)) {
-    el.innerHTML = '';
-    return;
-  }
-  const rows: { label: string; pct: number; note: string }[] = [];
+  if (!(cur > 0)) return null;
+  const rows: SensRow[] = [];
 
   if (state.singleLayer) {
     // areal density +20% (clamped to the modeled 0–40 g/cm² range)
@@ -305,7 +305,17 @@ function renderSensitivity(): void {
   }
 
   rows.push({ label: 'Mission duration +20%', pct: 20, note: 'exactly linear by construction' });
+  return rows;
+}
 
+function renderSensitivity(): void {
+  const el = $('sensRows');
+  if (!el) return;
+  const rows = sensitivityRows();
+  if (!rows) {
+    el.innerHTML = '';
+    return;
+  }
   const fmt = (p: number): string => `${p >= 0 ? '+' : ''}${p.toFixed(1)}%`;
   const maxAbs = Math.max(20, ...rows.filter((r) => Number.isFinite(r.pct)).map((r) => Math.abs(r.pct)));
   el.innerHTML = rows
@@ -361,17 +371,119 @@ function renderOrgans(): void {
   }).join('');
 }
 
-function drawChart(): void {
-  if (!curves) return;
-  const canvas = $<HTMLCanvasElement>('chart');
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = canvas.clientWidth || 900;
-  const cssH = 420;
+// ---- print export plumbing (v2.3) --------------------------------------------
+// The SAME renderer draws the on-screen canvas and the print PNG: export re-renders into an
+// offscreen canvas at EXPORT_W×EXPORT_DPR (3200 px wide, 300-DPI-class for poster print) with
+// an opaque background and a baked-in caption identifying the configuration. No screenshots.
+const EXPORT_W = 1280;
+const EXPORT_DPR = 2.5;
+const EXPORT_CAPTION_H = 44;
+
+function drawCaption(ctx: CanvasRenderingContext2D, cssW: number, plotH: number, caption: string): void {
+  ctx.strokeStyle = 'rgba(40,63,99,0.6)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(12, plotH + 6); ctx.lineTo(cssW - 12, plotH + 6); ctx.stroke();
+  ctx.font = '11px ui-monospace, monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#9db1cd';
+  ctx.fillText(caption, 12, plotH + 22);
+  ctx.fillStyle = '#7f94b0';
+  ctx.fillText(`DOSEFIELD — izbanovj3-prog.github.io/DOSEFIELD · generated ${new Date().toISOString().slice(0, 10)}`, 12, plotH + 37);
+}
+
+/** Current configuration line baked into exported charts (stands alone on a printed poster). */
+function configCaption(chartTitle: string): string {
+  const mats = state.singleLayer
+    ? `${MAT_LABEL[state.material]} ${state.thickness.toFixed(1)} g/cm²`
+    : `${MAT_LABEL[state.material]} ${state.thickness.toFixed(1)} + ${MAT_LABEL[state.layer2.material]} ${state.layer2.thickness.toFixed(1)} g/cm²`;
+  const mode = state.mode === 'fragmentation' ? 'primaries + simplified fragmentation' : 'primaries only';
+  return `${chartTitle} — ${PRESET_LABEL[state.preset] ?? state.preset} preset · ${mats} · W = ${state.W} (Matthiä 2013) · ${mode} · ${state.duration} d`;
+}
+
+/** Print-only sensitivity chart (the on-screen panel is HTML; posters need a canvas). */
+function renderSensitivityCanvas(canvas: HTMLCanvasElement, cssW: number, dpr: number, rows: SensRow[], caption: string): void {
+  const padT = 24;
+  const rowH = 74;
+  const cssH = padT + rows.length * rowH + 6;
   canvas.width = cssW * dpr;
-  canvas.height = cssH * dpr;
+  canvas.height = (cssH + EXPORT_CAPTION_H) * dpr;
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.fillStyle = '#0d1526';
+  ctx.fillRect(0, 0, cssW, cssH + EXPORT_CAPTION_H);
+  const maxAbs = Math.max(20, ...rows.filter((r) => Number.isFinite(r.pct)).map((r) => Math.abs(r.pct)));
+  rows.forEach((r, i) => {
+    const y = padT + i * rowH;
+    ctx.font = '13px ui-monospace, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#c9d8ee';
+    ctx.fillText(r.label, 16, y + 14);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#7a8fb2';
+    ctx.fillText(Number.isFinite(r.pct) ? `${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}% mission total` : '—', cssW - 16, y + 14);
+    if (Number.isFinite(r.pct)) {
+      const barW = cssW - 32;
+      ctx.fillStyle = '#060b16';
+      ctx.fillRect(16, y + 24, barW, 10);
+      ctx.strokeStyle = '#1d2c4a';
+      ctx.strokeRect(16.5, y + 24.5, barW - 1, 9);
+      ctx.fillStyle = r.pct > 0 ? '#ff5a5a' : '#46e06a'; // red = raises dose, green = lowers it
+      ctx.fillRect(16, y + 24, (Math.abs(r.pct) / maxAbs) * barW, 10);
+    }
+    ctx.font = '11px ui-monospace, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#7f94b0';
+    ctx.fillText(r.note, 16, y + 52);
+  });
+  drawCaption(ctx, cssW, cssH, caption);
+}
+
+/** Re-render the requested chart into an offscreen canvas at print resolution and download it. */
+function exportChartPNG(kind: 'dose' | 'timeline' | 'spectrum' | 'sensitivity', btn: HTMLButtonElement): void {
+  const off = document.createElement('canvas');
+  if (kind === 'dose') {
+    if (!curves) return;
+    renderDoseChart(off, EXPORT_W, EXPORT_DPR, configCaption('Dose-equivalent vs shield areal density'));
+  } else if (kind === 'timeline') {
+    if (!curves) return;
+    renderTimeline(off, EXPORT_W, EXPORT_DPR, configCaption('Cumulative dose over mission'));
+  } else if (kind === 'spectrum') {
+    if (!spectrum) return;
+    renderSpectrumChart(off, EXPORT_W, EXPORT_DPR, `Dose-rate contribution per decade of ion energy (incident GCR, before shielding) — W = ${state.W} (Matthiä 2013)`);
+  } else {
+    const rows = sensitivityRows();
+    if (!rows) return;
+    renderSensitivityCanvas(off, EXPORT_W, EXPORT_DPR, rows, configCaption('Sensitivity — mission-total response'));
+  }
+  off.toBlob((blob) => {
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `dosefield_${kind}_${PRESET_CODE[state.preset] ?? 'custom'}_${new Date().toISOString().slice(0, 10)}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+    const prev = btn.textContent;
+    btn.textContent = 'Saved ✓';
+    setTimeout(() => { btn.textContent = prev; }, 1300);
+  }, 'image/png');
+}
+
+function drawChart(): void {
+  const canvas = $<HTMLCanvasElement>('chart');
+  renderDoseChart(canvas, canvas.clientWidth || 900, window.devicePixelRatio || 1);
+}
+function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, caption?: string): void {
+  if (!curves) return;
+  const cssH = 420;
+  const totalH = cssH + (caption ? EXPORT_CAPTION_H : 0);
+  canvas.width = cssW * dpr;
+  canvas.height = totalH * dpr;
+  const ctx = canvas.getContext('2d')!;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cssW, totalH);
+  if (caption) { ctx.fillStyle = '#0d1526'; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 56, r: 16, t: 14, b: 36 };
   const plotW = cssW - pad.l - pad.r;
@@ -446,6 +558,8 @@ function drawChart(): void {
   ctx.fillStyle = '#e7f0ff';
   ctx.beginPath(); ctx.arc(mx, my, 4.5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = TRACE[state.material]; ctx.lineWidth = 2; ctx.stroke();
+
+  if (caption) drawCaption(ctx, cssW, cssH, caption);
 }
 
 // Cumulative dose over the mission (Feature 3). Linear accumulation = constant GCR rate
@@ -453,14 +567,17 @@ function drawChart(): void {
 function drawTimeline(): void {
   const canvas = $<HTMLCanvasElement>('timeline');
   if (!canvas) return;
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = canvas.clientWidth || 900;
+  renderTimeline(canvas, canvas.clientWidth || 900, window.devicePixelRatio || 1);
+}
+function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, caption?: string): void {
   const cssH = 320;
+  const totalH = cssH + (caption ? EXPORT_CAPTION_H : 0);
   canvas.width = cssW * dpr;
-  canvas.height = cssH * dpr;
+  canvas.height = totalH * dpr;
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.clearRect(0, 0, cssW, totalH);
+  if (caption) { ctx.fillStyle = '#0d1526'; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 56, r: 16, t: 18, b: 36 };
   const plotW = cssW - pad.l - pad.r;
@@ -523,6 +640,8 @@ function drawTimeline(): void {
     ctx.fillStyle = '#ff5a5a'; ctx.textAlign = 'right'; ctx.font = 'bold 12px sans-serif';
     ctx.fillText('⚠ Exceeds NASA career limit', cssW - pad.r, pad.t + 2);
   }
+
+  if (caption) drawCaption(ctx, cssW, cssH, caption);
 }
 
 // ---- dose spectrum dH/dT chart (v2.2) ------------------------------------------
@@ -536,15 +655,19 @@ function fmtEnergy(T: number): string {
 
 function drawSpectrum(): void {
   const canvas = $<HTMLCanvasElement>('spectrum');
-  if (!canvas || !spectrum) return;
-  const dpr = window.devicePixelRatio || 1;
-  const cssW = canvas.clientWidth || 900;
+  if (!canvas) return;
+  renderSpectrumChart(canvas, canvas.clientWidth || 900, window.devicePixelRatio || 1);
+}
+function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, caption?: string): void {
+  if (!spectrum) return;
   const cssH = 340;
+  const totalH = cssH + (caption ? EXPORT_CAPTION_H : 0);
   canvas.width = cssW * dpr;
-  canvas.height = cssH * dpr;
+  canvas.height = totalH * dpr;
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, cssW, cssH);
+  ctx.clearRect(0, 0, cssW, totalH);
+  if (caption) { ctx.fillStyle = '#0d1526'; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 64, r: 16, t: 20, b: 40 };
   const plotW = cssW - pad.l - pad.r;
@@ -617,6 +740,8 @@ function drawSpectrum(): void {
   ctx.setLineDash([]);
   ctx.fillStyle = '#00d4ff'; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
   ctx.fillText(`peak contribution: ${fmtEnergy(spectrum.peakT)} MeV/n`, px + (px > pad.l + plotW * 0.7 ? -6 : 6), pad.t + 12);
+
+  if (caption) drawCaption(ctx, cssW, cssH, caption);
 }
 
 // ---- automated self-checks (v2.2) ------------------------------------------------
@@ -1030,6 +1155,11 @@ $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
     btn.textContent = '▶ RUN VALIDATION';
   }, 600);
 });
+(['exportDose', 'exportTimeline', 'exportSpectrum', 'exportSens'] as const).forEach((id) => {
+  const kind = { exportDose: 'dose', exportTimeline: 'timeline', exportSpectrum: 'spectrum', exportSens: 'sensitivity' }[id] as
+    | 'dose' | 'timeline' | 'spectrum' | 'sensitivity';
+  $<HTMLButtonElement>(id).addEventListener('click', (e) => exportChartPNG(kind, e.currentTarget as HTMLButtonElement));
+});
 $<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
   showIons = !showIons;
   const btn = $<HTMLButtonElement>('ionToggle');
@@ -1040,6 +1170,7 @@ $<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
 });
 window.addEventListener('resize', () => { drawChart(); drawTimeline(); drawSpectrum(); });
 
+renderProvenance(document.getElementById('provenance'));
 applyURLParams(); // restore a shared configuration before the first compute
 (['thickness', 'thickness2', 'duration', 'wSlider'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
 setStatus('busy', 'COMPUTING');
