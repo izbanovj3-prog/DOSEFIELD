@@ -36,7 +36,7 @@ Three structural defenses, all checkable in the repo history:
    dishonestly (ICRP-60 wT as organ-dose multipliers; a force-field φ(MV) reparametrization
    requiring endpoint tuning; a parametric "neutron correction" table whose factors were
    reverse-engineered to land on the RAD number and whose material ordering was physically
-   inverted). Each rejection is documented in CLAUDE.md with the physics reason.
+   inverted). Each rejection is documented in the commit history with the physics reason.
 
 **Q: Norbury et al. 2018 says your GCR model differs from AMS-02 by up to 14%. Why trust the dose?**
 

@@ -15,6 +15,5 @@ dist/
 .wakatime/
 
 # Editor / tooling
-.claude/
 .vscode/
 .idea/
