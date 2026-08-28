@@ -10,9 +10,11 @@ import type { ValidationSummary } from '../validation/validationSummary.js';
 
 const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
-const TRACE = { aluminum: '#ffb000', polyethylene: '#46e06a', water: '#38bdf8', hydrogen: '#ff79c6', methane: '#a78bfa' } as const;
+// Ordered ramp, mirrors :root in styles.css — luminance falls monotonically along the
+// validated ranking H2 < CH4 < PE < water < Al, so the colour carries the result.
+const TRACE = { aluminum: '#b87061', polyethylene: '#86a35f', water: '#5a8fa3', hydrogen: '#efe4c8', methane: '#d3a75a' } as const;
 // spectrum chart per-ion colours (H, He, C, O, Fe)
-const SPEC_COLORS: Record<string, string> = { H: '#4da3ff', He: '#46e06a', C: '#ffb000', O: '#38bdf8', Fe: '#ff5a5a' };
+const SPEC_COLORS: Record<string, string> = { H: '#efe4c8', He: '#d3a75a', C: '#86a35f', O: '#5a8fa3', Fe: '#b87061' };
 const SPEC_ION_KEYS = ['H', 'He', 'C', 'O', 'Fe'] as const;
 
 interface Layer {
@@ -75,6 +77,23 @@ let heroSet = false; // hero subhead is computed once, from the default-config c
 const worker = new Worker(new URL('./dose.worker.ts', import.meta.url), { type: 'module' });
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
+
+/**
+ * Write a readout figure and, if it actually moved, flash it once (see `.is-changed`
+ * in styles.css). The comparison is against the text already on screen, so a control
+ * that leaves a number where it was produces no motion at all — which is the point:
+ * the flash means "this reading changed", not "something was clicked".
+ */
+function setReading(id: string, text: string): void {
+  const el = $(id);
+  if (el.textContent === text) return;
+  const first = el.textContent === '' || el.textContent === '—';
+  el.textContent = text;
+  if (first) return;
+  el.classList.remove('is-changed');
+  void el.offsetWidth; // restart the animation on a value that changes twice in a row
+  el.classList.add('is-changed');
+}
 const statusLamp = $('statusLamp');
 const statusText = $('statusText');
 
@@ -216,9 +235,9 @@ function render(): void {
   if (!curves) return;
   const cur = readout();
 
-  $('rateValue').textContent = cur.H.toFixed(2);
-  $('absVal').textContent = cur.D.toFixed(3);
-  $('qVal').textContent = cur.Q.toFixed(2);
+  setReading('rateValue', cur.H.toFixed(2));
+  setReading('absVal', cur.D.toFixed(3));
+  setReading('qVal', cur.Q.toFixed(2));
 
   // Phase A: 1σ-style input band on the headline rate (GCR flux ⊕ stopping power ⊕ this
   // run's PSTAR deviation). Explicitly NOT model-form error — the 0.67× gap is separate.
@@ -228,7 +247,7 @@ function render(): void {
       : '';
 
   const totalSv = (cur.H * state.duration) / 1000;
-  $('totalVal').textContent = totalSv.toFixed(2);
+  setReading('totalVal', totalSv.toFixed(2));
 
   const totalMsv = cur.H * state.duration;
   const pct = (totalMsv / NASA_CAREER_LIMIT_MSV) * 100;
@@ -239,10 +258,10 @@ function render(): void {
   $('careerPct').setAttribute('data-band', band);
   const fill = $('careerFill');
   fill.style.width = Math.min(100, pct) + '%';
-  fill.style.background = pct > 100 ? 'var(--warn)' : 'linear-gradient(90deg, var(--accent), var(--water))';
+  fill.style.background = pct > 100 ? 'var(--warn)' : 'var(--accent)';
   const note = $('careerNote');
   if (pct > 100) {
-    note.textContent = `⚠ exceeds NASA career limit by ${(pct - 100).toFixed(0)}% (${totalMsv.toFixed(0)} mSv)`;
+    note.textContent = `Exceeds NASA career limit by ${(pct - 100).toFixed(0)}% (${totalMsv.toFixed(0)} mSv)`;
     note.style.color = 'var(--warn)';
   } else {
     note.textContent = `${totalMsv.toFixed(0)} mSv of 600 mSv over ${state.duration} d`;
@@ -381,14 +400,14 @@ const EXPORT_DPR = 2.5;
 const EXPORT_CAPTION_H = 44;
 
 function drawCaption(ctx: CanvasRenderingContext2D, cssW: number, plotH: number, caption: string): void {
-  ctx.strokeStyle = 'rgba(40,63,99,0.6)';
+  ctx.strokeStyle = 'rgba(46,42,36,0.95)';
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(12, plotH + 6); ctx.lineTo(cssW - 12, plotH + 6); ctx.stroke();
-  ctx.font = '11px ui-monospace, monospace';
+  ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#9db1cd';
+  ctx.fillStyle = '#b6ad9e';
   ctx.fillText(caption, 12, plotH + 22);
-  ctx.fillStyle = '#7f94b0';
+  ctx.fillStyle = '#8d8474';
   ctx.fillText(`DOSEFIELD — izbanovj3-prog.github.io/DOSEFIELD · generated ${new Date().toISOString().slice(0, 10)}`, 12, plotH + 37);
 }
 
@@ -410,30 +429,30 @@ function renderSensitivityCanvas(canvas: HTMLCanvasElement, cssW: number, dpr: n
   canvas.height = (cssH + EXPORT_CAPTION_H) * dpr;
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#0d1526';
+  ctx.fillStyle = '#191714';
   ctx.fillRect(0, 0, cssW, cssH + EXPORT_CAPTION_H);
   const maxAbs = Math.max(20, ...rows.filter((r) => Number.isFinite(r.pct)).map((r) => Math.abs(r.pct)));
   rows.forEach((r, i) => {
     const y = padT + i * rowH;
-    ctx.font = '13px ui-monospace, monospace';
+    ctx.font = '13px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#c9d8ee';
+    ctx.fillStyle = '#d9d2c6';
     ctx.fillText(r.label, 16, y + 14);
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#7a8fb2';
+    ctx.fillStyle = '#8d8474';
     ctx.fillText(Number.isFinite(r.pct) ? `${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}% mission total` : '—', cssW - 16, y + 14);
     if (Number.isFinite(r.pct)) {
       const barW = cssW - 32;
-      ctx.fillStyle = '#060b16';
+      ctx.fillStyle = '#0c0b09';
       ctx.fillRect(16, y + 24, barW, 10);
-      ctx.strokeStyle = '#1d2c4a';
+      ctx.strokeStyle = '#2e2a24';
       ctx.strokeRect(16.5, y + 24.5, barW - 1, 9);
-      ctx.fillStyle = r.pct > 0 ? '#ff5a5a' : '#46e06a'; // red = raises dose, green = lowers it
+      ctx.fillStyle = r.pct > 0 ? '#e4573d' : '#5a8fa3'; // red = raises dose, green = lowers it
       ctx.fillRect(16, y + 24, (Math.abs(r.pct) / maxAbs) * barW, 10);
     }
-    ctx.font = '11px ui-monospace, monospace';
+    ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#7f94b0';
+    ctx.fillStyle = '#8d8474';
     ctx.fillText(r.note, 16, y + 52);
   });
   drawCaption(ctx, cssW, cssH, caption);
@@ -484,7 +503,7 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, totalH);
-  if (caption) { ctx.fillStyle = '#0d1526'; ctx.fillRect(0, 0, cssW, totalH); }
+  if (caption) { ctx.fillStyle = '#191714'; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 56, r: 16, t: 14, b: 36 };
   const plotW = cssW - pad.l - pad.r;
@@ -499,9 +518,9 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   const yOf = (h: number) => pad.t + plotH - (h / hMax) * plotH;
 
   // grid + axes
-  ctx.strokeStyle = 'rgba(40,63,99,0.5)';
-  ctx.fillStyle = '#7f94b0';
-  ctx.font = '11px ui-monospace, monospace';
+  ctx.strokeStyle = 'rgba(46,42,36,0.95)';
+  ctx.fillStyle = '#8d8474';
+  ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.lineWidth = 1;
   for (let h = 0; h <= hMax + 1e-9; h += 0.5) {
     const y = yOf(h);
@@ -510,11 +529,11 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   }
   for (let t = 0; t <= tMax; t += 5) {
     const x = xOf(t);
-    ctx.strokeStyle = 'rgba(40,63,99,0.28)';
+    ctx.strokeStyle = 'rgba(46,42,36,0.55)';
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
     ctx.textAlign = 'center'; ctx.fillText(String(t), x, cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#9db1cd'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#b6ad9e'; ctx.textAlign = 'center';
   ctx.fillText('shield areal density  (g/cm²)', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose-equivalent  (mSv/day)', 0, 0); ctx.restore();
@@ -523,7 +542,7 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   // (H·(1±bandRel); input propagation only — the un-modeled-secondaries gap is separate).
   if (bandRel > 0) {
     const pts = curves[state.material]!;
-    ctx.fillStyle = 'rgba(0, 212, 255, 0.09)';
+    ctx.fillStyle = 'rgba(255, 176, 46, 0.13)';
     ctx.beginPath();
     pts.forEach((p, i) => { const x = xOf(p.t); const y = yOf(Math.min(p.H * (1 + bandRel), hMax)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
     for (let i = pts.length - 1; i >= 0; i--) {
@@ -552,11 +571,11 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   const markT = state.singleLayer ? state.thickness : state.thickness + state.layer2.thickness;
   const mx = xOf(Math.min(markT, tMax));
   const my = yOf(rd.H);
-  ctx.strokeStyle = 'rgba(231,240,255,0.45)';
+  ctx.strokeStyle = 'rgba(244,239,230,0.45)';
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(mx, pad.t); ctx.lineTo(mx, pad.t + plotH); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#e7f0ff';
+  ctx.fillStyle = '#f4efe6';
   ctx.beginPath(); ctx.arc(mx, my, 4.5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = TRACE[state.material]; ctx.lineWidth = 2; ctx.stroke();
 
@@ -578,7 +597,7 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, totalH);
-  if (caption) { ctx.fillStyle = '#0d1526'; ctx.fillRect(0, 0, cssW, totalH); }
+  if (caption) { ctx.fillStyle = '#191714'; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 56, r: 16, t: 18, b: 36 };
   const plotW = cssW - pad.l - pad.r;
@@ -594,19 +613,19 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
   const xOf = (d: number) => pad.l + (d / days) * plotW;
   const yOf = (sv: number) => pad.t + plotH - (Math.min(sv, yMax) / yMax) * plotH;
 
-  ctx.font = '11px ui-monospace, monospace';
+  ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   const ystep = yMax > 0.5 ? 0.1 : 0.02;
   for (let v = 0; v <= yMax + 1e-9; v += ystep) {
     const y = yOf(v);
-    ctx.strokeStyle = 'rgba(40,63,99,0.4)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = 'rgba(46,42,36,0.8)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
+    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
   }
   const xstep = days <= 30 ? 5 : days <= 200 ? 30 : 60;
   for (let d = 0; d <= days + 1e-9; d += xstep) {
-    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
+    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#9db1cd'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#b6ad9e'; ctx.textAlign = 'center';
   ctx.fillText('mission day', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('cumulative dose-equivalent  (Sv)', 0, 0); ctx.restore();
@@ -619,27 +638,27 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
     ctx.setLineDash([]);
     ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(label, pad.l + 6, y - 5);
   };
-  refLine(ANNUAL, '#ff9f43', 'Annual Limit (50 mSv) · NCRP occupational');
-  refLine(CAREER, '#ff5a5a', 'NASA Career Limit (600 mSv)');
+  refLine(ANNUAL, '#8d8474', 'Annual Limit (50 mSv) · NCRP occupational');
+  refLine(CAREER, '#e4573d', 'NASA Career Limit (600 mSv)');
 
   // cumulative-dose line (straight, constant rate)
-  ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.6;
+  ctx.strokeStyle = '#ffb02e'; ctx.lineWidth = 2.6;
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(0)); ctx.lineTo(xOf(days), yOf(totalSv)); ctx.stroke();
-  ctx.fillStyle = '#e7f0ff';
+  ctx.fillStyle = '#f4efe6';
   ctx.beginPath(); ctx.arc(xOf(days), yOf(totalSv), 4, 0, Math.PI * 2); ctx.fill();
 
   if (rate > 0 && totalSv > CAREER) {
     const crossDay = (CAREER * 1000) / rate; // cumulative = 600 mSv
     if (crossDay <= days) {
       const x = xOf(crossDay);
-      ctx.strokeStyle = 'rgba(255,90,90,0.85)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(228,87,61,0.9)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#ff5a5a'; ctx.textAlign = 'center'; ctx.font = 'bold 11px ui-monospace, monospace';
+      ctx.fillStyle = '#e4573d'; ctx.textAlign = 'center'; ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillText(`Limit reached on day ${Math.round(crossDay)}`, x, pad.t + plotH - 8);
     }
-    ctx.fillStyle = '#ff5a5a'; ctx.textAlign = 'right'; ctx.font = 'bold 12px sans-serif';
-    ctx.fillText('⚠ Exceeds NASA career limit', cssW - pad.r, pad.t + 2);
+    ctx.fillStyle = '#e4573d'; ctx.textAlign = 'right'; ctx.font = 'bold 12px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillText('EXCEEDS NASA CAREER LIMIT', cssW - pad.r, pad.t + 2);
   }
 
   if (caption) drawCaption(ctx, cssW, cssH, caption);
@@ -668,7 +687,7 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, totalH);
-  if (caption) { ctx.fillStyle = '#0d1526'; ctx.fillRect(0, 0, cssW, totalH); }
+  if (caption) { ctx.fillStyle = '#191714'; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 64, r: 16, t: 20, b: 40 };
   const plotW = cssW - pad.l - pad.r;
@@ -685,26 +704,26 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
     return pad.t + plotH - ((lv - expLo) / Y_DECADES) * plotH;
   };
 
-  ctx.font = '11px ui-monospace, monospace';
+  ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.lineWidth = 1;
   // y grid: one line per decade
   for (let ex = expLo; ex <= expHi; ex++) {
     const y = yOf(Math.pow(10, ex));
-    ctx.strokeStyle = 'rgba(40,63,99,0.5)';
+    ctx.strokeStyle = 'rgba(46,42,36,0.95)';
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'right';
+    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'right';
     ctx.fillText(`1e${ex}`, pad.l - 8, y + 4);
   }
   // x grid: decades 10 … 1e5
   for (let ex = 1; ex <= 5; ex++) {
     const T = Math.pow(10, ex);
     const x = xOf(T);
-    ctx.strokeStyle = 'rgba(40,63,99,0.28)';
+    ctx.strokeStyle = 'rgba(46,42,36,0.55)';
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
-    ctx.fillStyle = '#7f94b0'; ctx.textAlign = 'center';
+    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'center';
     ctx.fillText(fmtEnergy(T), x, cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#9db1cd'; ctx.textAlign = 'center';
+  ctx.fillStyle = '#b6ad9e'; ctx.textAlign = 'center';
   ctx.fillText('ion kinetic energy  (MeV/n, log)', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose contribution  (mSv/day per decade, log)', 0, 0); ctx.restore();
@@ -731,15 +750,15 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
     for (const k of SPEC_ION_KEYS) trace(spectrum.perIon[k] ?? [], SPEC_COLORS[k]!, 1.3, 0.8);
   }
   // total — the headline trace
-  trace(spectrum.total, '#e7f0ff', 2.4);
+  trace(spectrum.total, '#f4efe6', 2.4);
 
   // peak-contribution marker (drawn label instead of a hover tooltip — hand-rolled canvas)
   const px = xOf(spectrum.peakT);
-  ctx.strokeStyle = 'rgba(0,212,255,0.55)';
+  ctx.strokeStyle = 'rgba(255,176,46,0.6)';
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, pad.t + plotH); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#00d4ff'; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
+  ctx.fillStyle = '#ffb02e'; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
   ctx.fillText(`peak contribution: ${fmtEnergy(spectrum.peakT)} MeV/n`, px + (px > pad.l + plotW * 0.7 ? -6 : 6), pad.t + 12);
 
   if (caption) drawCaption(ctx, cssW, cssH, caption);
@@ -758,7 +777,7 @@ function renderSelfChecks(): void {
   $('selfCheckRows').innerHTML = selfChecks
     .map(
       (c) =>
-        `<div class="val-row ${c.pass ? 'pass' : 'fail'}"><span class="vr-icon">${c.pass ? '✔' : '✘'}</span>` +
+        `<div class="val-row ${c.pass ? 'pass' : 'fail'}"><span class="vr-icon">${c.pass ? 'OK' : 'FAIL'}</span>` +
         `<span>${c.name}</span><span class="vr-detail">${c.detail}</span></div>`,
     )
     .join('');
@@ -767,7 +786,7 @@ function renderSelfChecks(): void {
 function renderValidation(d: ValidationSummary): void {
   const f = (x: number, n = 2): string => x.toFixed(n);
   const check = (ok: boolean, label: string, detail: string): string =>
-    `<div class="val-row ${ok ? 'pass' : 'fail'}"><span class="vr-icon">${ok ? '✔' : '✘'}</span>` +
+    `<div class="val-row ${ok ? 'pass' : 'fail'}"><span class="vr-icon">${ok ? 'OK' : 'FAIL'}</span>` +
     `<span>${label}</span><span class="vr-detail">${detail}</span></div>`;
   const r = d.rad;
   const radRow = (q: string, model: string, meas: string, ratio: string): string =>
@@ -794,6 +813,7 @@ function renderValidation(d: ValidationSummary): void {
           <th>ratio</th></tr></thead>
         <tbody>
           ${radRow('absorbed dose [mGy/d]', f(r.model.D, 3), `${f(r.measured.D, 3)} ± ${d.radSigma.D}`, f(r.ratioD))}
+          <tr class="rt-annot"><td colspan="4">${f(r.ratioD)}× is a declared scope limit, not a defect: secondary charged particles and target fragments made in the shield are not transported. Measured cruise neutrons are only ~1–2% of the total, so the shortfall is charged secondaries.</td></tr>
           ${radRow('dose-equivalent [mSv/d]', f(r.model.H), `${f(r.measured.H)} ± ${d.radSigma.H}`, f(r.ratioH))}
           ${radRow('mean quality ⟨Q⟩', f(r.model.Q), `${f(r.measured.Q)} ± ${d.radSigma.Q}`, f(r.ratioQ))}
         </tbody>
@@ -817,7 +837,7 @@ function setHeroSubhead(series: CurveSeries): void {
   const el = $('heroSubhead');
   el.innerHTML =
     totalMsv > NASA_CAREER_LIMIT_MSV
-      ? `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — past NASA’s ${NASA_CAREER_LIMIT_MSV} mSv career limit, before you’ve landed.`
+      ? `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — past NASA’s ${NASA_CAREER_LIMIT_MSV} mSv career limit, on one round trip.`
       : `A ${months}-month Mars round trip delivers <span class="hero-x">~${sv.toFixed(2)} Sv</span> of cosmic radiation — ${Math.round((totalMsv / NASA_CAREER_LIMIT_MSV) * 100)}% of NASA’s ${NASA_CAREER_LIMIT_MSV} mSv career limit.`;
 }
 
@@ -1148,12 +1168,12 @@ $<HTMLButtonElement>('exportReport').addEventListener('click', () => {
 $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
   const btn = $<HTMLButtonElement>('runValidation');
   btn.disabled = true;
-  btn.textContent = '▶ RUNNING…';
+  btn.textContent = 'Running…';
   $('validationResults').innerHTML = '<p class="val-hint">Running live physics checks…</p>';
   worker.postMessage({ type: 'validate' });
   setTimeout(() => {
     btn.disabled = false;
-    btn.textContent = '▶ RUN VALIDATION';
+    btn.textContent = 'Run validation';
   }, 600);
 });
 (['exportDose', 'exportTimeline', 'exportSpectrum', 'exportSens'] as const).forEach((id) => {

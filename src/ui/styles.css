@@ -1,52 +1,59 @@
 /* ============================================================================
-   DOSEFIELD — Flight Deck
-   Deep-space mission-control theme. Single interface accent (electric cyan);
-   green / amber / red are reserved for go / caution / limit semantics only.
+   DOSEFIELD — instrument panel
+   Amber-phosphor console on warm graphite. ONE interface accent (amber); red is
+   a functional signal reserved for the 600 mSv career limit and failed checks —
+   it is never decoration. Surfaces are flat, separated by 1px hairlines; there
+   are no gradients, no glass, no shadows. Light belongs only to lamps.
    Token NAMES (--accent, --water, --warn, --dim, …) are part of the JS
    contract (main.ts sets inline styles with them) — do not rename.
+   Every foreground/surface pair below was measured, not eyeballed: the lowest
+   text ratio in the set is --dim on --panel at 4.84:1 (WCAG AA needs 4.5).
    ========================================================================== */
 
 :root {
   color-scheme: dark;
-  /* Neutral ramp: one hue family (~225°, faint chroma toward the accent per
-     tinted-neutral practice), five stops from void to ink. Hand-set values,
-     not a framework palette. Glow is reserved for things that are physically
-     lit: the status lamp, the live dose figure, active indicator dots. */
-  --bg: #0a0e1a; /* L≈7 void */
-  --panel: #0d1526; /* L≈10 surface */
-  --well: #060b16; /* L≈5 inset data well */
-  --edge: #1d2c4a; /* hairlines */
-  --edge-bright: #31476f; /* hover / primary-panel border */
-  --ink: #eaf4ff; /* headings, hero numerals */
-  --text: #c9d8ee; /* data values */
-  --body: #a4b8d6; /* prose — ≥4.5:1 on bg/panel */
-  --dim: #7a8fb2; /* labels — ≥4.5:1 on panel/well */
-  --accent: #00d4ff; /* electric cyan — interactive + live-data accent, nothing else */
-  --go: #46e06a; /* pass / ready (matches polyethylene trace) */
-  --amber: #ffb000; /* caution (matches aluminium trace) */
-  --warn: #ff5a5a; /* limit exceeded (matches canvas career line) */
-  --al: #ffb000;
-  --poly: #46e06a;
-  --water: #38bdf8;
-  --hydrogen: #ff79c6;
-  --methane: #a78bfa;
-  --mark: #e7f0ff;
-  --mono: "JetBrains Mono", "Consolas", "Roboto Mono", ui-monospace, monospace;
-  /* Briefing prose is set in a serif (Spectral): the written mission-report register,
-     a real contrast axis against the telemetry mono. No third family. */
-  --serif: "Spectral", "Georgia", "Times New Roman", serif;
+  /* Warm graphite ramp (hue ~40°, near-zero chroma) — the accent's own family,
+     so amber sits ON the surface rather than glowing off a blue one. */
+  --bg: #12110f; /* deck */
+  --panel: #191714; /* instrument face */
+  --well: #0c0b09; /* recessed data well */
+  --edge: #2e2a24; /* hairline dividers — decorative, never the only cue for a control */
+  --edge-bright: #6f6757; /* control outlines + hover — 3.20:1 on panel (WCAG 1.4.11) */
+  --ink: #f4efe6; /* headings, headline numerals — 15.62:1 on panel */
+  --text: #d9d2c6; /* data values — 11.91:1 */
+  --body: #b6ad9e; /* prose — 8.06:1 */
+  --dim: #8d8474; /* labels — 4.84:1, the floor of the set */
+  --accent: #ffb02e; /* amber phosphor — interactive + live data, nothing else. 9.80:1 */
+  --warn: #e4573d; /* FUNCTIONAL ONLY: limit exceeded / check failed. 4.88:1 */
+  /* Shield traces are an ORDERED series (H₂ < CH₄ < PE < water < Al), so they are
+     encoded as an ordered ramp — luminance falls monotonically 14.14 → 8.05 → 6.32
+     → 5.02 → 4.71 on --panel, hue rotates bone → straw → olive → steel → oxide.
+     Colour carries the ranking; it is not five arbitrary brand hues. */
+  --hydrogen: #efe4c8;
+  --methane: #d3a75a;
+  --poly: #86a35f;
+  --water: #5a8fa3;
+  --al: #b87061;
+  --mark: #f4efe6;
+  /* One superfamily, three registers. Plex Mono for every number (slashed zero —
+     a readout must not confuse 0 with O), Plex Sans Condensed for instrument
+     labelling, Plex Sans for the few paragraphs of running prose. */
+  --mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+  --ui: "IBM Plex Sans Condensed", "IBM Plex Sans", Arial Narrow, sans-serif;
+  --prose: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --r: 2px; /* the only radius. Bars and canvases are square; only lamps are round. */
 }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 button, input[type="range"] { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
 
+/* Flat deck. The old build painted two radial washes and an animated star field
+   behind everything; both were scenery, and scenery is what a marketing page
+   uses to fill space an instrument fills with data. Removed, not restyled. */
 html, body {
   margin: 0;
-  background:
-    radial-gradient(1100px 640px at 82% -12%, #0e2140 0%, transparent 62%),
-    radial-gradient(820px 560px at -8% 108%, #071d2b 0%, transparent 55%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: var(--mono);
   font-size: 13px;
@@ -54,33 +61,12 @@ html, body {
   min-height: 100vh;
 }
 
-/* star field — three drifting-depth layers, fixed behind everything */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background-image:
-    radial-gradient(1px 1px at 25% 18%, rgba(210, 232, 255, 0.9) 45%, transparent 55%),
-    radial-gradient(1px 1px at 68% 62%, rgba(210, 232, 255, 0.7) 45%, transparent 55%),
-    radial-gradient(1.5px 1.5px at 82% 28%, rgba(0, 212, 255, 0.55) 45%, transparent 55%),
-    radial-gradient(1px 1px at 12% 78%, rgba(210, 232, 255, 0.55) 45%, transparent 55%),
-    radial-gradient(1px 1px at 45% 42%, rgba(210, 232, 255, 0.4) 45%, transparent 55%);
-  background-size: 340px 340px, 260px 260px, 520px 520px, 420px 420px, 180px 180px;
-  opacity: 0.5;
-}
-@media (prefers-reduced-motion: no-preference) {
-  body::before { animation: twinkle 14s ease-in-out infinite alternate; }
-}
-@keyframes twinkle { from { opacity: 0.38; } to { opacity: 0.6; } }
-
-::selection { background: rgba(0, 212, 255, 0.3); color: var(--ink); }
+::selection { background: color-mix(in srgb, var(--accent) 32%, transparent); color: var(--ink); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 * { scrollbar-width: thin; scrollbar-color: var(--edge-bright) transparent; }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: var(--edge); border-radius: 5px; border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--edge-bright); border-radius: 0; border: 3px solid var(--bg); }
 ::-webkit-scrollbar-track { background: transparent; }
 
 #app { max-width: 1440px; margin: 0 auto; padding: 20px clamp(12px, 2.5vw, 30px) 36px; }
@@ -91,7 +77,8 @@ body::before {
   padding-bottom: 14px; border-bottom: 1px solid var(--edge);
 }
 .wordmark h1 {
-  margin: 0; font-size: 26px; letter-spacing: 0.34em; font-weight: 800; color: var(--ink);
+  margin: 0; font-family: var(--ui); font-size: 27px; letter-spacing: 0.26em;
+  font-weight: 600; color: var(--ink); text-transform: uppercase;
 }
 .subtitle { margin: 5px 0 0; font-size: 10.5px; color: var(--dim); letter-spacing: 0.14em; text-transform: uppercase; }
 .version { font-size: 10px; color: var(--accent); letter-spacing: 0.12em; font-weight: 600; vertical-align: super; }
@@ -101,61 +88,72 @@ body::before {
   font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim);
   text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color 0.15s, border-color 0.15s;
 }
-.site-nav a:hover { color: var(--accent); border-color: rgba(0, 212, 255, 0.5); }
+.site-nav a:hover { color: var(--accent); border-color: var(--accent); }
 .scope-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .scope-link:hover { color: var(--ink); }
+/* was a pill; a console status block is a rectangle with a lamp in it */
 .status-lamp {
   display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.18em; color: var(--dim);
-  padding: 6px 14px; border: 1px solid var(--edge); border-radius: 999px; background: var(--panel);
+  padding: 6px 14px; border: 1px solid var(--edge-bright); border-radius: var(--r); background: var(--well);
 }
-.status-lamp .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 10px currentColor; }
-.status-lamp.ready .dot { background: var(--go); }
-.status-lamp.busy .dot { background: var(--amber); animation: pulse 0.9s infinite; }
-@keyframes pulse { 50% { opacity: 0.35; } }
+/* the ONE place a glow is honest: this is a lamp, and lamps emit */
+.status-lamp .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 8px currentColor; }
+.status-lamp.ready .dot { background: var(--accent); }
+.status-lamp.busy .dot { background: var(--accent); animation: pulse 0.9s infinite; }
+@keyframes pulse { 50% { opacity: 0.3; } }
 
-/* ---- hero briefing -------------------------------------------------------- */
-.hero {
-  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.9fr); gap: 18px 0;
-  margin-top: 20px; align-items: start;
+/* ---- status band ----------------------------------------------------------
+   This replaces the old hero: a centred serif slogan in a 1.2fr/0.9fr marketing
+   split, with the descriptive paragraph given more room than any measurement.
+   An instrument opens with its readings, so the band is three cells of live
+   data on one rule — the mission statement is now one of them, at label size,
+   and the prose is folded away behind a summary for whoever wants it. */
+.statusband {
+  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+  margin-top: 16px; border: 1px solid var(--edge); border-radius: var(--r);
+  background: var(--panel);
 }
-/* the side column reads as a margin note: hairline rule, tighter measure */
-.hero-side { border-left: 1px solid var(--edge); padding-left: 26px; margin-left: 30px; }
+.sb-cell { padding: 11px 15px; min-width: 0; border-left: 1px solid var(--edge); }
+.sb-cell:first-child { border-left: none; }
+.sb-label { display: block; font-family: var(--ui); font-size: 9.5px; color: var(--dim); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 5px; }
 .hero-subhead {
-  font-family: var(--serif); font-size: clamp(19px, 2vw, 26px); font-weight: 600; line-height: 1.42;
-  color: var(--ink); margin: 2px 0 0; text-wrap: balance;
+  font-family: var(--ui); font-size: 15px; font-weight: 500; line-height: 1.45;
+  color: var(--ink); margin: 0; text-wrap: pretty;
 }
-.hero-subhead .hero-x { font-family: var(--mono); font-size: 0.88em; color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.hero-plain { font-family: var(--serif); font-size: 14px; line-height: 1.75; color: var(--body); margin: 0; max-width: 68ch; text-wrap: pretty; }
-.hero-scope { font-size: 10.5px; line-height: 1.7; color: var(--dim); margin: 10px 0 0; text-wrap: pretty; }
+.hero-subhead .hero-x { font-family: var(--mono); font-size: 0.92em; color: var(--warn); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.vs-val { font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; line-height: 1.45; }
+.vs-val .vs-ok { color: var(--accent); }
+.hero-scope { font-size: 10.5px; line-height: 1.7; color: var(--dim); margin: 9px 0 0; text-wrap: pretty; }
 .hero-num { color: var(--accent); font-variant-numeric: tabular-nums; }
-.valstrip { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
-.vs-item {
-  flex: 1 1 240px; min-width: 0; background: var(--well); border: 1px solid var(--edge); border-radius: 3px;
-  padding: 9px 13px; display: flex; flex-direction: column; gap: 4px;
+/* the briefing paragraph: available, not occupying the top of the instrument */
+.brief { margin-top: 7px; }
+.brief summary {
+  cursor: pointer; font-family: var(--ui); font-size: 10px; color: var(--dim);
+  letter-spacing: 0.14em; text-transform: uppercase; user-select: none; width: max-content;
 }
-.vs-label { font-size: 9.5px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
-.vs-val { font-size: 13.5px; color: var(--text); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.vs-val .vs-ok { color: var(--go); }
+.brief summary:hover { color: var(--text); }
+.brief[open] summary { color: var(--accent); margin-bottom: 8px; }
+.hero-plain { font-family: var(--prose); font-size: 13.5px; line-height: 1.7; color: var(--body); margin: 0; max-width: 74ch; text-wrap: pretty; }
 
 /* ---- preset top bar -------------------------------------------------------- */
 .preset-bar {
   display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   margin-top: 18px; padding: 8px 12px;
   background: var(--panel);
-  border: 1px solid var(--edge); border-radius: 4px;
+  border: 1px solid var(--edge); border-radius: var(--r);
 }
 .preset-title { font-size: 10px; color: var(--dim); letter-spacing: 0.2em; text-transform: uppercase; white-space: nowrap; }
 .preset-note { font-size: 10px; color: var(--dim); margin-left: auto; letter-spacing: 0.02em; }
 .presets { display: flex; gap: 6px; flex-wrap: wrap; }
 .presets button {
-  background: transparent; color: var(--dim); border: 1px solid transparent; border-radius: 7px;
+  background: transparent; color: var(--dim); border: 1px solid transparent; border-radius: var(--r);
   padding: 8px 14px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; cursor: pointer;
-  transition: color 0.15s, border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
 }
-.presets button:hover { color: var(--text); border-color: var(--edge-bright); }
+.presets button:hover { color: var(--text); border-color: var(--accent); }
 .presets button:active { transform: translateY(1px); }
 .presets button.active {
-  color: var(--accent); border-color: rgba(0, 212, 255, 0.55); background: rgba(0, 212, 255, 0.09);
+  color: var(--accent); border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent);
 }
 
 /* ---- deck grid ------------------------------------------------------------- */
@@ -178,22 +176,19 @@ body::before {
 .spectrum-panel canvas { width: 100%; height: auto; display: block; }
 .validation { grid-area: validation; }
 
-/* Surfaces are flat; hierarchy comes from density and border weight, not gradients.
-   Radius scale: 0 canvas · 2px controls · 3px wells · 4px panels · pill = lamp only. */
+/* Surfaces are flat: one radius (--r), one hairline weight, no gradient, no shadow.
+   Hierarchy comes from density and from which panel carries the brighter border.
+   The four decorative "avionics bezel ticks" that used to be drawn in the corners
+   of the readout and validation panels are gone — they were costume, not signal. */
 .panel {
   background: var(--panel);
-  border: 1px solid var(--edge); border-radius: 4px; padding: 15px 16px; position: relative; min-width: 0;
+  border: 1px solid var(--edge); border-radius: var(--r); padding: 15px 16px; position: relative; min-width: 0;
 }
 .controls { padding: 14px; }
+/* the live instrument is marked by a brighter frame, not by ornament */
 .readout { padding: 20px 22px; border-color: var(--edge-bright); }
-/* avionics bezel ticks — only on the two live instruments, not stamped on every panel */
-.readout::before, .readout::after, .validation::before, .validation::after {
-  content: ""; position: absolute; width: 11px; height: 11px; pointer-events: none; opacity: 0.4;
-}
-.readout::before, .validation::before { top: 5px; left: 5px; border-top: 1px solid var(--accent); border-left: 1px solid var(--accent); }
-.readout::after, .validation::after { bottom: 5px; right: 5px; border-bottom: 1px solid var(--accent); border-right: 1px solid var(--accent); }
 .panel h2 {
-  margin: 0 0 13px; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  margin: 0 0 13px; font-family: var(--ui); font-size: 11.5px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--dim); font-weight: 600;
 }
 .readout h2 { color: var(--accent); }
@@ -204,32 +199,34 @@ body::before {
 .control { margin-bottom: 18px; }
 .control > label { display: block; font-size: 10.5px; color: var(--dim); letter-spacing: 0.06em; margin-bottom: 8px; }
 .readback { color: var(--accent); font-weight: 600; font-variant-numeric: tabular-nums; }
-.total-line { padding: 9px 11px; background: var(--well); border: 1px solid var(--edge); border-radius: 3px; }
+.total-line { padding: 9px 11px; background: var(--well); border: 1px solid var(--edge); border-radius: var(--r); }
 .total-line label { margin: 0; }
-.layer-group { border: 1px solid var(--edge); border-radius: 3px; padding: 13px 12px 0; margin-bottom: 16px; background: rgba(6, 11, 22, 0.5); }
+.layer-group { border: 1px solid var(--edge); border-radius: var(--r); padding: 13px 12px 0; margin-bottom: 16px; background: color-mix(in srgb, var(--well) 55%, transparent); }
 .layer-group > .control:first-child > label { color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; font-size: 9.5px; }
 
-/* base segmented */
+/* base segmented — keys on a panel. Their outline is --edge-bright, not the --edge
+   hairline: 3.20:1 against the surface, so the key boundary itself meets WCAG 1.4.11
+   rather than leaning on the label to identify the control. */
 .segmented { display: flex; gap: 6px; flex-wrap: wrap; }
 .segmented button {
-  background: var(--well); color: var(--dim); border: 1px solid var(--edge); border-radius: 2px;
+  background: var(--well); color: var(--dim); border: 1px solid var(--edge-bright); border-radius: var(--r);
   padding: 8px; font-family: var(--mono); font-size: 10.5px; cursor: pointer; letter-spacing: 0.02em;
-  transition: border-color 0.15s, color 0.15s, background-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
 }
-.segmented button:hover { border-color: var(--edge-bright); color: var(--text); }
+.segmented button:hover { border-color: var(--accent); color: var(--text); }
 .segmented button:active { transform: translateY(1px); }
 .segmented button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .segmented button.active {
-  background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.6); color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: var(--accent); color: var(--accent);
 }
 
 /* rocker-switch variant (two options) */
-.switch { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--well); border: 1px solid var(--edge); border-radius: 3px; padding: 3px; }
-.switch button { display: flex; align-items: center; justify-content: center; gap: 7px; border: none; background: transparent; border-radius: 2px; padding: 8px 6px; }
-.switch button::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.3; flex: none; transition: opacity 0.15s, box-shadow 0.15s; }
+.switch { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; background: var(--well); border: 1px solid var(--edge-bright); border-radius: var(--r); padding: 3px; }
+.switch button { display: flex; align-items: center; justify-content: center; gap: 7px; border: none; background: transparent; border-radius: var(--r); padding: 8px 6px; }
+.switch button::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: 0.3; flex: none; transition: opacity 0.15s; }
 .switch button:hover { color: var(--text); }
-.switch button.active { background: rgba(0, 212, 255, 0.1); color: var(--accent); }
-.switch button.active::before { opacity: 1; box-shadow: 0 0 8px currentColor; }
+.switch button.active { background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); }
+.switch button.active::before { opacity: 1; }
 
 /* material element cards — card color == chart trace color */
 .matgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); gap: 6px; }
@@ -239,8 +236,8 @@ body::before {
   font-size: 9px; letter-spacing: 0.04em; line-height: 1.2;
 }
 .matgrid button::before {
-  content: ""; font-size: 15px; font-weight: 700; letter-spacing: 0; color: var(--mat);
-  font-variant-numeric: normal; opacity: 0.85;
+  content: ""; font-size: 15px; font-weight: 600; letter-spacing: 0; color: var(--mat);
+  font-variant-numeric: normal;
 }
 .matgrid button[data-mat="aluminum"] { --mat: var(--al); }
 .matgrid button[data-mat="aluminum"]::before { content: "Al"; }
@@ -256,110 +253,110 @@ body::before {
   border-color: var(--mat); color: var(--text);
   background: color-mix(in srgb, var(--mat) 11%, transparent);
 }
-.matgrid button.active::before { opacity: 1; }
 
-/* sliders — glowing energy fill */
+/* sliders — a fader on a track: flat fill, square handle, no glow ring */
 input[type="range"] {
-  -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; outline: none;
-  background: linear-gradient(90deg, #00637a, var(--accent) var(--fill, 50%), #101c33 var(--fill, 50%));
+  -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 0; outline: none;
+  background: linear-gradient(90deg, var(--accent) var(--fill, 50%), var(--edge) var(--fill, 50%));
 }
 input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; width: 17px; height: 17px; border-radius: 50%;
-  background: var(--well); border: 2px solid var(--accent); cursor: pointer;
-  box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.14);
+  -webkit-appearance: none; width: 9px; height: 20px; border-radius: 0;
+  background: var(--accent); border: none; cursor: pointer;
 }
 input[type="range"]::-moz-range-thumb {
-  width: 15px; height: 15px; border-radius: 50%; background: var(--well); border: 2px solid var(--accent);
-  cursor: pointer; box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.14);
+  width: 9px; height: 20px; border-radius: 0; background: var(--accent); border: none; cursor: pointer;
 }
 input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 .footnote { font-size: 10px; color: var(--dim); line-height: 1.65; margin: 18px 0 0; border-top: 1px dashed var(--edge); padding-top: 11px; }
 .range-ends { display: flex; justify-content: space-between; margin-top: 6px; font-size: 9px; color: var(--dim); letter-spacing: 0.02em; }
 
-/* ---- cockpit readout -------------------------------------------------------- */
+/* ---- readout ---------------------------------------------------------------- */
 .big-number { display: flex; align-items: baseline; gap: 10px; margin: 2px 0 16px; }
 .big-number #rateValue {
-  font-size: 68px; font-weight: 700; color: var(--ink); line-height: 1;
-  text-shadow: 0 0 24px rgba(0, 212, 255, 0.26); font-variant-numeric: tabular-nums;
+  font-size: 68px; font-weight: 600; color: var(--ink); line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: -0.01em;
 }
+/* The only motion left in the readout, and the brief's one justified case: when a
+   control changes the model, the figures that actually moved flash once. Applied
+   by main.ts (`flash()`), which compares the new string with the old one — an
+   unchanged number stays still, which is the whole point. */
+@media (prefers-reduced-motion: no-preference) {
+  .is-changed { animation: settle 0.42s ease-out; }
+}
+/* no 100% keyframe on purpose: the animation ends on the element's OWN colour,
+   so the band colours (nominal/caution/exceed) are never overwritten by it */
+@keyframes settle { from { color: var(--accent); } }
 .big-number .unit { font-size: 14px; color: var(--dim); }
 .unc-line { font-size: 10px; color: var(--dim); margin: -8px 0 14px; line-height: 1.6; font-variant-numeric: tabular-nums; text-wrap: pretty; }
 .sub-metrics { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
 .metric {
-  background: var(--well); border: 1px solid var(--edge); border-radius: 3px; padding: 10px 13px;
+  background: var(--well); border: 1px solid var(--edge); border-radius: var(--r); padding: 10px 13px;
   display: grid; grid-template-columns: 1fr auto auto; align-items: baseline; gap: 8px;
 }
 .m-label { font-size: 9.5px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
 .m-val { font-size: 21px; color: var(--text); font-variant-numeric: tabular-nums; }
 .m-unit { font-size: 9.5px; color: var(--dim); }
 /* mission-total band: nominal < 50% of the 600 mSv career limit ≤ caution ≤ 100% < exceed */
-.m-val[data-band="nominal"], .career-pct[data-band="nominal"] { color: var(--go); }
-.m-val[data-band="caution"], .career-pct[data-band="caution"] { color: var(--amber); }
+.m-val[data-band="nominal"], .career-pct[data-band="nominal"] { color: var(--text); }
+.m-val[data-band="caution"], .career-pct[data-band="caution"] { color: var(--accent); }
 .m-val[data-band="exceed"], .career-pct[data-band="exceed"] { color: var(--warn); }
 
 .career-head { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--dim); margin-bottom: 7px; }
 .career-pct { font-weight: 700; font-variant-numeric: tabular-nums; }
 .career-bar {
-  height: 13px; border: 1px solid var(--edge); border-radius: 2px; overflow: hidden;
+  height: 13px; border: 1px solid var(--edge-bright); border-radius: 0; overflow: hidden;
   background:
-    linear-gradient(90deg, transparent calc(50% - 1px), rgba(255, 176, 0, 0.35) calc(50% - 1px), rgba(255, 176, 0, 0.35) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(90deg, transparent calc(50% - 1px), color-mix(in srgb, var(--accent) 35%, transparent) calc(50% - 1px), color-mix(in srgb, var(--accent) 35%, transparent) calc(50% + 1px), transparent calc(50% + 1px)),
     var(--well);
 }
-.career-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--water)); transition: width 0.25s, background 0.25s; }
+.career-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s, background 0.25s; }
 .career-note { font-size: 10.5px; margin-top: 8px; min-height: 14px; line-height: 1.5; }
 
 /* ---- chart legend ------------------------------------------------------------ */
 .legend { display: flex; gap: 16px; margin-top: 11px; font-size: 10.5px; color: var(--dim); flex-wrap: wrap; }
 .lg { display: inline-flex; align-items: center; gap: 7px; }
-.lg::before { content: ""; width: 16px; height: 3px; border-radius: 2px; background: currentColor; }
+.lg::before { content: ""; width: 16px; height: 3px; border-radius: 0; background: currentColor; }
 .lg-mark::before { width: 8px; height: 8px; border-radius: 50%; }
 .lg-band { color: var(--dim); }
-.lg-band::before { height: 9px; border-radius: 1px; background: rgba(0, 212, 255, 0.18); box-shadow: none; }
+.lg-band::before { height: 9px; border-radius: 0; background: color-mix(in srgb, var(--accent) 20%, transparent); }
 .lg-al { color: var(--al); } .lg-poly { color: var(--poly); } .lg-water { color: var(--water); } .lg-h { color: var(--hydrogen); } .lg-ch4 { color: var(--methane); } .lg-mark { color: var(--mark); }
 
 /* ---- dose spectrum chart (v2.2) ---- */
 .spec-note { font-size: 10px; color: var(--dim); margin: -6px 0 12px; line-height: 1.6; text-wrap: pretty; }
 #specIonLegend { display: inline-flex; gap: 14px; }
-.lg-spec-h { color: #4da3ff; } .lg-spec-he { color: #46e06a; } .lg-spec-c { color: #ffb000; } .lg-spec-o { color: #38bdf8; } .lg-spec-fe { color: #ff5a5a; }
+.lg-spec-h { color: #efe4c8; } .lg-spec-he { color: #d3a75a; } .lg-spec-c { color: #86a35f; } .lg-spec-o { color: #5a8fa3; } .lg-spec-fe { color: #b87061; }
 .legend .tool-btn { margin-left: auto; padding: 5px 10px; }
-.tool-btn.active { border-color: rgba(0, 212, 255, 0.6); color: var(--accent); background: rgba(0, 212, 255, 0.09); }
+.tool-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
 
 /* ---- validation console -------------------------------------------------------- */
 .run-btn {
-  background: rgba(0, 212, 255, 0.09); color: var(--accent); border: 1px solid rgba(0, 212, 255, 0.6);
-  border-radius: 2px; padding: 10px 22px; font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.14em;
-  cursor: pointer; transition: background-color 0.15s, box-shadow 0.15s;
+  background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--accent); border: 1px solid var(--accent);
+  border-radius: var(--r); padding: 10px 22px; font-family: var(--ui); font-size: 12px; letter-spacing: 0.16em;
+  text-transform: uppercase; cursor: pointer; transition: background-color 0.15s;
 }
-.run-btn:hover { background: rgba(0, 212, 255, 0.18); }
+.run-btn:hover { background: color-mix(in srgb, var(--accent) 18%, transparent); }
 .run-btn:active { transform: translateY(1px); }
 .run-btn:disabled { opacity: 0.5; cursor: wait; }
 
 .val-results {
-  margin-top: 13px; padding: 12px 13px; background: var(--well); border: 1px solid var(--edge); border-radius: 3px;
+  margin-top: 13px; padding: 12px 13px; background: var(--well); border: 1px solid var(--edge); border-radius: var(--r);
   display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: 8px 18px; align-items: start;
 }
+/* No terminal theatre. The previous build blinked a caret glyph and slid the four
+   validation rows in on a 0.02/0.2/0.38/0.56s stagger, so a check that had
+   already finished pretended to still be typing. Results appear when they exist. */
 .val-hint { font-size: 11px; color: var(--dim); margin: 0; grid-column: 1 / -1; }
-.val-hint::after { content: "▊"; color: var(--accent); margin-left: 5px; }
-@media (prefers-reduced-motion: no-preference) {
-  .val-hint::after { animation: caret 1.1s steps(2) infinite; }
-  .val-results > * { animation: term-in 0.3s ease-out both; }
-  .val-results > :nth-child(1) { animation-delay: 0.02s; }
-  .val-results > :nth-child(2) { animation-delay: 0.2s; }
-  .val-results > :nth-child(3) { animation-delay: 0.38s; }
-  .val-results > :nth-child(4) { animation-delay: 0.56s; }
-}
-@keyframes caret { 50% { opacity: 0; } }
-@keyframes term-in { from { opacity: 0; transform: translateX(-7px); } }
 
-.val-row { grid-column: 1; display: grid; grid-template-columns: 18px 1fr auto; align-items: baseline; gap: 9px; font-size: 12px; padding: 5px 2px; }
-.val-row .vr-icon { font-size: 12px; }
-.val-row.pass .vr-icon { color: var(--go); }
+.val-row { grid-column: 1; display: grid; grid-template-columns: 34px 1fr auto; align-items: baseline; gap: 9px; font-size: 12px; padding: 5px 2px; }
+/* status is a word, not a dingbat — and it is the non-colour cue for pass/fail */
+.val-row .vr-icon { font-size: 9.5px; letter-spacing: 0.08em; font-weight: 600; }
+.val-row.pass .vr-icon { color: var(--dim); }
 .val-row.fail .vr-icon { color: var(--warn); }
 .val-row.pending .vr-icon { color: var(--dim); }
 .val-row .vr-detail { color: var(--dim); font-size: 10.5px; font-variant-numeric: tabular-nums; text-align: right; }
 
-.rad-box { grid-column: 2; grid-row: 1 / span 3; border: 1px solid var(--edge); border-radius: 3px; padding: 11px 12px; background: rgba(13, 21, 38, 0.55); }
+.rad-box { grid-column: 2; grid-row: 1 / span 3; border: 1px solid var(--edge); border-radius: var(--r); padding: 11px 12px; background: color-mix(in srgb, var(--well) 60%, transparent); }
 .rad-kicker { font-size: 10px; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 6px; }
 .rad-note { font-size: 10px; color: var(--dim); margin-bottom: 8px; line-height: 1.6; text-wrap: pretty; }
 .rad-table { width: 100%; border-collapse: collapse; font-size: 11.5px; }
@@ -369,18 +366,23 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .rad-table td.rt-q { text-align: left; color: var(--dim); font-variant-numeric: normal; }
 .rad-table td.rt-meas { color: var(--dim); }
 .rad-table td.rt-ratio { color: var(--accent); }
-.rad-table tbody tr + tr td { border-top: 1px solid rgba(29, 44, 74, 0.6); }
-.limitations { grid-column: 1; font-family: var(--serif); font-size: 13px; line-height: 1.7; color: var(--dim); max-width: 68ch; text-wrap: pretty; padding-top: 4px; }
+.rad-table tbody tr + tr td { border-top: 1px solid color-mix(in srgb, var(--edge) 70%, transparent); }
+/* the scope limit is labelled where the number is, not only in the paragraph below */
+.rad-table tr.rt-annot td {
+  text-align: left; color: var(--dim); font-size: 10px; line-height: 1.6; padding: 6px 7px 8px;
+  border-top: none; border-left: 2px solid var(--warn); font-variant-numeric: normal; text-wrap: pretty;
+}
+.limitations { grid-column: 1; font-family: var(--prose); font-size: 13px; line-height: 1.7; color: var(--dim); max-width: 68ch; text-wrap: pretty; padding-top: 4px; }
 .limitations .lim-head { color: var(--text); font-weight: 600; }
 .limitations .lim-warn { color: var(--warn); }
 
 /* ---- v2.1 tools: copy-link / export + organ dose estimates ------------------- */
 .tool-btn {
-  background: var(--well); color: var(--dim); border: 1px solid var(--edge); border-radius: 2px;
+  background: var(--well); color: var(--dim); border: 1px solid var(--edge-bright); border-radius: var(--r);
   padding: 7px 13px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.tool-btn:hover { border-color: var(--edge-bright); color: var(--text); }
+.tool-btn:hover { border-color: var(--accent); color: var(--text); }
 .tool-btn:active { transform: translateY(1px); }
 .readout-tools { margin-top: 14px; display: flex; gap: 8px; }
 .chart-export { position: absolute; top: 11px; right: 12px; padding: 5px 10px; }
@@ -397,10 +399,10 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .organ-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; font-size: 10.5px; }
 .o-name { color: var(--text); }
 .o-nums { color: var(--dim); font-variant-numeric: tabular-nums; }
-.organ-bar { height: 8px; border: 1px solid var(--edge); border-radius: 2px; background: var(--well); overflow: hidden; margin-top: 5px; }
+.organ-bar { height: 8px; border: 1px solid var(--edge); border-radius: 0; background: var(--well); overflow: hidden; margin-top: 5px; }
 .organ-fill { height: 100%; width: 0%; transition: width 0.25s; }
-.organ-fill[data-band="nominal"] { background: var(--go); }
-.organ-fill[data-band="caution"] { background: var(--amber); }
+.organ-fill[data-band="nominal"] { background: var(--edge-bright); }
+.organ-fill[data-band="caution"] { background: var(--accent); }
 .organ-fill[data-band="exceed"] { background: var(--warn); }
 .organ-limit { font-size: 9.5px; color: var(--dim); margin-top: 4px; font-variant-numeric: tabular-nums; }
 .organ-foot { margin-top: 13px; }
@@ -413,7 +415,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 }
 .selfchecks summary:hover { color: var(--text); }
 .sc-sum { text-transform: none; letter-spacing: 0.02em; font-variant-numeric: tabular-nums; }
-.sc-sum[data-state="pass"] { color: var(--go); }
+.sc-sum[data-state="pass"] { color: var(--accent); }
 .sc-sum[data-state="fail"] { color: var(--warn); }
 .selfcheck-rows { margin-top: 10px; display: flex; flex-direction: column; gap: 2px; }
 .sc-foot { margin-top: 11px; }
@@ -424,7 +426,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
   width: 11px; height: 11px; border-radius: 50%;
   background: var(--dim); border: 1px solid var(--edge-bright);
 }
-.selfcheck-lamp[data-state="pass"] { background: var(--go); box-shadow: 0 0 9px var(--go); border-color: transparent; }
+.selfcheck-lamp[data-state="pass"] { background: var(--accent); border-color: transparent; }
 .selfcheck-lamp[data-state="fail"] { background: var(--warn); box-shadow: 0 0 9px var(--warn); border-color: transparent; }
 @media (prefers-reduced-motion: no-preference) {
   .selfcheck-lamp[data-state="fail"] { animation: pulse 0.9s infinite; }
@@ -432,21 +434,21 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 
 /* ---- Methods & Limitations page (rendered from METHODS.md + README) ----------- */
 .doc-page {
-  max-width: 84ch; margin: 26px auto 0; font-family: var(--serif); font-size: 14.5px;
+  max-width: 84ch; margin: 26px auto 0; font-family: var(--prose); font-size: 14.5px;
   line-height: 1.75; color: var(--body); text-wrap: pretty;
 }
-.doc-page h1 { font-family: var(--mono); font-size: 21px; letter-spacing: 0.06em; color: var(--ink); margin: 0 0 14px; }
-.doc-page h2 { font-family: var(--mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 34px 0 12px; }
-.doc-page h4 { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 34px 0 12px; }
+.doc-page h1 { font-family: var(--ui); font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink); margin: 0 0 14px; }
+.doc-page h2 { font-family: var(--ui); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 34px 0 12px; }
+.doc-page h4 { font-family: var(--ui); font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin: 34px 0 12px; }
 .doc-page p { margin: 0 0 14px; }
 .doc-page a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .doc-page strong { color: var(--text); }
 .doc-page ul, .doc-page ol { margin: 0 0 14px; padding-left: 22px; }
 .doc-page li { margin-bottom: 7px; }
-.doc-page code { font-family: var(--mono); font-size: 0.86em; color: var(--text); background: var(--well); padding: 1px 5px; border-radius: 2px; }
+.doc-page code { font-family: var(--mono); font-size: 0.86em; color: var(--text); background: var(--well); padding: 1px 5px; border-radius: var(--r); }
 .doc-page pre {
   font-family: var(--mono); font-size: 12px; line-height: 1.7; color: var(--text);
-  background: var(--well); border: 1px solid var(--edge); border-radius: 3px;
+  background: var(--well); border: 1px solid var(--edge); border-radius: var(--r);
   padding: 12px 14px; overflow-x: auto; margin: 0 0 14px;
 }
 .doc-page pre code { background: none; padding: 0; }
@@ -458,7 +460,7 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
   text-align: left; padding: 6px 9px; color: var(--dim); font-size: 10px; text-transform: uppercase;
   letter-spacing: 0.06em; font-weight: 400; border-bottom: 1px solid var(--edge-bright); white-space: nowrap;
 }
-.doc-page td { padding: 7px 9px; border-bottom: 1px solid rgba(29, 44, 74, 0.6); color: var(--text); vertical-align: top; font-variant-numeric: tabular-nums; }
+.doc-page td { padding: 7px 9px; border-bottom: 1px solid color-mix(in srgb, var(--edge) 70%, transparent); color: var(--text); vertical-align: top; font-variant-numeric: tabular-nums; }
 .doc-page td strong { color: var(--accent); }
 .doc-page hr { border: none; border-top: 1px dashed var(--edge); margin: 30px 0; }
 .doc-page #limitations { scroll-margin-top: 20px; }
@@ -471,10 +473,9 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
   font-size: 10px; color: var(--dim); line-height: 1.7; letter-spacing: 0.02em;
 }
 .badge {
-  flex: none; padding: 6px 12px; border: 1px solid rgba(0, 212, 255, 0.4); border-radius: 3px;
+  flex: none; padding: 6px 12px; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: var(--r);
   color: var(--accent); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
 }
-.badge::before { content: "✦ "; }
 
 /* provenance footer strip — build-time facts only, deliberately quiet */
 .provenance { margin: 10px 0 0; font-size: 9.5px; color: var(--dim); letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
@@ -482,9 +483,12 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .provenance a:hover { color: var(--accent); }
 
 /* ---- motion --------------------------------------------------------------------
-   No entrance choreography: instruments don't animate in, they are already on.
-   Motion belongs to the things that are alive — the console types its checks,
-   the caret and status lamp blink, the star field barely breathes. */
+   Three moving things, each earning it: the status lamp pulses while the worker is
+   busy, the self-check lamp pulses when an invariant has actually failed, and a
+   readout figure flashes once when a control changed it (.is-changed). Everything
+   else — the star field, the caret, the staggered console rows, the entrance
+   choreography — has been deleted rather than slowed down. Hover states change
+   colour only; nothing lifts, scales, or blooms. */
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -510,12 +514,13 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
     grid-template-columns: 1fr;
     grid-template-areas: "config" "readout" "chart" "timeline" "spectrum" "validation";
   }
-  .hero { grid-template-columns: 1fr; gap: 18px; }
-  .hero-side { border-left: none; padding-left: 0; margin-left: 0; border-top: 1px solid var(--edge); padding-top: 16px; }
+  .statusband { grid-template-columns: 1fr; }
+  .sb-cell { border-left: none; border-top: 1px solid var(--edge); }
+  .sb-cell:first-child { border-top: none; }
   .big-number #rateValue { font-size: 52px; }
   .val-results { grid-template-columns: 1fr; }
   .rad-box { grid-column: 1; grid-row: auto; }
-  .val-row { grid-template-columns: 18px 1fr; }
+  .val-row { grid-template-columns: 34px 1fr; }
   .val-row .vr-detail { grid-column: 2; text-align: left; }
   .preset-note { margin-left: 0; flex-basis: 100%; }
 }

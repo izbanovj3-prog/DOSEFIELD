@@ -8,7 +8,7 @@
       name="description"
       content="Scientifically-honest 1D deep-space radiation dose &amp; shielding model — GCR ion spectra to dose-equivalent behind spacecraft shielding, validated against NIST PSTAR and NASA MSL/RAD."
     />
-    <meta name="theme-color" content="#0a0e1a" />
+    <meta name="theme-color" content="#12110f" />
     <meta property="og:title" content="DOSEFIELD · Deep-Space Dosimeter" />
     <meta
       property="og:description"
@@ -18,13 +18,13 @@
     <meta property="og:url" content="https://izbanovj3-prog.github.io/DOSEFIELD/" />
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0e1a'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%2300d4ff'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='%2300d4ff' stroke-opacity='.55' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%2300d4ff' stroke-opacity='.22' stroke-width='2'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='2' fill='%2312110f'/%3E%3Ccircle cx='16' cy='16' r='3.2' fill='%23ffb02e'/%3E%3Ccircle cx='16' cy='16' r='8.5' fill='none' stroke='%23ffb02e' stroke-opacity='.55' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='%23ffb02e' stroke-opacity='.22' stroke-width='2'/%3E%3C/svg%3E"
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700;800&family=Spectral:wght@400;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;600&display=swap"
     />
     <link rel="stylesheet" href="/src/ui/styles.css" />
   </head>
@@ -41,35 +41,37 @@
         </div>
       </header>
 
-      <section class="hero" aria-label="Mission briefing">
-        <div class="hero-main">
+      <section class="statusband" id="valStrip" aria-label="Standing readings" aria-live="polite">
+        <div class="sb-cell">
+          <span class="sb-label">Default mission</span>
           <p class="hero-subhead" id="heroSubhead">Computing the default-mission dose…</p>
-          <div class="valstrip" id="valStrip" aria-live="polite">
-            <div class="vs-item">
-              <span class="vs-label">Stopping power vs NIST PSTAR (≥10&nbsp;MeV)</span>
-              <span class="vs-val" id="vsNist">—</span>
-            </div>
-            <div class="vs-item">
-              <span class="vs-label">Cruise dose-equivalent vs NASA MSL/RAD</span>
-              <span class="vs-val" id="vsRad">—</span>
-            </div>
-          </div>
         </div>
-        <div class="hero-side">
-          <p class="hero-plain">
-            DOSEFIELD turns galactic-cosmic-ray ion spectra into absorbed dose and dose-equivalent
-            behind spacecraft shielding, from first principles — Bethe–Bloch stopping power, ICRP-60
-            quality factors, a cited GCR model. Every constant is sourced and cited, nothing is tuned
-            to the answer, and the result is validated against NASA’s MSL/RAD Mars-cruise measurement.
-          </p>
-          <p class="hero-scope">
-            Deterministic 1-D slab · stopping power within <span class="hero-num" id="heroNist">—</span>
-            of NIST PSTAR (≥10&nbsp;MeV) · integral cruise dose within ~2× of MSL/RAD · primaries + simplified
-            Bradt–Peters fragmentation, no secondary-neutron transport —
-            <a class="scope-link" href="./methods.html#limitations">full methods &amp; limitations</a>; not a substitute for HZETRN / OLTARIS.
-          </p>
+        <div class="sb-cell">
+          <span class="sb-label">Stopping power vs NIST PSTAR (≥10&nbsp;MeV)</span>
+          <span class="vs-val" id="vsNist">—</span>
+        </div>
+        <div class="sb-cell">
+          <span class="sb-label">Cruise dose-equivalent vs NASA MSL/RAD</span>
+          <span class="vs-val" id="vsRad">—</span>
         </div>
       </section>
+
+      <p class="hero-scope">
+        Deterministic 1-D slab · stopping power within <span class="hero-num" id="heroNist">—</span>
+        of NIST PSTAR (≥10&nbsp;MeV) · integral cruise dose within ~2× of MSL/RAD · primaries + simplified
+        Bradt–Peters fragmentation, no secondary-neutron transport —
+        <a class="scope-link" href="./methods.html#limitations">full methods &amp; limitations</a>; not a substitute for HZETRN / OLTARIS.
+      </p>
+
+      <details class="brief">
+        <summary>What this instrument computes</summary>
+        <p class="hero-plain">
+          DOSEFIELD turns galactic-cosmic-ray ion spectra into absorbed dose and dose-equivalent
+          behind spacecraft shielding, from first principles — Bethe–Bloch stopping power, ICRP-60
+          quality factors, a cited GCR model. Every constant is sourced and cited, nothing is tuned
+          to the answer, and the result is validated against NASA’s MSL/RAD Mars-cruise measurement.
+        </p>
+      </details>
 
       <nav class="preset-bar" aria-label="Mission presets">
         <span class="preset-title">Mission preset</span>
@@ -79,7 +81,7 @@
           <button data-preset="artemis-transit" aria-pressed="false">Artemis Transit</button>
           <button data-preset="custom" class="active" aria-pressed="true">Custom</button>
         </div>
-        <button id="copyLink" class="tool-btn" title="Copy a shareable link to this exact configuration">⧉ Copy link</button>
+        <button id="copyLink" class="tool-btn" title="Copy a shareable link to this exact configuration">Copy link</button>
         <span class="preset-note">illustrative configs — not spacecraft specs</span>
       </nav>
 
@@ -213,18 +215,18 @@
               construction (constant GCR rate, no solar-cycle variation). Solar modulation W has no row
               because its effect requires a full recompute — drag the W slider to see it live.
             </p>
-            <button id="exportSens" class="tool-btn" title="Download the sensitivity comparison as a print-resolution PNG">⬇ PNG (print)</button>
+            <button id="exportSens" class="tool-btn" title="Download the sensitivity comparison as a print-resolution PNG">PNG · print</button>
           </details>
 
           <div class="readout-tools">
-            <button id="exportReport" class="tool-btn" title="Download this configuration and its computed doses as a plain-text report">⬇ Export report</button>
+            <button id="exportReport" class="tool-btn" title="Download this configuration and its computed doses as a plain-text report">Export report</button>
           </div>
         </section>
 
         <!-- CHART -->
         <section class="panel chart">
           <h2>Dose-Equivalent vs Shield Areal Density</h2>
-          <button id="exportDose" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">⬇ PNG</button>
+          <button id="exportDose" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">PNG · print</button>
           <canvas
             id="chart"
             width="900"
@@ -246,7 +248,7 @@
         <!-- TIMELINE (v2.0) -->
         <section class="panel timeline-panel">
           <h2>Cumulative Dose Over Mission</h2>
-          <button id="exportTimeline" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">⬇ PNG</button>
+          <button id="exportTimeline" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">PNG · print</button>
           <canvas
             id="timeline"
             width="900"
@@ -259,7 +261,7 @@
         <!-- DOSE SPECTRUM (v2.2) -->
         <section class="panel spectrum-panel">
           <h2>Dose Rate Contribution by Ion Energy</h2>
-          <button id="exportSpectrum" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">⬇ PNG</button>
+          <button id="exportSpectrum" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">PNG · print</button>
           <p class="spec-note">Incident GCR spectrum (before shielding) · dose-equivalent contribution per decade of ion energy, dH/dlog₁₀T · updates with solar modulation W · its integral over the axis equals the free-space dose rate (verified to &lt;0.01%)</p>
           <canvas
             id="spectrum"
@@ -284,7 +286,7 @@
         <!-- VALIDATION -->
         <section class="panel validation">
           <h2>Validation Suite</h2>
-          <button id="runValidation" class="run-btn">▶ RUN VALIDATION</button>
+          <button id="runValidation" class="run-btn">Run validation</button>
           <div id="validationResults" class="val-results">
             <p class="val-hint">Runs the live physics checks behind this model.</p>
           </div>
