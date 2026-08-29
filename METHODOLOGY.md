@@ -301,5 +301,6 @@ npm run report              # regenerates report/DOSEFIELD_report.md + plots
 npm run verify:deployed     # UI-path values vs report values
 ```
 
-All of these except `verify:deployed` and `report` run in CI on every push
-(`.github/workflows/ci.yml`).
+Everything except `npm run report` runs in CI on every push (`.github/workflows/ci.yml`), including
+`verify:deployed` — so a number that drifts between the app and the report fails the build rather
+than waiting to be noticed.

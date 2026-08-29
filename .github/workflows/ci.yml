@@ -46,3 +46,12 @@ jobs:
 
       - name: Physics validation — simplified fragmentation
         run: npm run validate:phase5
+
+      # Capstone: the values the UI computes must equal the values the report publishes.
+      # It recomputes both sides from the same physics functions (the UI path at the worker's
+      # perDecade = 50, the report at its default) and exits non-zero on any mismatch, so a
+      # number that drifts between the app and the report now fails the build. Despite the
+      # script name it makes no network request and reads no build output — it is a pure
+      # recomputation and needs nothing beyond `npm ci`.
+      - name: Integrity cross-check — UI compute path vs published report values
+        run: npm run verify:deployed
