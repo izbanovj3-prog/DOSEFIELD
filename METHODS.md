@@ -125,7 +125,7 @@ push by CI.
 ## 9. Reproduction commands
 
     npm install
-    npm run typecheck && npm test      # 111 tests, incl. the PSTAR data-driven suite
+    npm run typecheck && npm test      # 137 tests, incl. the PSTAR data-driven suite
     npm run validate:phase1..5         # headless PASS/FAIL validation gates
     npm run report                     # regenerates report/DOSEFIELD_report.md + plots
 

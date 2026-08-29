@@ -7,7 +7,7 @@ physics, with no parameter tuned to the answer.**
 ### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
 [![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
-&nbsp; CI runs typecheck · 111 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
+&nbsp; CI runs typecheck · 137 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** on every push.
 
 > ### The headline
 > **A Mars round-trip exceeds NASA's 600 mSv career radiation limit.** NASA's MSL/RAD instrument
@@ -19,7 +19,10 @@ physics, with no parameter tuned to the answer.**
 
 **Proof, not visuals.** The full validation — NIST agreement, the RAD comparison with an honest
 error discussion, and a Limitations section — is the auto-generated report:
-**[`report/DOSEFIELD_report.md`](report/DOSEFIELD_report.md)** &nbsp;·&nbsp; plots:
+**[`report/DOSEFIELD_report.md`](report/DOSEFIELD_report.md)**. For the method itself:
+[`METHODS.md`](METHODS.md) has the equations and a worked example you can check by hand;
+[`METHODOLOGY.md`](METHODOLOGY.md) has the provenance ledger (what is cited vs. implemented here),
+the validation results, and where this model sits relative to published work &nbsp;·&nbsp; plots:
 [NIST](report/plots/nist_validation.png) ·
 [shielding curve](report/plots/shielding_curve.png) ·
 [RAD comparison](report/plots/rad_comparison.png) ·
@@ -59,7 +62,9 @@ a few percent near 1 MeV, where the Bethe formula reaches its low-energy limit. 
 honestly rather than tuning it away. Nuclear (elastic) stopping is excluded — it is <0.1% of
 the total above 1 MeV — so we compare against PSTAR's *electronic* stopping-power column.
 
-**Result:** stopping power 30/30 within a few % (≤1.55% above 10 MeV); CSDA range 27/27.
+**Result:** stopping power **50/50** points within a few % (≤1.55% above 10 MeV, ≤4.03% down to
+1 MeV); CSDA range increment **45/45** (≤2.26% above 10 MeV). Counts are over all five shipped
+materials — `npm run validate:phase1` prints them.
 
 ### Phase 2 — GCR spectrum → dose → LET → Q(LET) → dose-equivalent
 
@@ -192,7 +197,7 @@ labeled where it matters.
 | Secondary neutrons not transported | dose **under**-predicted | small: 6 ± 2 µGy/day, 30 ± 10 µSv/day measured in-cruise (~1–2% of totals) | Köhler et al. 2015 |
 | No fragmentation softening of HZE LET (primaries mode) | ⟨Q⟩ **over**-predicted | 4.78 vs 3.82 measured (1.25×, computed); Phase 5 moves it to 4.41 | this work vs Zeitlin et al. 2013 |
 | Shell, Barkas (z³), Bloch (z⁴) corrections omitted | stopping power error grows at low E | ≤1.55% (≥10 MeV), ≤4.03% (all E ≥1 MeV) — computed vs PSTAR every CI run | NIST PSTAR |
-| High-Z shield materials excluded | n/a (deliberately not offered) | lead/titanium failed validation at 50.7%/22% — rejected, not shipped | this work vs NIST PSTAR |
+| High-Z shield materials excluded | n/a (deliberately not offered) | lead and titanium were tested against PSTAR during material selection and **failed by a wide margin** — rejected, not shipped. The exact percentages are **not reproducible from this repository** (no Pb/Ti table in `data/pstar/`, no test), so they are not quoted; the check would have to be rerun with the tables pasted in. | this work vs NIST PSTAR |
 | Heavy-ion stopping via z_eff² scaling | few-% level at low E/n | not separately quantified in this work (subsumed in the RAD comparison) | Barkas 1963 convention |
 | Straight-ahead 1-D slab geometry (single thickness) | RAD sat behind an anisotropic distribution (most solid angle <10 g/cm²) | H over the 10–20 g/cm² bracket: 1.67–1.37 mSv/day (computed); D gap survives the bracket | Guo et al. 2015 shielding model |
 | GCR spectra for Z ≥ 3 not directly constrained by AMS comparison | unknown sign | assumed comparable to H (±14%) — stated assumption | Norbury et al. 2018 covers H, He only |

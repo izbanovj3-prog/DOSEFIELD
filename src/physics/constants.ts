@@ -31,4 +31,19 @@ export const M_U_C2 = 931.49410242; // MeV
 /** Avogadro constant (CODATA 2018, exact). */
 export const N_A = 6.02214076e23; // mol⁻¹
 
+/**
+ * Dose unit conversion:  MeV/g → Gray (J/kg).
+ * 1 MeV = 1.602176634e-13 J (CODATA 2018, exact via the elementary charge), and 1/g = 1000/kg,
+ * so 1 MeV/g = 1.602176634e-10 Gy.
+ *
+ * Single source on purpose: this factor and SECONDS_PER_DAY were previously re-declared as
+ * private literals in doseModel.ts, shieldedDose.ts, fragmentedDose.ts, multiLayerDose.ts and
+ * ui/dose.worker.ts. All five copies agreed, but nothing enforced that and `tsc` cannot catch a
+ * divergence — one edited copy would silently make two dose paths disagree.
+ */
+export const MEV_PER_G_TO_GY = 1.602176634e-10; // Gy per (MeV/g)
+
+/** Rate conversion: the model works per second, every reported dose is per day. */
+export const SECONDS_PER_DAY = 86400; // s/day
+
 export const LN10 = Math.LN10;

@@ -12,14 +12,13 @@ import { GCR_SPECIES, differentialFluxMatthia, W_SOLAR_MIN, W_SOLAR_MAX } from '
 import { WATER } from '../physics/materials.js';
 import { ionStopping } from '../physics/ionStopping.js';
 import { qualityFactorICRP60, letFromMassStopping } from '../physics/qualityFactor.js';
+import { MEV_PER_G_TO_GY, SECONDS_PER_DAY } from '../physics/constants.js';
 
 const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water', 'hydrogen', 'methane'] as const;
 const T_MAX = 40;
 const T_STEP = 1;
 const CURVE_PERDECADE = 50;
 
-const MEV_PER_G_TO_GY = 1.602176634e-10;
-const SECONDS_PER_DAY = 86400;
 const FOUR_PI = 4 * Math.PI;
 
 // Phase A: relative input-uncertainty band (GCR flux ⊕ stopping power ⊕ THIS RUN's computed

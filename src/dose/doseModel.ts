@@ -18,10 +18,8 @@ import { WATER } from '../physics/materials.js';
 import { ionStopping } from '../physics/ionStopping.js';
 import { qualityFactorICRP60, letFromMassStopping } from '../physics/qualityFactor.js';
 import { GCR_SPECIES, differentialFluxMatthia } from '../../data/gcr/matthia2013.js';
+import { MEV_PER_G_TO_GY, SECONDS_PER_DAY } from '../physics/constants.js';
 
-/** MeV/g → Gray (J/kg):  1 MeV = 1.602176634e-13 J, 1/g = 1000/kg. */
-const MEV_PER_G_TO_GY = 1.602176634e-10;
-const SECONDS_PER_DAY = 86400;
 const FOUR_PI = 4 * Math.PI;
 
 /** Lower / upper bounds of the energy-per-nucleon integration (MeV/n). */

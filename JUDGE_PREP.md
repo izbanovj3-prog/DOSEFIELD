@@ -61,7 +61,11 @@ answer to "how much requires more". Reimplementing HZETRN badly would answer nei
 Quantified, not assumed: against NIST PSTAR the implementation stays within 1.55% above
 10 MeV (integration floor) and 4.03% down to 1 MeV — the omitted corrections are exactly why
 the error grows at low energy, and the report says so. The same test rejected high-Z shield
-materials (lead fails at 50.7%) — that's why the material list is low-Z only.
+materials during selection (lead and titanium failed by a wide margin) — that's why the
+material list is low-Z only. Careful with the exact figure: no Pb/Ti dataset ships in
+`data/pstar/`, so those percentages cannot be recomputed from this repository. Say "failed by
+a wide margin"; if a judge presses for the number, say it needs the PSTAR tables pasted in and
+the check rerun.
 
 **Q: Why ICRP-60 Q(L) instead of ICRP-103?**
 

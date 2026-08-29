@@ -25,9 +25,8 @@ import { qualityFactorICRP60, letFromMassStopping } from '../physics/qualityFact
 import { GCR_SPECIES, differentialFluxMatthia } from '../../data/gcr/matthia2013.js';
 import { getRangeTable } from '../physics/ionRange.js';
 import type { DoseResult, SpeciesDose } from './doseModel.js';
+import { MEV_PER_G_TO_GY, SECONDS_PER_DAY } from '../physics/constants.js';
 
-const MEV_PER_G_TO_GY = 1.602176634e-10;
-const SECONDS_PER_DAY = 86400;
 const FOUR_PI = 4 * Math.PI;
 const E_HI_MEV = 1e5; // 100 GeV/n integration ceiling
 const SPECTRUM_FLOOR = 10; // Matthiä validity floor (MeV/n)
