@@ -91,10 +91,13 @@ html, body {
 .site-nav a:hover { color: var(--accent); border-color: var(--accent); }
 .scope-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .scope-link:hover { color: var(--ink); }
-/* was a pill; a console status block is a rectangle with a lamp in it */
+/* A lamp and its label, sitting in the masthead row — not a badge.
+   What it reports is real: COMPUTING while the worker recomputes the curves, READY once
+   they are current. But it reads READY almost all of the time, so boxing it in a filled,
+   outlined rectangle made a live indicator look like a sticker someone pasted on. The
+   frame, the fill and the padding are gone; the dot still carries the state. */
 .status-lamp {
-  display: flex; align-items: center; gap: 8px; font-size: 11px; letter-spacing: 0.18em; color: var(--dim);
-  padding: 6px 14px; border: 1px solid var(--edge-bright); border-radius: var(--r); background: var(--well);
+  display: flex; align-items: center; gap: 8px; font-size: 10.5px; letter-spacing: 0.18em; color: var(--dim);
 }
 /* the ONE place a glow is honest: this is a lamp, and lamps emit */
 .status-lamp .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 8px currentColor; }
@@ -467,16 +470,12 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 .doc-note { font-size: 11.5px; color: var(--dim); }
 
 /* ---- footer ----------------------------------------------------------------- */
+/* one child since the Stardance badge came out — space-between no longer describes anything */
 .colophon {
-  display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   margin-top: 22px; padding-top: 14px; border-top: 1px solid var(--edge);
   font-size: 10px; color: var(--dim); line-height: 1.7; letter-spacing: 0.02em;
 }
-.badge {
-  flex: none; padding: 6px 12px; border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); border-radius: var(--r);
-  color: var(--accent); font-size: 9.5px; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap;
-}
-
 /* provenance footer strip — build-time facts only, deliberately quiet */
 .provenance { margin: 10px 0 0; font-size: 9.5px; color: var(--dim); letter-spacing: 0.03em; font-variant-numeric: tabular-nums; }
 .provenance a { color: var(--dim); text-decoration: underline; text-underline-offset: 2px; }

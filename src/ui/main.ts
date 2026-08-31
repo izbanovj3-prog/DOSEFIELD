@@ -1146,7 +1146,7 @@ function buildReportText(): string {
   }
   if (!state.singleLayer) L.push('Note: the two-layer stack is unvalidated beyond the single-layer limit.');
   L.push(rule);
-  L.push('Built for NASA Stardance Challenge - https://izbanovj3-prog.github.io/DOSEFIELD/');
+  L.push('DOSEFIELD - https://izbanovj3-prog.github.io/DOSEFIELD/');
   return L.join('\n') + '\n';
 }
 
