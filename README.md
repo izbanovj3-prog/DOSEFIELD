@@ -19,10 +19,10 @@ physics, with no parameter tuned to the answer.**
 
 **Proof, not visuals.** The full validation — NIST agreement, the RAD comparison with an honest
 error discussion, and a Limitations section — is the auto-generated report:
-**[`report/DOSEFIELD_report.md`](report/DOSEFIELD_report.md)**. For the method itself:
-[`METHODS.md`](METHODS.md) has the equations and a worked example you can check by hand;
-[`METHODOLOGY.md`](METHODOLOGY.md) has the provenance ledger (what is cited vs. implemented here),
-the validation results, and where this model sits relative to published work &nbsp;·&nbsp; plots:
+**[`report/DOSEFIELD_report.md`](report/DOSEFIELD_report.md)**. For the method itself,
+[`METHODS.md`](METHODS.md) — every equation and constant, a worked example you can check by hand,
+the provenance ledger (what is cited vs. implemented here), the validation results, and where this
+model sits relative to published work &nbsp;·&nbsp; plots:
 [NIST](report/plots/nist_validation.png) ·
 [shielding curve](report/plots/shielding_curve.png) ·
 [RAD comparison](report/plots/rad_comparison.png) ·
