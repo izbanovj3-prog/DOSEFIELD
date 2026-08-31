@@ -3,7 +3,7 @@
  * Regenerated on every `npm run build` from `git rev-parse` and a real `vitest run`.
  */
 export const BUILD_INFO = {
-  commit: 'c5f183f',
+  commit: 'be383fd',
   testsPassing: 172,
   testsTotal: 172,
   verifiedAt: '2026-08-31',

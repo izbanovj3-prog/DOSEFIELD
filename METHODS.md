@@ -217,8 +217,9 @@ being trustworthy.
 | Bethe stopping-power formula and the Sternheimer density-effect parameterisation | PDG, *Passage of particles through matter*; parameters ultimately R.M. Sternheimer, M.J. Berger, S.M. Seltzer, *At. Data Nucl. Data Tables* **30**, 261 (1984) | `src/physics/stoppingPower.ts`, `densityEffect` block of each material |
 | K = 4π·N_A·r_e²·m_e·c² = 0.307075 MeV·mol⁻¹·cm² | PDG | `src/physics/constants.ts` |
 | m_e c², m_p c², u·c², N_A | CODATA 2018 | `src/physics/constants.ts` |
-| ⟨Z/A⟩, density, mean excitation energy I for all five materials | NIST PSTAR composition pages (accessed 2026-06-16; H₂ and CH₄ 2026-06-27) | `src/physics/materials.ts` |
-| Reference stopping powers and CSDA ranges used as the validation target | NIST PSTAR proton tables — **entered by hand**: PSTAR is a CGI form and cannot be fetched programmatically | `data/pstar/*.ts` |
+| ⟨Z/A⟩, density, mean excitation energy I for all five shipped materials | NIST PSTAR composition pages (accessed 2026-06-16; H₂ and CH₄ 2026-06-27) | `src/physics/materials.ts` |
+| Same quantities for the two high-Z **reference** materials (Pb, Ti — not shields) | NIST PSTAR `compos.pl` (accessed 2026-08-31); Sternheimer density-effect sets from the PDG 2023 muon energy-loss tables | `src/physics/materials.ts` |
+| Reference stopping powers and CSDA ranges used as the validation target | NIST PSTAR proton tables. The five **shipped** materials were **entered by hand** from NIST's own output. The two high-Z **reference** tables (Pb, Ti) were retrieved on 2026-08-31 by submitting the same NIST material form and reading the returned table. PSTAR publishes no plain-GET URL either way — `ap_table.pl` answers only a POST from that form — so neither route is a bulk download, and every row is traceable to a named material number. | `data/pstar/*.ts` |
 | Q(L) three-branch quality function | ICRP Publication 60 (1991), *Annals of the ICRP* 21(1–3) | `src/physics/qualityFactor.ts` |
 | GCR differential flux coefficients (28 species, DLR-modified ISO 15390 fit to Badhwar–O'Neill) | D. Matthiä, T. Berger, A.I. Mrigakshi, G. Reitz, *Adv. Space Res.* **51** (2013) 329, doi:10.1016/j.asr.2012.09.022 — coefficients transcribed from the reference implementation `ssc-maire/CosRayModifiedISO` | `data/gcr/matthia2013.ts` |
 | Effective-charge convention z_eff(Z, β) | W.H. Barkas, *Nuclear Research Emulsions* (1963) | `src/physics/effectiveCharge.ts` |
@@ -345,7 +346,7 @@ Fragmentation also widens the polyethylene-versus-aluminium advantage at 20 g/cm
 
 ```
 npm run typecheck   → 0 errors
-npm test            → 137/137 pass (7 files)
+npm test            → 172/172 pass (9 files)
 npm run build       → clean
 npm run validate:phase1..5 → 5/5 GATE PASS
 npm run report      → regenerates byte-identical output (no drift)
@@ -468,7 +469,7 @@ Methods page renders immediately after this section.
 ```
 npm ci
 npm run typecheck
-npm test                    # 137 tests, incl. the PSTAR data-driven suite
+npm test                    # 172 tests, incl. the PSTAR data-driven suite
 npm run validate:phase1     # NIST PSTAR stopping power + CSDA range
 npm run validate:phase2     # GCR spectrum → dose → LET → Q(L)
 npm run validate:phase3     # shielding transport + material ranking
