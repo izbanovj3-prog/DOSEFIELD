@@ -175,6 +175,15 @@
           <div class="big-number">
             <span id="rateValue">—</span><span class="unit">mSv/day</span>
           </div>
+          <!-- Names the quantity so it cannot be mistaken for effective dose E. What the code
+               computes is H = ∫ Φ(E)·S_water(E)·Q(L) dE with ICRP-60 Q(L) on unrestricted LET
+               in water, deposited in a thin water target — see METHODOLOGY.md §1.1. No tissue
+               weighting factors exist anywhere in this model, so "effective" would be wrong. -->
+          <p class="quantity-note">
+            Dose equivalent <em>H</em> · ICRP-60 <em>Q(L)</em> on unrestricted LET in water ·
+            thin water target, no self-shielding. <strong>Not</strong> effective dose <em>E</em> —
+            that needs organ-level tissue weighting this model does not do.
+          </p>
           <p class="unc-line" id="uncLine"></p>
           <div class="sub-metrics">
             <div class="metric"><span class="m-label">Absorbed dose</span><span class="m-val" id="absVal">—</span><span class="m-unit">mGy/day</span></div>
@@ -189,6 +198,12 @@
             </div>
             <div class="career-bar"><div class="career-fill" id="careerFill"></div></div>
             <div class="career-note" id="careerNote"></div>
+            <!-- Stated because the two sides of this bar are not the same quantity: the model
+                 computes H, while NASA-STD-3001 sets its career limit in effective dose E. -->
+            <p class="quantity-note career-caveat">
+              The NASA-STD-3001 career limit is set in effective dose <em>E</em>; this bar plots
+              dose equivalent <em>H</em> against it. Comparable in magnitude, not the same quantity.
+            </p>
           </div>
 
           <details class="organs">

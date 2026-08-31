@@ -291,7 +291,13 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
    so the band colours (nominal/caution/exceed) are never overwritten by it */
 @keyframes settle { from { color: var(--accent); } }
 .big-number .unit { font-size: 14px; color: var(--dim); }
-.unc-line { font-size: 10px; color: var(--dim); margin: -8px 0 14px; line-height: 1.6; font-variant-numeric: tabular-nums; text-wrap: pretty; }
+/* Names the quantity directly under the figure — the first question a physicist asks of a
+   number in mSv is which quantity it is. Sits between the numeral and the uncertainty line. */
+.quantity-note { font-size: 10px; color: var(--dim); margin: -10px 0 10px; line-height: 1.65; text-wrap: pretty; }
+.quantity-note em { font-style: normal; color: var(--text); }
+.quantity-note strong { font-weight: 400; color: var(--warn); }
+.career-caveat { margin: 8px 0 0; }
+.unc-line { font-size: 10px; color: var(--dim); margin: 0 0 14px; line-height: 1.6; font-variant-numeric: tabular-nums; text-wrap: pretty; }
 .sub-metrics { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 16px; }
 .metric {
   background: var(--well); border: 1px solid var(--edge); border-radius: var(--r); padding: 10px 13px;
