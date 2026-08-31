@@ -6,7 +6,9 @@ import './styles.css';
 import { renderProvenance } from './provenance.js';
 import { renderVersion } from './version.js';
 import { initTheme } from './theme.js';
-import type { CurvePoint, CurveSeries, SpectrumData, SelfCheck } from './dose.worker.js';
+import type { CurvePoint, CurveSeries, SelfCheck } from './dose.worker.js';
+import type { SpectrumData } from './spectrum.js';
+import { T_INCIDENT_LO, T_INCIDENT_HI, E_RESIDUAL_LO, E_RESIDUAL_HI } from './spectrum.js';
 import type { ValidationSummary } from '../validation/validationSummary.js';
 
 const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
@@ -88,8 +90,13 @@ let organTimer: number | undefined;
 let lastVal: ValidationSummary | null = null;
 // incident dose spectrum dH/dT (v2.2) — depends on W only (pre-shield); null until first compute
 let spectrum: SpectrumData | null = null;
-let showIons = false; // spectrum chart: overlay individual H/He/C/O/Fe lines
+let showIons = false; // spectrum charts: overlay individual H/He/C/O/Fe lines
 let specTimer: number | undefined;
+// residual dose spectrum behind the stack (v2.3) — depends on the whole shield config.
+// `shieldedKey` tags the config it belongs to, so a reply that lands after the user has
+// moved on is discarded instead of being drawn under the new labels.
+let shieldedSpec: SpectrumData | null = null;
+let shieldedSpecTimer: number | undefined;
 // automated self-checks (v2.2)
 let selfChecks: SelfCheck[] | null = null;
 let checkTimer: number | undefined;
@@ -175,6 +182,21 @@ function requestSpectrum(): void {
   specTimer = window.setTimeout(() => worker.postMessage({ type: 'spectrum', W: state.W }), 140);
 }
 
+/** Identity of the shield configuration a residual spectrum belongs to. */
+function shieldConfigKey(): string {
+  return `${state.W}:${state.mode}:${layers().map((l) => `${l.material}@${l.thickness}`).join('+')}`;
+}
+
+/** Debounced residual-spectrum request (depends on materials, areal densities, W and mode). */
+function requestShieldedSpectrum(): void {
+  clearTimeout(shieldedSpecTimer);
+  const key = shieldConfigKey();
+  shieldedSpecTimer = window.setTimeout(
+    () => worker.postMessage({ type: 'shieldedSpectrum', layers: layers(), W: state.W, mode: state.mode, key }),
+    140,
+  );
+}
+
 /** Debounced self-check request — carries the live rate/duration for the arithmetic checks. */
 function requestSelfChecks(): void {
   clearTimeout(checkTimer);
@@ -208,6 +230,12 @@ worker.onmessage = (e: MessageEvent) => {
     renderOrgans();
   } else if (msg.type === 'spectrum') {
     if (msg.W === state.W) { spectrum = msg as SpectrumData; drawSpectrum(); }
+  } else if (msg.type === 'shieldedSpectrum') {
+    // drop a reply whose configuration is no longer on screen (see shieldedKey)
+    if (msg.key === shieldConfigKey()) {
+      shieldedSpec = msg as SpectrumData;
+      drawShieldedSpectrum();
+    }
   } else if (msg.type === 'selfcheck') {
     selfChecks = msg.checks as SelfCheck[];
     renderSelfChecks();
@@ -258,6 +286,7 @@ function refreshReadout(): void {
   }
   renderGeometry();
   requestOrgans();
+  requestShieldedSpectrum();
   syncURL();
   render();
 }
@@ -548,7 +577,10 @@ function renderSensitivityCanvas(canvas: HTMLCanvasElement, cssW: number, dpr: n
 }
 
 /** Re-render the requested chart into an offscreen canvas at print resolution and download it. */
-function exportChartPNG(kind: 'dose' | 'timeline' | 'spectrum' | 'sensitivity', btn: HTMLButtonElement): void {
+function exportChartPNG(
+  kind: 'dose' | 'timeline' | 'spectrum' | 'spectrumShielded' | 'sensitivity',
+  btn: HTMLButtonElement,
+): void {
   const off = document.createElement('canvas');
   if (kind === 'dose') {
     if (!curves) return;
@@ -558,7 +590,17 @@ function exportChartPNG(kind: 'dose' | 'timeline' | 'spectrum' | 'sensitivity', 
     renderTimeline(off, EXPORT_W, EXPORT_DPR, configCaption('Cumulative dose over mission'));
   } else if (kind === 'spectrum') {
     if (!spectrum) return;
-    renderSpectrumChart(off, EXPORT_W, EXPORT_DPR, `Dose-rate contribution per decade of ion energy (incident GCR, before shielding) — W = ${state.W} (Matthiä 2013)`);
+    renderSpectrumChart(off, EXPORT_W, EXPORT_DPR, `Dose-rate contribution per decade of INCIDENT ion energy (GCR before shielding) — W = ${state.W} (Matthiä 2013)`);
+  } else if (kind === 'spectrumShielded') {
+    if (!shieldedSpec) return;
+    renderSpectrumChart(
+      off,
+      EXPORT_W,
+      EXPORT_DPR,
+      configCaption('Dose-rate contribution per decade of RESIDUAL ion energy behind the shield'),
+      shieldedSpec,
+      AXIS_RESIDUAL,
+    );
   } else {
     const rows = sensitivityRows();
     if (!rows) return;
@@ -753,22 +795,53 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
   if (caption) drawCaption(ctx, cssW, cssH, caption);
 }
 
-// ---- dose spectrum dH/dT chart (v2.2) ------------------------------------------
-// Log–log plot of the differential dose-equivalent contribution per ion energy for the
-// INCIDENT (pre-shield) GCR field. Same integrand as the free-space dose — the chart just
-// resolves in energy what the readout integrates. Depends on W only, labeled as such.
+// ---- dose spectrum charts (v2.2 incident; v2.3 adds the behind-shield panel) ----
+// Log–log plots of the differential dose-equivalent contribution per ion energy. Each panel
+// draws the integrand of a dose the model already computes — the chart resolves in energy what
+// the readout integrates — and each is drawn on ITS OWN abscissa:
+//   · incident panel  → INCIDENT kinetic energy T (the argument of the Matthiä flux), 10…1e5
+//   · shielded panel  → RESIDUAL energy E_out at the scoring point behind the stack, 1…1e5
+// The two are different physical variables. Nothing is re-projected from one axis onto the
+// other, and they are never superimposed: side by side, separately labelled, separate scales.
 function fmtEnergy(T: number): string {
   if (T >= 1000) return `${(T / 1000).toFixed(T >= 10000 ? 0 : 1)}k`;
   return String(Math.round(T));
 }
+
+/** Which energy variable a spectrum panel is differential in — sets the axis and its label. */
+interface SpecAxis {
+  lo: number; // MeV/n at the left edge
+  hi: number; // MeV/n at the right edge
+  xLabel: string;
+}
+const AXIS_INCIDENT: SpecAxis = { lo: T_INCIDENT_LO, hi: T_INCIDENT_HI, xLabel: 'incident kinetic energy  (MeV/n, log)' };
+const AXIS_RESIDUAL: SpecAxis = { lo: E_RESIDUAL_LO, hi: E_RESIDUAL_HI, xLabel: 'residual kinetic energy behind shield  (MeV/n, log)' };
 
 function drawSpectrum(): void {
   const canvas = $<HTMLCanvasElement>('spectrum');
   if (!canvas) return;
   renderSpectrumChart(canvas, canvas.clientWidth || 900, window.devicePixelRatio || 1);
 }
-function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, caption?: string): void {
-  if (!spectrum) return;
+function drawShieldedSpectrum(): void {
+  const canvas = $<HTMLCanvasElement>('spectrumShielded');
+  if (!canvas) return;
+  renderSpectrumChart(canvas, canvas.clientWidth || 900, window.devicePixelRatio || 1, undefined, shieldedSpec, AXIS_RESIDUAL);
+  const note = document.getElementById('shieldedSpecClosure');
+  if (note) {
+    note.textContent = shieldedSpec
+      ? `∫ over this axis = ${shieldedSpec.integral.toFixed(3)} mSv/day — the shielded dose rate of this configuration`
+      : 'computing…';
+  }
+}
+function renderSpectrumChart(
+  canvas: HTMLCanvasElement,
+  cssW: number,
+  dpr: number,
+  caption?: string,
+  data: SpectrumData | null = spectrum,
+  axis: SpecAxis = AXIS_INCIDENT,
+): void {
+  if (!data) return;
   const cssH = 340;
   const totalH = cssH + (caption ? EXPORT_CAPTION_H : 0);
   canvas.width = cssW * dpr;
@@ -782,12 +855,15 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
   const plotW = cssW - pad.l - pad.r;
   const plotH = cssH - pad.t - pad.b;
 
-  // x: 10 … 1e5 MeV/n (4 decades); y: 5 decades down from the total's maximum
-  const vMax = Math.max(...spectrum.total);
+  // x: this panel's own energy variable and range; y: 5 decades down from the total's maximum
+  const xExpLo = Math.round(Math.log10(axis.lo));
+  const xExpHi = Math.round(Math.log10(axis.hi));
+  const xDecades = xExpHi - xExpLo;
+  const vMax = Math.max(...data.total);
   const expHi = Math.ceil(Math.log10(vMax));
   const Y_DECADES = 5;
   const expLo = expHi - Y_DECADES;
-  const xOf = (T: number): number => pad.l + ((Math.log10(T) - 1) / 4) * plotW;
+  const xOf = (T: number): number => pad.l + ((Math.log10(T) - xExpLo) / xDecades) * plotW;
   const yOf = (v: number): number => {
     const lv = Math.log10(Math.max(v, Math.pow(10, expLo)));
     return pad.t + plotH - ((lv - expLo) / Y_DECADES) * plotH;
@@ -803,8 +879,8 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
     ctx.fillStyle = PAL.dim; ctx.textAlign = 'right';
     ctx.fillText(`1e${ex}`, pad.l - 8, y + 4);
   }
-  // x grid: decades 10 … 1e5
-  for (let ex = 1; ex <= 5; ex++) {
+  // x grid: one line per decade of this panel's energy variable
+  for (let ex = xExpLo; ex <= xExpHi; ex++) {
     const T = Math.pow(10, ex);
     const x = xOf(T);
     ctx.strokeStyle = PAL.gridFaint;
@@ -813,7 +889,7 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
     ctx.fillText(fmtEnergy(T), x, cssH - pad.b + 18);
   }
   ctx.fillStyle = PAL.body; ctx.textAlign = 'center';
-  ctx.fillText('ion kinetic energy  (MeV/n, log)', pad.l + plotW / 2, cssH - 4);
+  ctx.fillText(axis.xLabel, pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose contribution  (mSv/day per decade, log)', 0, 0); ctx.restore();
 
@@ -823,10 +899,10 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
     ctx.globalAlpha = alpha;
     ctx.beginPath();
     let started = false;
-    for (let i = 0; i < spectrum!.T.length; i++) {
+    for (let i = 0; i < data!.T.length; i++) {
       const v = ys[i]!;
       if (v <= 0) continue; // log axis: skip empty bins
-      const x = xOf(spectrum!.T[i]!);
+      const x = xOf(data!.T[i]!);
       const y = yOf(v);
       if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     }
@@ -836,19 +912,19 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
 
   // per-ion overlays first (under the total)
   if (showIons) {
-    for (const k of SPEC_ION_KEYS) trace(spectrum.perIon[k] ?? [], PAL.spec[k]!, 1.3, 0.8);
+    for (const k of SPEC_ION_KEYS) trace(data.perIon[k] ?? [], PAL.spec[k]!, 1.3, 0.8);
   }
   // total — the headline trace
-  trace(spectrum.total, PAL.mark, 2.4);
+  trace(data.total, PAL.mark, 2.4);
 
   // peak-contribution marker (drawn label instead of a hover tooltip — hand-rolled canvas)
-  const px = xOf(spectrum.peakT);
+  const px = xOf(data.peakT);
   ctx.strokeStyle = PAL.accent;
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, pad.t + plotH); ctx.stroke();
   ctx.setLineDash([]);
   ctx.fillStyle = PAL.accent; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
-  ctx.fillText(`peak contribution: ${fmtEnergy(spectrum.peakT)} MeV/n`, px + (px > pad.l + plotW * 0.7 ? -6 : 6), pad.t + 12);
+  ctx.fillText(`peak contribution: ${fmtEnergy(data.peakT)} MeV/n`, px + (px > pad.l + plotW * 0.7 ? -6 : 6), pad.t + 12);
 
   if (caption) drawCaption(ctx, cssW, cssH, caption);
 }
@@ -1013,6 +1089,7 @@ function applyPreset(key: string): void {
   reflectControls();
   requestCurves(); // W/mode may have changed → refresh the chart curves
   requestSpectrum();
+  requestShieldedSpectrum();
   refreshReadout();
   applyingPreset = false;
 }
@@ -1126,7 +1203,7 @@ $<HTMLInputElement>('wSlider').addEventListener('input', (e) => {
   syncFill(e.target as HTMLInputElement);
   scheduleCurves(); // debounced — the curve set is the heavy compute
   requestSpectrum();
-  refreshReadout();
+  refreshReadout(); // also refreshes the residual spectrum
 });
 $('modeSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
@@ -1265,9 +1342,14 @@ $<HTMLButtonElement>('runValidation').addEventListener('click', () => {
     btn.textContent = 'Run validation';
   }, 600);
 });
-(['exportDose', 'exportTimeline', 'exportSpectrum', 'exportSens'] as const).forEach((id) => {
-  const kind = { exportDose: 'dose', exportTimeline: 'timeline', exportSpectrum: 'spectrum', exportSens: 'sensitivity' }[id] as
-    | 'dose' | 'timeline' | 'spectrum' | 'sensitivity';
+(['exportDose', 'exportTimeline', 'exportSpectrum', 'exportSpectrumShielded', 'exportSens'] as const).forEach((id) => {
+  const kind = {
+    exportDose: 'dose',
+    exportTimeline: 'timeline',
+    exportSpectrum: 'spectrum',
+    exportSpectrumShielded: 'spectrumShielded',
+    exportSens: 'sensitivity',
+  }[id] as 'dose' | 'timeline' | 'spectrum' | 'spectrumShielded' | 'sensitivity';
   $<HTMLButtonElement>(id).addEventListener('click', (e) => exportChartPNG(kind, e.currentTarget as HTMLButtonElement));
 });
 $<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
@@ -1277,8 +1359,9 @@ $<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
   btn.classList.toggle('active', showIons);
   $('specIonLegend').toggleAttribute('hidden', !showIons);
   drawSpectrum();
+  drawShieldedSpectrum();
 });
-window.addEventListener('resize', () => { drawChart(); drawTimeline(); drawSpectrum(); });
+window.addEventListener('resize', () => { drawChart(); drawTimeline(); drawSpectrum(); drawShieldedSpectrum(); });
 
 /* The canvases cannot inherit CSS, so the theme switch has to hand them the new palette
    and ask for a repaint. Everything else on the page re-colours itself. */
@@ -1288,6 +1371,7 @@ window.addEventListener('themechange', () => {
   drawChart();
   drawTimeline();
   drawSpectrum();
+  drawShieldedSpectrum();
   renderSensitivity();
   renderGeometry();
 });
@@ -1305,4 +1389,5 @@ requestCurves();
 if (!state.singleLayer) worker.postMessage({ type: 'multiLayer', layers: layers(), W: state.W, mode: state.mode });
 requestOrgans();
 requestSpectrum();
+requestShieldedSpectrum();
 worker.postMessage({ type: 'validate' }); // populate the validation panel on load

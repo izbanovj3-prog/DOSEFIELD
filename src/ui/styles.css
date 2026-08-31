@@ -396,6 +396,18 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 #specIonLegend { display: inline-flex; gap: 14px; }
 .lg-spec-h { color: #efe4c8; } .lg-spec-he { color: #d3a75a; } .lg-spec-c { color: #86a35f; } .lg-spec-o { color: #5a8fa3; } .lg-spec-fe { color: #b87061; }
 .legend .tool-btn { margin-left: auto; padding: 5px 10px; }
+
+/* ---- behind-shield spectrum panel (v2.3) ----
+   The axis caveat is the load-bearing label on this panel: the two spectra are differential in
+   different energy variables, so it is boxed rather than left to blend into the note above it. */
+.spec-axis-warning {
+  border-left: 2px solid var(--accent);
+  padding: 8px 0 8px 10px;
+  margin: -6px 0 12px;
+  color: var(--body);
+}
+.spec-axis-warning strong { color: var(--accent); }
+.spec-closure { margin-left: auto; font-variant-numeric: tabular-nums; }
 .tool-btn.active { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
 
 /* ---- validation console -------------------------------------------------------- */

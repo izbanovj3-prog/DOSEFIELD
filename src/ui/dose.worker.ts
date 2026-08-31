@@ -8,18 +8,13 @@ import { computeFreeSpaceDose } from '../dose/doseModel.js';
 import { computeValidationSummary, computeNistStoppingSummary } from '../validation/validationSummary.js';
 import { doseRelUncertainty } from '../validation/uncertainty.js';
 import { computeMultiLayerDose, computeMultiLayerFragmentedDose, type ShieldLayer } from '../dose/multiLayerDose.js';
-import { GCR_SPECIES, differentialFluxMatthia, W_SOLAR_MIN, W_SOLAR_MAX } from '../../data/gcr/matthia2013.js';
-import { WATER } from '../physics/materials.js';
-import { ionStopping } from '../physics/ionStopping.js';
-import { qualityFactorICRP60, letFromMassStopping } from '../physics/qualityFactor.js';
-import { MEV_PER_G_TO_GY, SECONDS_PER_DAY } from '../physics/constants.js';
+import { W_SOLAR_MIN } from '../../data/gcr/matthia2013.js';
+import { incidentSpectrum, shieldedSpectrum } from './spectrum.js';
 
 const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water', 'hydrogen', 'methane'] as const;
 const T_MAX = 40;
 const T_STEP = 1;
 const CURVE_PERDECADE = 50;
-
-const FOUR_PI = 4 * Math.PI;
 
 // Phase A: relative input-uncertainty band (GCR flux ⊕ stopping power ⊕ THIS RUN's computed
 // PSTAR deviation — see src/validation/uncertainty.ts for the cited sources and what the
@@ -70,62 +65,12 @@ function computeCurves(W: number, mode: string): CurveSeries {
   return series;
 }
 
-// ---- dose spectrum dH/dlogT (v2.2, Feature 2) --------------------------------
-// Dose-equivalent contribution PER DECADE of ion energy for the INCIDENT (pre-shield)
-// GCR field: dH/dlog₁₀T = ln10 · T · Σ_i 4π·j_i(T,W)·S_i(T)·Q_i(T) · (unit factor).
-// Per-decade is the honest representation on a log energy axis: equal plotted areas are
-// equal dose contributions, and ∫ (dH/dlogT) dlogT reproduces computeFreeSpaceDose to
-// <0.01% (verified headless). The linear dH/dT variant peaks at ~37 MeV/n and visually
-// overstates the low-energy share on a log axis — rejected for that reason.
-// No new physics: it resolves where in energy the already-computed dose comes from.
-const SPEC_LO = 10; // MeV/n — model validity floor
-const SPEC_HI = 1e5; // 100 GeV/n
-const SPEC_POINTS = 121;
-const SPEC_IONS = [
-  { key: 'H', Z: 1 }, { key: 'He', Z: 2 }, { key: 'C', Z: 6 }, { key: 'O', Z: 8 }, { key: 'Fe', Z: 26 },
-] as const;
-
-export interface SpectrumData {
-  /** kinetic energy grid, MeV/n (log-spaced) */
-  T: number[];
-  /** total dH/dlog₁₀T summed over all ions, mSv/day per decade of energy */
-  total: number[];
-  /** dH/dlog₁₀T for the tracked ions (H, He, C, O, Fe) */
-  perIon: Record<string, number[]>;
-  /** energy of peak per-decade contribution, MeV/n */
-  peakT: number;
-}
-
-function computeSpectrum(W: number): SpectrumData {
-  const UNIT = MEV_PER_G_TO_GY * SECONDS_PER_DAY * 1000; // → mSv/day per (MeV/n)
-  const uLo = Math.log(SPEC_LO);
-  const uHi = Math.log(SPEC_HI);
-  const T: number[] = [];
-  const total: number[] = [];
-  const perIon: Record<string, number[]> = {};
-  for (const io of SPEC_IONS) perIon[io.key] = [];
-  let peakT = SPEC_LO;
-  let peakV = -1;
-
-  for (let i = 0; i < SPEC_POINTS; i++) {
-    const Tn = Math.exp(uLo + ((uHi - uLo) * i) / (SPEC_POINTS - 1));
-    let sum = 0;
-    const byZ: Record<number, number> = {};
-    for (const sp of GCR_SPECIES) {
-      const phi = FOUR_PI * differentialFluxMatthia(sp.Z, Tn, W); // /(cm²·s·(MeV/n))
-      const { massStopping } = ionStopping(Tn, sp.Z, sp.A, WATER); // MeV·cm²/g (incl. z_eff²)
-      const Q = qualityFactorICRP60(letFromMassStopping(massStopping, WATER.density));
-      const perDecade = Math.LN10 * Tn * phi * massStopping * Q * UNIT; // dH/dlog₁₀T
-      sum += perDecade;
-      byZ[sp.Z] = perDecade;
-    }
-    T.push(Tn);
-    total.push(sum);
-    for (const io of SPEC_IONS) perIon[io.key]!.push(byZ[io.Z] ?? 0);
-    if (sum > peakV) { peakV = sum; peakT = Tn; }
-  }
-  return { T, total, perIon, peakT };
-}
+// ---- dose spectra (v2.2 incident; v2.3 adds the behind-shield panel) ---------
+// Both curves live in ./spectrum.ts, which re-evaluates the dose engines' OWN integrands on the
+// engines' own Simpson nodes — so each curve's integral reproduces the engine result it belongs
+// to (test/spectrum.test.ts asserts the identity). The incident curve is differential in the
+// INCIDENT kinetic energy, the shielded curve in the RESIDUAL energy behind the stack: two
+// different abscissae, reported separately, never merged onto one axis.
 
 // ---- automated self-checks (v2.2, Feature 3) --------------------------------
 // Physics invariants that must hold in every configuration. Each is a real property of
@@ -205,6 +150,8 @@ ctx.onmessage = (e: MessageEvent) => {
     layers?: ShieldLayer[];
     rate?: number;
     days?: number;
+    /** echo tag so a stale shielded-spectrum reply can be discarded on arrival */
+    key?: string;
   };
   const W = msg.W ?? W_SOLAR_MIN;
   if (msg.type === 'curves') {
@@ -226,7 +173,18 @@ ctx.onmessage = (e: MessageEvent) => {
     });
     ctx.postMessage({ type: 'organs', organs });
   } else if (msg.type === 'spectrum') {
-    ctx.postMessage({ type: 'spectrum', W, ...computeSpectrum(W) });
+    // incident (pre-shield) field — a function of solar modulation only
+    ctx.postMessage({ type: 'spectrum', W, ...incidentSpectrum(W) });
+  } else if (msg.type === 'shieldedSpectrum') {
+    // residual field behind the current stack — depends on materials, areal densities and mode
+    const layers = msg.layers ?? [];
+    const fragment = (msg.mode ?? 'primaries') === 'fragmentation';
+    ctx.postMessage({
+      type: 'shieldedSpectrum',
+      W,
+      key: msg.key ?? '',
+      ...shieldedSpectrum(layers, W, fragment),
+    });
   } else if (msg.type === 'selfcheck') {
     ctx.postMessage({ type: 'selfcheck', checks: runSelfChecks(W, msg.rate ?? 0, msg.days ?? 0) });
   } else if (msg.type === 'validate') {

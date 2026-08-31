@@ -140,6 +140,29 @@ heterogeneous stacks). Fragmentation: Bradt–Peters charge-changing cross-secti
 paths λ; primary survival exp(−t/λ) with a single-collision, charge-conserving fragment yield.
 **Labeled:** no neutrons/target fragments, no multi-generation cascade.
 
+### 7.1 Spectral decomposition of the dose (`src/ui/spectrum.ts`)
+
+The UI shows the dose resolved in energy, as two curves that are **differential in two different
+variables**. This is the whole reason they are drawn as separate panels on separate abscissae:
+
+| Panel | Differential in | Grid | Its integral equals |
+|---|---|---|---|
+| Incident GCR spectrum | **incident** kinetic energy T — the argument of the Matthiä flux | 10 … 10⁵ MeV/n | `computeFreeSpaceDose` |
+| Behind the shield | **residual** energy E_out at the scoring point | 1 … 10⁵ MeV/n | `computeShieldedDose` / `computeMultiLayerDose` |
+
+    dH/dlog₁₀E = ln10 · E · Σ_Z 4π·J_Z(E_in) · (dE_in/dE_out) · S_water(E_out) · Q(LET(E_out))
+
+with dE_in/dE_out ≡ 1 and E_in ≡ E_out for the unshielded panel. Neither curve is a re-projection
+of the other. The transformation dΦ/dE_out = dΦ/dE_in·|dE_in/dE_out| that would put them on one
+axis exists inside the dose integral above, but it is validated only as part of that integral —
+so it is not lifted out and used to overlay one spectrum in the other's coordinates.
+
+Nothing here is new physics: both curves re-evaluate the engines' own integrands on the engines'
+own Simpson nodes, which makes the decomposition falsifiable rather than decorative — summing a
+plotted curve over its axis must return the dose rate the model reports. `test/spectrum.test.ts`
+asserts that identity to floating point on matched nodes, and to < 0.1 % at the coarser density
+the charts are drawn at.
+
 ## 8. Propagated input uncertainty (`src/validation/uncertainty.ts` — Phase A)
 
     ε_H = √( ε_φ² + ε_S² + ε_impl² )

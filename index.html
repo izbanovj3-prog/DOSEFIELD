@@ -308,6 +308,35 @@
           </div>
         </section>
 
+        <!-- DOSE SPECTRUM BEHIND THE SHIELD (v2.3) -->
+        <section class="panel spectrum-panel">
+          <h2>Same Contribution, Behind the Shield</h2>
+          <button id="exportSpectrumShielded" class="tool-btn chart-export" title="Download this chart as a print-resolution PNG (3200 px wide, caption baked in)">PNG · print</button>
+          <p class="spec-note">
+            Residual field at the scoring point · dose-equivalent contribution per decade of
+            <strong>residual</strong> energy, dH/dlog₁₀E_out · updates with shield material, areal density,
+            solar modulation and nuclear mode.
+          </p>
+          <p class="spec-note spec-axis-warning">
+            <strong>Different abscissa from the panel above.</strong> That one is differential in the
+            <em>incident</em> energy the ion arrives with; this one in the <em>residual</em> energy it still
+            carries after crossing the shield — the variable the shielded dose integral is taken over.
+            The two are separate physical quantities and are deliberately not drawn on a shared axis or
+            re-projected into each other’s coordinates. Compare the shapes, not the abscissae point by point.
+          </p>
+          <canvas
+            id="spectrumShielded"
+            width="900"
+            height="340"
+            role="img"
+            aria-label="Log-log line chart: dose-equivalent contribution per decade of residual ion kinetic energy from 1 to 100,000 MeV per nucleon at the scoring point behind the shield, with the peak-contribution energy marked."
+          ></canvas>
+          <div class="legend">
+            <span class="lg lg-mark">total (all Z = 1–28)</span>
+            <span id="shieldedSpecClosure" class="spec-closure">computing…</span>
+          </div>
+        </section>
+
         <!-- VALIDATION -->
         <section class="panel validation">
           <h2>Validation Suite</h2>
