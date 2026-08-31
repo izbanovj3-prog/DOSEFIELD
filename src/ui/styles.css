@@ -244,6 +244,20 @@ html, body {
 
 .chart canvas, .timeline-panel canvas { width: 100%; height: auto; display: block; }
 
+/* ---- model geometry schematic ----------------------------------------------
+   A drawing of the thing being computed, at the top of the panel that configures it:
+   beam in, slab, scoring point. Deliberately flat and 2-D — the model is a 1-D slab,
+   and a perspective box would claim geometry this project does not have. */
+.geom { margin: 0 0 16px; padding: 0 0 11px; border-bottom: 1px solid var(--edge); }
+.geom svg { display: block; width: 100%; height: auto; }
+.geom figcaption { font-size: 9px; color: var(--dim); letter-spacing: 0.04em; margin-top: 6px; }
+.geom .g-beam { stroke: var(--dim); stroke-width: 1; }
+.geom .g-slab { stroke-width: 1; }
+.geom .g-gap { stroke: var(--edge-bright); stroke-width: 1; stroke-dasharray: 2 3; }
+.geom .g-target { fill: var(--accent); }
+.geom .g-label { font-family: var(--mono); font-size: 8px; fill: var(--dim); }
+.geom .g-mat { font-family: var(--mono); font-size: 8.5px; fill: var(--text); }
+
 /* ---- controls -------------------------------------------------------------- */
 .control { margin-bottom: 18px; }
 .control > label { display: block; font-size: 10.5px; color: var(--dim); letter-spacing: 0.06em; margin-bottom: 8px; }
