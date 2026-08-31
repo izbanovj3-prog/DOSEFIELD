@@ -144,10 +144,66 @@ export const METHANE: Material = {
     'left as formula (not in the pasted NIST export).',
 };
 
+/**
+ * The shipped shield materials. All low-Z, all validated against NIST PSTAR — the material
+ * picker, the dose curves and the report draw from exactly this map, and
+ * `test/materials.test.ts` pins its membership so a high-Z entry cannot drift in.
+ */
 export const MATERIALS: Record<string, Material> = {
   aluminum: ALUMINUM,
   water: WATER,
   polyethylene: POLYETHYLENE,
   hydrogen: HYDROGEN,
   methane: METHANE,
+};
+
+/* ---------------------------------------------------------------------------------------
+ * HIGH-Z REFERENCE MATERIALS — not shields, not offered, not validated.
+ *
+ * These two exist for one purpose: to make the rejection of high-Z shielding a measured
+ * result. The Bethe–Bloch implementation here omits the shell correction, whose size grows
+ * with Z, so it cannot reproduce PSTAR for heavy elements. That claim used to be carried by
+ * a remembered pair of percentages that no longer reproduced from this repository;
+ * `test/highZRejection.test.ts` now recomputes it from these definitions and the PSTAR tables
+ * in `data/pstar/{lead,titanium}.ts`.
+ *
+ * They are deliberately NOT in `MATERIALS`: nothing in the dose pipeline should be able to
+ * select them, and the membership test above enforces that. Their inputs are sourced exactly
+ * like the shipped materials, so the comparison tests the physics rather than the data.
+ * ------------------------------------------------------------------------------------- */
+
+export const LEAD: Material = {
+  key: 'lead',
+  name: 'Lead (high-Z reference — not a shield option)',
+  matno: '082',
+  ZoverA: 82 / 207.2, // = 0.395753 mol/g (Z=82, A=207.2(1) g/mol, PDG 2023)
+  density: 11.35,
+  I_eV: 823.0,
+  densityEffect: { a: 0.09359, m: 3.1608, x0: 0.3776, x1: 3.8073, Cbar: 6.2018, delta0: 0.14 },
+  composition: [{ Z: 82, A: 207.2, massFraction: 1.0 }],
+  sourceNote:
+    'NIST PSTAR matno 082 (density 11.35 g/cm³, I=823.0 eV, accessed 2026-08-31); Sternheimer ' +
+    'params PDG 2023 muon energy-loss table for lead (Sternheimer-Berger-Seltzer 1984). ' +
+    'REFERENCE ONLY: Bethe without shell corrections does not reproduce PSTAR at Z=82.',
+};
+
+export const TITANIUM: Material = {
+  key: 'titanium',
+  name: 'Titanium (high-Z reference — not a shield option)',
+  matno: '022',
+  ZoverA: 22 / 47.867, // = 0.459617 mol/g (Z=22, A=47.867(1) g/mol, PDG 2023)
+  density: 4.54,
+  I_eV: 233.0,
+  densityEffect: { a: 0.15662, m: 3.0302, x0: 0.0957, x1: 3.0386, Cbar: 4.445, delta0: 0.12 },
+  composition: [{ Z: 22, A: 47.867, massFraction: 1.0 }],
+  sourceNote:
+    'NIST PSTAR matno 022 (density 4.54 g/cm³, I=233.0 eV, accessed 2026-08-31); Sternheimer ' +
+    'params PDG 2023 muon energy-loss table for titanium (Sternheimer-Berger-Seltzer 1984). ' +
+    'REFERENCE ONLY: the shell-correction error is already out of tolerance at Z=22.',
+};
+
+/** High-Z reference materials — comparison inputs only, never shield options. */
+export const HIGH_Z_REFERENCE: Record<string, Material> = {
+  titanium: TITANIUM,
+  lead: LEAD,
 };

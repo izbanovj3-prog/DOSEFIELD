@@ -408,12 +408,34 @@ mission planning.
    remove it.
 3. **Stopping power carries a few-percent residual** that grows toward low energy — ≤1.55% above
    10 MeV, ≤4.03% down to 1 MeV — from the omitted shell, Barkas and Bloch corrections.
-4. **Only low-Z shields qualify.** High-Z materials were tested and **rejected**, not simply
-   omitted, because Bethe without shell corrections cannot reproduce PSTAR for them.
-   *Caveat on this item:* the specific failure percentages quoted historically for lead and titanium
-   are **not reproducible from this repository** — there is no Pb or Ti dataset in `data/pstar/` and
-   no test covering them. The qualitative conclusion stands; the digits should not be quoted until
-   the tables are pasted in and the check is rerun.
+4. **Only low-Z shields qualify — now with the numbers behind it.** The NIST PSTAR tables for
+   lead and titanium are in the repository (`data/pstar/{lead,titanium}.ts`, matno 082 / 022,
+   accessed 2026-08-31), the matching inputs are in `HIGH_Z_REFERENCE` (materials.ts), and
+   `test/highZRejection.test.ts` recomputes the comparison on every run. Max deviation of
+   electronic stopping power from PSTAR, ≥ 10 MeV, against the 2.5 % tolerance a **shipped**
+   material must meet:
+
+   | Material | Z | max dev ≥10 MeV | max dev, full 1–1000 MeV | CSDA range 1→1000 MeV | shipped? |
+   |---|---:|---:|---:|---:|---|
+   | Aluminium | 13 | **1.55 %** @ 10 MeV | +4.03 % @ 1 MeV | −0.05 % | yes |
+   | Titanium | 22 | **2.50 %** @ 10 MeV | +4.36 % @ 2 MeV | −0.15 % | no |
+   | Lead | 82 | **6.19 %** @ 10 MeV | **−11.85 %** @ 1 MeV | −0.61 % | no |
+
+   The error grows monotonically with Z, which is the expected signature of the omitted shell
+   correction — and lead reverses sign at 1 MeV, under-predicting, because the inner-shell
+   electrons the approximation stops counting are a much larger share of 82 than of 13.
+
+   **A correction, stated plainly:** the failure percentages quoted historically for these two
+   materials (of order tens of percent) are **not what this repository computes**. Lead does fail
+   the shipped tolerance decisively, at 2.5× the gate; titanium fails only *marginally* — it lands
+   essentially on the 2.5 % line. The rejection of high-Z shielding stands, but "failed by a wide
+   margin" was never supportable for titanium and is not claimed anywhere any more.
+
+   The substantive reason to prefer low-Z is separate from this accuracy question and is the
+   validated one: dose-equivalent falls monotonically with rising ⟨Z/A⟩, and lead's 0.396 is below
+   every shipped material (aluminium 0.482 … hydrogen 0.992). That the trend predicts lead is the
+   worst shield per g/cm² is a **prediction, not a validated result** — no lead dose figure is
+   computed or quoted anywhere, precisely because its stopping power is 6 % off.
 5. **Multi-layer stacks are unvalidated beyond the single-layer limit.** They run the same engine and
    reduce exactly to the validated single slab (<0.5%, asserted), but no NASA layered cruise
    measurement exists to validate a stack against. Labelled as such in the UI at the point of use.

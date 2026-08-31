@@ -60,12 +60,19 @@ answer to "how much requires more". Reimplementing HZETRN badly would answer nei
 
 Quantified, not assumed: against NIST PSTAR the implementation stays within 1.55% above
 10 MeV (integration floor) and 4.03% down to 1 MeV — the omitted corrections are exactly why
-the error grows at low energy, and the report says so. The same test rejected high-Z shield
-materials during selection (lead and titanium failed by a wide margin) — that's why the
-material list is low-Z only. Careful with the exact figure: no Pb/Ti dataset ships in
-`data/pstar/`, so those percentages cannot be recomputed from this repository. Say "failed by
-a wide margin"; if a judge presses for the number, say it needs the PSTAR tables pasted in and
-the check rerun.
+the error grows at low energy, and the report says so. The same test is what keeps high-Z
+materials off the shield list, and since 2026-08-31 the numbers ship with it: the max deviation
+above 10 MeV runs 1.55% for aluminium (Z=13), 2.50% for titanium (Z=22) and 6.19% for lead
+(Z=82), against the 2.5% gate a shipped material must pass. Quote those, and quote them
+carefully — lead fails decisively, titanium only marginally, sitting right on the line.
+
+**Do NOT say "failed by a wide margin."** That phrasing came from much larger percentages that
+this repository does not reproduce; it was retired when the PSTAR tables for Pb/Ti were actually
+pulled in (`data/pstar/{lead,titanium}.ts`, `test/highZRejection.test.ts` — re-run any time).
+If a judge presses on why low-Z anyway, the stronger answer is the validated one and it is not
+about accuracy at all: dose-equivalent falls monotonically with ⟨Z/A⟩, and lead's 0.396 is the
+lowest of any material in the repo. Add that no lead dose figure is quoted, because the model
+cannot reproduce lead's stopping power well enough to compute one.
 
 **Q: Why ICRP-60 Q(L) instead of ICRP-103?**
 
