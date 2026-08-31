@@ -7,6 +7,7 @@ import './styles.css';
 import { marked } from 'marked';
 import { renderProvenance } from './provenance.js';
 import { renderVersion } from './version.js';
+import { initTheme } from './theme.js';
 import methodsMd from '../../METHODS.md?raw';
 import readmeMd from '../../README.md?raw';
 
@@ -36,6 +37,7 @@ if (doc) {
 }
 
 renderVersion();
+initTheme();
 renderProvenance(document.getElementById('provenance'));
 
 // Support deep links like methods.html#limitations arriving before render completed.

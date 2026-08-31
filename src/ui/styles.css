@@ -41,7 +41,48 @@
   --mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
   --ui: "IBM Plex Sans Condensed", "IBM Plex Sans", Arial Narrow, sans-serif;
   --prose: "IBM Plex Sans", "Segoe UI", sans-serif;
+  /* Canvas-facing tokens. The three charts used to hard-code their greys, which meant a
+     second, invisible palette that no theme switch could reach. They read these now. */
+  --grid: #2e2a24; /* axis rules */
+  --grid-faint: #262320; /* minor rules */
+  --band: rgba(255, 176, 46, 0.13); /* uncertainty band fill */
   --r: 2px; /* the only radius. Bars and canvases are square; only lamps are round. */
+}
+
+/* ---------------------------------------------------------------------------
+   LIGHT THEME — the same instrument under daylight, for a projector or a print.
+   Opt-in: dark stays the default identity, this is set by the masthead toggle and
+   remembered in localStorage. Same amber for action, same red for the limit, same
+   mono for numerals — only the ground changes, and the values are re-derived for
+   it rather than reused. Measured, not eyeballed: every foreground below clears
+   4.5:1 on all three surfaces (--bg, --panel, --well); the floor is aluminium at
+   4.68:1 on --well. Control outlines (--edge-bright) clear 3:1 for WCAG 1.4.11.
+   The shield ramp stays monotone in contrast — 9.98 / 8.91 / 7.47 / 5.96 / 5.51
+   on --panel — so colour keeps encoding the H₂ < CH₄ < PE < water < Al ranking
+   exactly as it does in the dark theme.
+   -------------------------------------------------------------------------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #e9e4da;
+  --panel: #f6f3ec;
+  --well: #e6e1d6;
+  --edge: #c6bfb0;
+  --edge-bright: #756c5c;
+  --ink: #1a1712;
+  --text: #35302a;
+  --body: #4d473d;
+  --dim: #5f5849;
+  --accent: #6e4000;
+  --warn: #a72913;
+  --hydrogen: #463b18;
+  --methane: #5c3d08;
+  --poly: #3b5620;
+  --water: #28637f;
+  --al: #a5432d;
+  --mark: #1a1712;
+  --grid: #cfc8b9;
+  --grid-faint: #e0dacd;
+  --band: rgba(110, 64, 0, 0.14);
 }
 
 * { box-sizing: border-box; }
@@ -89,6 +130,9 @@ html, body {
   text-decoration: none; border-bottom: 1px solid transparent; padding-bottom: 2px; transition: color 0.15s, border-color 0.15s;
 }
 .site-nav a:hover { color: var(--accent); border-color: var(--accent); }
+/* the theme switch: a control, styled as one — same key as the other tool buttons */
+.theme-toggle { flex: none; letter-spacing: 0.12em; text-transform: uppercase; font-size: 9.5px; padding: 5px 11px; }
+.theme-toggle[aria-pressed="true"] { color: var(--accent); border-color: var(--accent); }
 .scope-link { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
 .scope-link:hover { color: var(--ink); }
 /* A lamp and its label, sitting in the masthead row — not a badge.
@@ -101,6 +145,8 @@ html, body {
 }
 /* the ONE place a glow is honest: this is a lamp, and lamps emit */
 .status-lamp .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 8px currentColor; }
+:root[data-theme="light"] .status-lamp .dot,
+:root[data-theme="light"] .selfcheck-lamp { box-shadow: none; }
 .status-lamp.ready .dot { background: var(--accent); }
 .status-lamp.busy .dot { background: var(--accent); animation: pulse 0.9s infinite; }
 @keyframes pulse { 50% { opacity: 0.3; } }

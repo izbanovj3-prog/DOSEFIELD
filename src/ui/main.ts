@@ -5,6 +5,7 @@
 import './styles.css';
 import { renderProvenance } from './provenance.js';
 import { renderVersion } from './version.js';
+import { initTheme } from './theme.js';
 import type { CurvePoint, CurveSeries, SpectrumData, SelfCheck } from './dose.worker.js';
 import type { ValidationSummary } from '../validation/validationSummary.js';
 
@@ -12,13 +13,42 @@ const NASA_CAREER_LIMIT_MSV = 600; // NASA-STD-3001 career effective-dose limit
 
 // Ordered ramp, mirrors :root in styles.css — luminance falls monotonically along the
 // validated ranking H2 < CH4 < PE < water < Al, so the colour carries the result.
-const TRACE = { aluminum: '#b87061', polyethylene: '#86a35f', water: '#5a8fa3', hydrogen: '#efe4c8', methane: '#d3a75a' } as const;
-// spectrum chart per-ion colours (H, He, C, O, Fe)
-const SPEC_COLORS: Record<string, string> = { H: '#efe4c8', He: '#d3a75a', C: '#86a35f', O: '#5a8fa3', Fe: '#b87061' };
+/**
+ * Canvas colours are read from the stylesheet, not restated here.
+ *
+ * The charts used to carry their own hard-coded hexes — a second palette that no theme
+ * switch could reach and that had to be kept in step with :root by hand. `readPalette()`
+ * pulls the custom properties off the document element instead, so light and dark are one
+ * definition each, in CSS, and the charts follow whatever the toggle set.
+ */
+const MATERIAL_KEYS = ['aluminum', 'polyethylene', 'water', 'hydrogen', 'methane'] as const;
+type MaterialKey = (typeof MATERIAL_KEYS)[number];
+const MAT_VAR: Record<MaterialKey, string> = {
+  aluminum: '--al', polyethylene: '--poly', water: '--water', hydrogen: '--hydrogen', methane: '--methane',
+};
+const SPEC_VAR: Record<string, string> = { H: '--hydrogen', He: '--methane', C: '--poly', O: '--water', Fe: '--al' };
+
+function readPalette() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (name: string): string => cs.getPropertyValue(name).trim();
+  const trace = {} as Record<MaterialKey, string>;
+  for (const k of MATERIAL_KEYS) trace[k] = v(MAT_VAR[k]);
+  const spec: Record<string, string> = {};
+  for (const k of Object.keys(SPEC_VAR)) spec[k] = v(SPEC_VAR[k]!);
+  return {
+    panel: v('--panel'), well: v('--well'), edge: v('--edge'),
+    ink: v('--ink'), text: v('--text'), body: v('--body'), dim: v('--dim'),
+    accent: v('--accent'), warn: v('--warn'), mark: v('--mark'),
+    grid: v('--grid'), gridFaint: v('--grid-faint'), band: v('--band'),
+    trace, spec,
+  };
+}
+let PAL = readPalette();
+const TRACE = PAL.trace; // kept as the name the rest of the file (and its types) use
 const SPEC_ION_KEYS = ['H', 'He', 'C', 'O', 'Fe'] as const;
 
 interface Layer {
-  material: keyof typeof TRACE;
+  material: MaterialKey;
   thickness: number;
 }
 // Matthiä-2013 solar-modulation parameter W is the model's own control: W=0 is the
@@ -28,7 +58,7 @@ const W_MIN = 0;
 const W_MAX = 130;
 
 interface State {
-  material: keyof typeof TRACE; // Layer 1 (structural) material
+  material: MaterialKey; // Layer 1 (structural) material
   thickness: number; // Layer 1 areal density (g/cm²)
   layer2: Layer; // Layer 2 (inner lining)
   singleLayer: boolean;
@@ -400,14 +430,14 @@ const EXPORT_DPR = 2.5;
 const EXPORT_CAPTION_H = 44;
 
 function drawCaption(ctx: CanvasRenderingContext2D, cssW: number, plotH: number, caption: string): void {
-  ctx.strokeStyle = 'rgba(46,42,36,0.95)';
+  ctx.strokeStyle = PAL.grid;
   ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(12, plotH + 6); ctx.lineTo(cssW - 12, plotH + 6); ctx.stroke();
   ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#b6ad9e';
+  ctx.fillStyle = PAL.body;
   ctx.fillText(caption, 12, plotH + 22);
-  ctx.fillStyle = '#8d8474';
+  ctx.fillStyle = PAL.dim;
   ctx.fillText(`DOSEFIELD — izbanovj3-prog.github.io/DOSEFIELD · generated ${new Date().toISOString().slice(0, 10)}`, 12, plotH + 37);
 }
 
@@ -429,30 +459,30 @@ function renderSensitivityCanvas(canvas: HTMLCanvasElement, cssW: number, dpr: n
   canvas.height = (cssH + EXPORT_CAPTION_H) * dpr;
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#191714';
+  ctx.fillStyle = PAL.panel;
   ctx.fillRect(0, 0, cssW, cssH + EXPORT_CAPTION_H);
   const maxAbs = Math.max(20, ...rows.filter((r) => Number.isFinite(r.pct)).map((r) => Math.abs(r.pct)));
   rows.forEach((r, i) => {
     const y = padT + i * rowH;
     ctx.font = '13px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#d9d2c6';
+    ctx.fillStyle = PAL.text;
     ctx.fillText(r.label, 16, y + 14);
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#8d8474';
+    ctx.fillStyle = PAL.dim;
     ctx.fillText(Number.isFinite(r.pct) ? `${r.pct >= 0 ? '+' : ''}${r.pct.toFixed(1)}% mission total` : '—', cssW - 16, y + 14);
     if (Number.isFinite(r.pct)) {
       const barW = cssW - 32;
-      ctx.fillStyle = '#0c0b09';
+      ctx.fillStyle = PAL.well;
       ctx.fillRect(16, y + 24, barW, 10);
-      ctx.strokeStyle = '#2e2a24';
+      ctx.strokeStyle = PAL.edge;
       ctx.strokeRect(16.5, y + 24.5, barW - 1, 9);
-      ctx.fillStyle = r.pct > 0 ? '#e4573d' : '#5a8fa3'; // red = raises dose, green = lowers it
+      ctx.fillStyle = r.pct > 0 ? PAL.warn : PAL.trace.water; // red = raises dose, green = lowers it
       ctx.fillRect(16, y + 24, (Math.abs(r.pct) / maxAbs) * barW, 10);
     }
     ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#8d8474';
+    ctx.fillStyle = PAL.dim;
     ctx.fillText(r.note, 16, y + 52);
   });
   drawCaption(ctx, cssW, cssH, caption);
@@ -503,7 +533,7 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, totalH);
-  if (caption) { ctx.fillStyle = '#191714'; ctx.fillRect(0, 0, cssW, totalH); }
+  if (caption) { ctx.fillStyle = PAL.panel; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 56, r: 16, t: 14, b: 36 };
   const plotW = cssW - pad.l - pad.r;
@@ -518,8 +548,8 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   const yOf = (h: number) => pad.t + plotH - (h / hMax) * plotH;
 
   // grid + axes
-  ctx.strokeStyle = 'rgba(46,42,36,0.95)';
-  ctx.fillStyle = '#8d8474';
+  ctx.strokeStyle = PAL.grid;
+  ctx.fillStyle = PAL.dim;
   ctx.font = '11px "IBM Plex Mono", ui-monospace, monospace';
   ctx.lineWidth = 1;
   for (let h = 0; h <= hMax + 1e-9; h += 0.5) {
@@ -529,11 +559,11 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   }
   for (let t = 0; t <= tMax; t += 5) {
     const x = xOf(t);
-    ctx.strokeStyle = 'rgba(46,42,36,0.55)';
+    ctx.strokeStyle = PAL.gridFaint;
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
     ctx.textAlign = 'center'; ctx.fillText(String(t), x, cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#b6ad9e'; ctx.textAlign = 'center';
+  ctx.fillStyle = PAL.body; ctx.textAlign = 'center';
   ctx.fillText('shield areal density  (g/cm²)', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose-equivalent  (mSv/day)', 0, 0); ctx.restore();
@@ -542,7 +572,7 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   // (H·(1±bandRel); input propagation only — the un-modeled-secondaries gap is separate).
   if (bandRel > 0) {
     const pts = curves[state.material]!;
-    ctx.fillStyle = 'rgba(255, 176, 46, 0.13)';
+    ctx.fillStyle = PAL.band;
     ctx.beginPath();
     pts.forEach((p, i) => { const x = xOf(p.t); const y = yOf(Math.min(p.H * (1 + bandRel), hMax)); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); });
     for (let i = pts.length - 1; i >= 0; i--) {
@@ -571,11 +601,11 @@ function renderDoseChart(canvas: HTMLCanvasElement, cssW: number, dpr: number, c
   const markT = state.singleLayer ? state.thickness : state.thickness + state.layer2.thickness;
   const mx = xOf(Math.min(markT, tMax));
   const my = yOf(rd.H);
-  ctx.strokeStyle = 'rgba(244,239,230,0.45)';
+  ctx.strokeStyle = PAL.mark;
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(mx, pad.t); ctx.lineTo(mx, pad.t + plotH); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#f4efe6';
+  ctx.fillStyle = PAL.mark;
   ctx.beginPath(); ctx.arc(mx, my, 4.5, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = TRACE[state.material]; ctx.lineWidth = 2; ctx.stroke();
 
@@ -597,7 +627,7 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, totalH);
-  if (caption) { ctx.fillStyle = '#191714'; ctx.fillRect(0, 0, cssW, totalH); }
+  if (caption) { ctx.fillStyle = PAL.panel; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 56, r: 16, t: 18, b: 36 };
   const plotW = cssW - pad.l - pad.r;
@@ -617,15 +647,15 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
   const ystep = yMax > 0.5 ? 0.1 : 0.02;
   for (let v = 0; v <= yMax + 1e-9; v += ystep) {
     const y = yOf(v);
-    ctx.strokeStyle = 'rgba(46,42,36,0.8)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = PAL.grid; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
+    ctx.fillStyle = PAL.dim; ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), pad.l - 8, y + 4);
   }
   const xstep = days <= 30 ? 5 : days <= 200 ? 30 : 60;
   for (let d = 0; d <= days + 1e-9; d += xstep) {
-    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
+    ctx.fillStyle = PAL.dim; ctx.textAlign = 'center'; ctx.fillText(String(Math.round(d)), xOf(d), cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#b6ad9e'; ctx.textAlign = 'center';
+  ctx.fillStyle = PAL.body; ctx.textAlign = 'center';
   ctx.fillText('mission day', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('cumulative dose-equivalent  (Sv)', 0, 0); ctx.restore();
@@ -638,26 +668,26 @@ function renderTimeline(canvas: HTMLCanvasElement, cssW: number, dpr: number, ca
     ctx.setLineDash([]);
     ctx.fillStyle = color; ctx.textAlign = 'left'; ctx.fillText(label, pad.l + 6, y - 5);
   };
-  refLine(ANNUAL, '#8d8474', 'Annual Limit (50 mSv) · NCRP occupational');
-  refLine(CAREER, '#e4573d', 'NASA Career Limit (600 mSv)');
+  refLine(ANNUAL, PAL.dim, 'Annual Limit (50 mSv) · NCRP occupational');
+  refLine(CAREER, PAL.warn, 'NASA Career Limit (600 mSv)');
 
   // cumulative-dose line (straight, constant rate)
-  ctx.strokeStyle = '#ffb02e'; ctx.lineWidth = 2.6;
+  ctx.strokeStyle = PAL.accent; ctx.lineWidth = 2.6;
   ctx.beginPath(); ctx.moveTo(xOf(0), yOf(0)); ctx.lineTo(xOf(days), yOf(totalSv)); ctx.stroke();
-  ctx.fillStyle = '#f4efe6';
+  ctx.fillStyle = PAL.mark;
   ctx.beginPath(); ctx.arc(xOf(days), yOf(totalSv), 4, 0, Math.PI * 2); ctx.fill();
 
   if (rate > 0 && totalSv > CAREER) {
     const crossDay = (CAREER * 1000) / rate; // cumulative = 600 mSv
     if (crossDay <= days) {
       const x = xOf(crossDay);
-      ctx.strokeStyle = 'rgba(228,87,61,0.9)'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
+      ctx.strokeStyle = PAL.warn; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5;
       ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
       ctx.setLineDash([]);
-      ctx.fillStyle = '#e4573d'; ctx.textAlign = 'center'; ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
+      ctx.fillStyle = PAL.warn; ctx.textAlign = 'center'; ctx.font = 'bold 11px "IBM Plex Mono", ui-monospace, monospace';
       ctx.fillText(`Limit reached on day ${Math.round(crossDay)}`, x, pad.t + plotH - 8);
     }
-    ctx.fillStyle = '#e4573d'; ctx.textAlign = 'right'; ctx.font = 'bold 12px "IBM Plex Mono", ui-monospace, monospace';
+    ctx.fillStyle = PAL.warn; ctx.textAlign = 'right'; ctx.font = 'bold 12px "IBM Plex Mono", ui-monospace, monospace';
     ctx.fillText('EXCEEDS NASA CAREER LIMIT', cssW - pad.r, pad.t + 2);
   }
 
@@ -687,7 +717,7 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
   const ctx = canvas.getContext('2d')!;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, cssW, totalH);
-  if (caption) { ctx.fillStyle = '#191714'; ctx.fillRect(0, 0, cssW, totalH); }
+  if (caption) { ctx.fillStyle = PAL.panel; ctx.fillRect(0, 0, cssW, totalH); }
 
   const pad = { l: 64, r: 16, t: 20, b: 40 };
   const plotW = cssW - pad.l - pad.r;
@@ -709,21 +739,21 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
   // y grid: one line per decade
   for (let ex = expLo; ex <= expHi; ex++) {
     const y = yOf(Math.pow(10, ex));
-    ctx.strokeStyle = 'rgba(46,42,36,0.95)';
+    ctx.strokeStyle = PAL.grid;
     ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(cssW - pad.r, y); ctx.stroke();
-    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'right';
+    ctx.fillStyle = PAL.dim; ctx.textAlign = 'right';
     ctx.fillText(`1e${ex}`, pad.l - 8, y + 4);
   }
   // x grid: decades 10 … 1e5
   for (let ex = 1; ex <= 5; ex++) {
     const T = Math.pow(10, ex);
     const x = xOf(T);
-    ctx.strokeStyle = 'rgba(46,42,36,0.55)';
+    ctx.strokeStyle = PAL.gridFaint;
     ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, pad.t + plotH); ctx.stroke();
-    ctx.fillStyle = '#8d8474'; ctx.textAlign = 'center';
+    ctx.fillStyle = PAL.dim; ctx.textAlign = 'center';
     ctx.fillText(fmtEnergy(T), x, cssH - pad.b + 18);
   }
-  ctx.fillStyle = '#b6ad9e'; ctx.textAlign = 'center';
+  ctx.fillStyle = PAL.body; ctx.textAlign = 'center';
   ctx.fillText('ion kinetic energy  (MeV/n, log)', pad.l + plotW / 2, cssH - 4);
   ctx.save(); ctx.translate(14, pad.t + plotH / 2); ctx.rotate(-Math.PI / 2);
   ctx.fillText('dose contribution  (mSv/day per decade, log)', 0, 0); ctx.restore();
@@ -747,18 +777,18 @@ function renderSpectrumChart(canvas: HTMLCanvasElement, cssW: number, dpr: numbe
 
   // per-ion overlays first (under the total)
   if (showIons) {
-    for (const k of SPEC_ION_KEYS) trace(spectrum.perIon[k] ?? [], SPEC_COLORS[k]!, 1.3, 0.8);
+    for (const k of SPEC_ION_KEYS) trace(spectrum.perIon[k] ?? [], PAL.spec[k]!, 1.3, 0.8);
   }
   // total — the headline trace
-  trace(spectrum.total, '#f4efe6', 2.4);
+  trace(spectrum.total, PAL.mark, 2.4);
 
   // peak-contribution marker (drawn label instead of a hover tooltip — hand-rolled canvas)
   const px = xOf(spectrum.peakT);
-  ctx.strokeStyle = 'rgba(255,176,46,0.6)';
+  ctx.strokeStyle = PAL.accent;
   ctx.setLineDash([4, 4]);
   ctx.beginPath(); ctx.moveTo(px, pad.t); ctx.lineTo(px, pad.t + plotH); ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = '#ffb02e'; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
+  ctx.fillStyle = PAL.accent; ctx.textAlign = px > pad.l + plotW * 0.7 ? 'right' : 'left';
   ctx.fillText(`peak contribution: ${fmtEnergy(spectrum.peakT)} MeV/n`, px + (px > pad.l + plotW * 0.7 ? -6 : 6), pad.t + 12);
 
   if (caption) drawCaption(ctx, cssW, cssH, caption);
@@ -859,8 +889,8 @@ const PRESETS: Record<
     W: number; // Matthiä solar modulation (0 = solar min, 130 = solar max)
     mode: 'primaries' | 'fragmentation';
     single: boolean;
-    l1: { mat: keyof typeof TRACE; t: number };
-    l2: { mat: keyof typeof TRACE; t: number };
+    l1: { mat: MaterialKey; t: number };
+    l2: { mat: MaterialKey; t: number };
   }
 > = {
   'mars-cruise': { duration: 360, W: W_MIN, mode: 'fragmentation', single: false, l1: { mat: 'aluminum', t: 10 }, l2: { mat: 'polyethylene', t: 5 } },
@@ -933,7 +963,7 @@ function applyPreset(key: string): void {
 //   ?preset=mars&mat1=Al&den1=10&layers=2&mat2=PE&den2=5&w=0&model=frag&days=360
 // Legacy links with solar=min|max (pre-v2.2) still restore: they map to W=0|130.
 const MAT_CODE: Record<string, string> = { aluminum: 'Al', polyethylene: 'PE', water: 'H2O', hydrogen: 'H2', methane: 'CH4' };
-const CODE_MAT: Record<string, keyof typeof TRACE> = { Al: 'aluminum', PE: 'polyethylene', H2O: 'water', H2: 'hydrogen', CH4: 'methane' };
+const CODE_MAT: Record<string, MaterialKey> = { Al: 'aluminum', PE: 'polyethylene', H2O: 'water', H2: 'hydrogen', CH4: 'methane' };
 const PRESET_CODE: Record<string, string> = { 'mars-cruise': 'mars', 'lunar-gateway': 'gateway', 'artemis-transit': 'artemis', custom: 'custom' };
 const CODE_PRESET: Record<string, string> = { mars: 'mars-cruise', gateway: 'lunar-gateway', artemis: 'artemis-transit', custom: 'custom' };
 
@@ -1004,14 +1034,14 @@ $('presetSeg').querySelectorAll('button').forEach((b) =>
 // ---- wiring ----------------------------------------------------------------
 $('materialSeg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
-    state.material = (b as HTMLElement).dataset.mat as keyof typeof TRACE;
+    state.material = (b as HTMLElement).dataset.mat as MaterialKey;
     setSeg('materialSeg', 'mat', state.material);
     refreshReadout();
   }),
 );
 $('material2Seg').querySelectorAll('button').forEach((b) =>
   b.addEventListener('click', () => {
-    state.layer2.material = (b as HTMLElement).dataset.mat as keyof typeof TRACE;
+    state.layer2.material = (b as HTMLElement).dataset.mat as MaterialKey;
     setSeg('material2Seg', 'mat', state.layer2.material);
     refreshReadout();
   }),
@@ -1191,7 +1221,21 @@ $<HTMLButtonElement>('ionToggle').addEventListener('click', () => {
 });
 window.addEventListener('resize', () => { drawChart(); drawTimeline(); drawSpectrum(); });
 
+/* The canvases cannot inherit CSS, so the theme switch has to hand them the new palette
+   and ask for a repaint. Everything else on the page re-colours itself. */
+window.addEventListener('themechange', () => {
+  PAL = readPalette();
+  for (const k of MATERIAL_KEYS) TRACE[k] = PAL.trace[k];
+  drawChart();
+  drawTimeline();
+  drawSpectrum();
+  renderSensitivity();
+});
+
 renderVersion();
+initTheme(); // before the first paint, so the charts are drawn in the remembered theme
+PAL = readPalette();
+for (const k of MATERIAL_KEYS) TRACE[k] = PAL.trace[k];
 renderProvenance(document.getElementById('provenance'));
 applyURLParams(); // restore a shared configuration before the first compute
 (['thickness', 'thickness2', 'duration', 'wSlider'] as const).forEach((id) => syncFill($<HTMLInputElement>(id)));
