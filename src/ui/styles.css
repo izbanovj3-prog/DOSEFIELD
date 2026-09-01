@@ -394,7 +394,11 @@ input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-of
 /* ---- dose spectrum chart (v2.2) ---- */
 .spec-note { font-size: 10px; color: var(--dim); margin: -6px 0 12px; line-height: 1.6; text-wrap: pretty; }
 #specIonLegend { display: inline-flex; gap: 14px; }
-.lg-spec-h { color: #efe4c8; } .lg-spec-he { color: #d3a75a; } .lg-spec-c { color: #86a35f; } .lg-spec-o { color: #5a8fa3; } .lg-spec-fe { color: #b87061; }
+/* The ion legend must name the SAME colours the canvas draws. These used to be five hex
+   literals copied from the dark palette, so in daylight the chips kept their night colours
+   while the traces they label switched — unreadable (H measured 1.14:1 against the panel)
+   and, worse, mislabelling. They read the tokens now, exactly as PAL.spec does in main.ts. */
+.lg-spec-h { color: var(--hydrogen); } .lg-spec-he { color: var(--methane); } .lg-spec-c { color: var(--poly); } .lg-spec-o { color: var(--water); } .lg-spec-fe { color: var(--al); }
 .legend .tool-btn { margin-left: auto; padding: 5px 10px; }
 
 /* ---- behind-shield spectrum panel (v2.3) ----
