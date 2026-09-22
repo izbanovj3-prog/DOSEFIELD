@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { MATERIALS, HIGH_Z_REFERENCE, checkDensityEffect, type Material } from '../src/physics/materials.js';
+import { densityEffect } from '../src/physics/stoppingPower.js';
 import { PSTAR_DATASETS } from '../data/pstar/index.js';
 import { letFromMassStopping } from '../src/physics/qualityFactor.js';
 import { MEV_PER_G_TO_GY, SECONDS_PER_DAY } from '../src/physics/constants.js';
@@ -107,6 +108,47 @@ describe('conductor flag ↔ δ0 consistency', () => {
     expect(() => checkDensityEffect(withDE(MATERIALS.water!, { delta0: 0.12 }))).toThrow(/non-conductor/);
     expect(() => checkDensityEffect(withDE(MATERIALS.aluminum!, { conductor: false }))).toThrow(/non-conductor/);
   });
+});
+
+/**
+ * Sternheimer's parameters join the middle branch to the branch below x0: evaluated at x = x0 it
+ * must equal δ0 for a conductor and 0 for an insulator.
+ *
+ * The parameters are printed to finite precision (PDG muE PDFs: `a` to 5 decimals; k, x0, x1, C̄
+ * to 4), so the join holds only to within that rounding — PDG's own sets miss by 5.5e-5 (Al) to
+ * 3.9e-4 (Pb), which rules out a machine-precision tolerance. The tolerance here IS that rounding:
+ * half a unit in the last printed digit of each parameter, propagated through the formula.
+ * Nothing in it is fitted. δ0 is treated as exact: it is printed to only 2 decimals, yet all three
+ * conductors meet it to < 4e-4, so `a` was evidently set from it.
+ *
+ * What this catches: aluminium's former a = 0.0802 missed by 1.7e-3 against a bound of 6.9e-4,
+ * water's 0.0912 by 1.3e-3 against 5.2e-4. What it cannot: polyethylene's former 0.1211 missed by
+ * 4.5e-4, inside its 4.8e-4 bound — a truncation in the last digit can hide in the rounding.
+ */
+describe('density-effect continuity at x0', () => {
+  const HALF_UNIT = { a: 0.5e-5, m: 0.5e-4, x0: 0.5e-4, x1: 0.5e-4, Cbar: 0.5e-4 };
+  const all = { ...MATERIALS, ...HIGH_Z_REFERENCE };
+
+  for (const key of Object.keys(all)) {
+    const d = all[key]!.densityEffect;
+    if (d.x0 === 99) continue; // δ≡0 sentinel (H₂, CH₄): no middle branch to join
+
+    it(`${key}: middle branch at x0 equals ${d.conductor ? 'δ0' : '0'} to printed precision`, () => {
+      const u = d.x1 - d.x0;
+      const middleAtX0 = 2 * Math.LN10 * d.x0 - d.Cbar + d.a * u ** d.m;
+      const target = d.conductor ? d.delta0 : 0;
+      const tolerance =
+        HALF_UNIT.a * u ** d.m +
+        HALF_UNIT.m * d.a * u ** d.m * Math.log(u) +
+        HALF_UNIT.x0 * Math.abs(2 * Math.LN10 - d.a * d.m * u ** (d.m - 1)) +
+        HALF_UNIT.x1 * d.a * d.m * u ** (d.m - 1) +
+        HALF_UNIT.Cbar;
+      expect(Math.abs(middleAtX0 - target)).toBeLessThanOrEqual(tolerance);
+      // the expression above is the one densityEffect evaluates just above x0
+      const justAbove = densityEffect(10 ** (d.x0 + 1e-12), d);
+      expect(Math.abs(justAbove - middleAtX0)).toBeLessThan(1e-9);
+    });
+  }
 });
 
 describe('unit conversions', () => {

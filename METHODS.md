@@ -10,7 +10,7 @@ validation results, the honest comparison with published work, and the limitatio
 are transcribed from the implementation files named in each section — if this document and the
 code ever disagree, the code and its CI-gated tests win.
 
-**Every number below was produced by running the code on 2026-08-31** — `npm run validate:phase1..5`,
+**Every number below was produced by running the code on 2026-08-31, and re-run in full on 2026-09-22** — `npm run validate:phase1..5`,
 `npm run report`, `npm run verify:deployed`, and a per-material recomputation against the NIST PSTAR
 tables in `data/pstar/`. Nothing is transcribed from an older report. If a figure here ever
 disagrees with what the code prints, rerun and fix the file.
@@ -106,7 +106,7 @@ values against an independent calculation.
 measured against NIST PSTAR every CI run: ≤ 1.55% error above 10 MeV, ≤ 4.03% down to 1 MeV.
 
 CSDA range (`range.ts`): R(T) = ∫₀ᵀ dE / S(E), integrated numerically; validated against
-PSTAR proton ranges in Al to < 0.4% (9.975 vs 10.01 g/cm² at 100 MeV, 412.177 vs 412.4 at 1 GeV).
+PSTAR proton ranges in Al to < 0.4% (9.975 vs 10.01 g/cm² at 100 MeV, 412.191 vs 412.4 at 1 GeV).
 
 ## 4. Heavy ions (`src/physics/effectiveCharge.ts`, `ionStopping.ts` — Phase 2)
 
@@ -358,7 +358,7 @@ Fragmentation also widens the polyethylene-versus-aluminium advantage at 20 g/cm
 
 ```
 npm run typecheck   → 0 errors
-npm test            → 185/185 pass (9 files)
+npm test            → 190/190 pass (9 files)
 npm run build       → clean
 npm run validate:phase1..5 → 5/5 GATE PASS
 npm run report      → regenerates byte-identical output (no drift)
@@ -481,7 +481,7 @@ Methods page renders immediately after this section.
 ```
 npm ci
 npm run typecheck
-npm test                    # 185 tests, incl. the PSTAR data-driven suite
+npm test                    # 190 tests, incl. the PSTAR data-driven suite
 npm run validate:phase1     # NIST PSTAR stopping power + CSDA range
 npm run validate:phase2     # GCR spectrum → dose → LET → Q(L)
 npm run validate:phase3     # shielding transport + material ranking

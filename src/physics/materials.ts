@@ -13,6 +13,9 @@
  *      https://pdg.lbl.gov/2023/AtomicNuclearProperties/MUE/  ,
  *      ultimately R.M. Sternheimer, M.J. Berger, S.M. Seltzer,
  *      At. Data Nucl. Data Tables 30, 261 (1984).
+ *      Taken from the PDF tables (muE_<name>.pdf) at full printed precision: `a` to 5 decimals,
+ *      the rest to 4. The plain-text muE_<name>.txt tables round `a` to 4 decimals — the source
+ *      of an earlier truncation for Al, water and polyethylene (re-checked 2026-09-22).
  *
  * Note on water I: PSTAR (ICRU-49) uses I = 75 eV. PDG lists 79.7 eV on its summary
  * page, but its tabulated density-effect C̄ = 3.5017 is self-consistent with I = 75 eV
@@ -75,7 +78,7 @@ export const ALUMINUM: Material = {
   ZoverA: 13 / 26.9815385, // = 0.481814 mol/g (Z=13, A=26.9815385 g/mol)
   density: 2.6989,
   I_eV: 166.0,
-  densityEffect: { a: 0.0802, m: 3.6345, x0: 0.1708, x1: 3.0127, Cbar: 4.2395, conductor: true, delta0: 0.12 },
+  densityEffect: { a: 0.08024, m: 3.6345, x0: 0.1708, x1: 3.0127, Cbar: 4.2395, conductor: true, delta0: 0.12 },
   composition: [{ Z: 13, A: 26.9815, massFraction: 1.0 }],
   sourceNote: 'NIST PSTAR matno 013; Sternheimer params PDG 2023 (Sternheimer-Berger-Seltzer 1984).',
 };
@@ -87,7 +90,7 @@ export const WATER: Material = {
   ZoverA: 0.55509,
   density: 1.0,
   I_eV: 75.0, // PSTAR/ICRU-49 value (see header note)
-  densityEffect: { a: 0.0912, m: 3.4773, x0: 0.24, x1: 2.8004, Cbar: 3.5017, conductor: false, delta0: 0.0 },
+  densityEffect: { a: 0.09116, m: 3.4773, x0: 0.24, x1: 2.8004, Cbar: 3.5017, conductor: false, delta0: 0.0 },
   composition: [
     { Z: 1, A: 1.008, massFraction: 0.111894 },
     { Z: 8, A: 15.999, massFraction: 0.888106 },
@@ -102,7 +105,7 @@ export const POLYETHYLENE: Material = {
   ZoverA: 0.57034,
   density: 0.94, // PSTAR/ICRU value; PDG lists a revised 0.89 (mass stopping power is density-independent)
   I_eV: 57.4,
-  densityEffect: { a: 0.1211, m: 3.4292, x0: 0.1489, x1: 2.5296, Cbar: 3.0563, conductor: false, delta0: 0.0 },
+  densityEffect: { a: 0.12108, m: 3.4292, x0: 0.1489, x1: 2.5296, Cbar: 3.0563, conductor: false, delta0: 0.0 },
   composition: [
     { Z: 1, A: 1.008, massFraction: 0.143711 },
     { Z: 6, A: 12.011, massFraction: 0.856289 },
