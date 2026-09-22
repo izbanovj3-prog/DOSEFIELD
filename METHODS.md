@@ -87,8 +87,20 @@ with the full maximum energy transfer
 
     T_max = 2·m_e c²·β²γ² / (1 + 2γ·(m_e/M) + (m_e/M)²)
 
-and the Sternheimer density effect δ(βγ) in its three-branch form (x = log₁₀ βγ):
-δ = 2·ln10·x − C̄ for x ≥ x₁; add a·(x₁−x)^m for x₀ ≤ x < x₁; δ = 0 below x₀ (insulators).
+and the Sternheimer density effect δ(βγ) in its four-branch form (PDG Eq. 34.7, x = log₁₀ βγ):
+
+    x ≥ x₁              δ = 2·ln10·x − C̄
+    x₀ ≤ x < x₁         δ = 2·ln10·x − C̄ + a·(x₁ − x)^m
+    x < x₀, conductor   δ = δ₀·10^(2(x − x₀))
+    x < x₀, insulator   δ = 0
+
+Of the five shield materials only **aluminium** is a conductor (δ₀ = 0.12, Sternheimer 1984);
+water and polyethylene take δ = 0 below x₀, and hydrogen and methane carry δ ≡ 0 throughout
+(labeled in `materials.ts`: their onset lies above the GCR range). Conductor status is an explicit per-material flag, not inferred from δ₀: a conductor with
+δ₀ ≤ 0, or an insulator with δ₀ ≠ 0, stops the code at module load. For aluminium the conductor
+branch lowers dE/dx by 0.012% at 10 MeV, 0.087% at 100 MeV and 0.68% just below x₀ = 0.1708
+(βγ = 1.4818, 739 MeV protons); above that it has no effect. `test/physics.test.ts` pins those
+values against an independent calculation.
 
 **Labeled omissions:** shell (−C/Z), Barkas (z³), Bloch (z⁴) corrections. Consequence,
 measured against NIST PSTAR every CI run: ≤ 1.55% error above 10 MeV, ≤ 4.03% down to 1 MeV.
@@ -346,7 +358,7 @@ Fragmentation also widens the polyethylene-versus-aluminium advantage at 20 g/cm
 
 ```
 npm run typecheck   → 0 errors
-npm test            → 172/172 pass (9 files)
+npm test            → 185/185 pass (9 files)
 npm run build       → clean
 npm run validate:phase1..5 → 5/5 GATE PASS
 npm run report      → regenerates byte-identical output (no drift)
@@ -469,7 +481,7 @@ Methods page renders immediately after this section.
 ```
 npm ci
 npm run typecheck
-npm test                    # 172 tests, incl. the PSTAR data-driven suite
+npm test                    # 185 tests, incl. the PSTAR data-driven suite
 npm run validate:phase1     # NIST PSTAR stopping power + CSDA range
 npm run validate:phase2     # GCR spectrum → dose → LET → Q(L)
 npm run validate:phase3     # shielding transport + material ranking

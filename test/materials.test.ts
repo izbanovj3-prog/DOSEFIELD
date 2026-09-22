@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MATERIALS } from '../src/physics/materials.js';
+import { MATERIALS, HIGH_Z_REFERENCE, checkDensityEffect, type Material } from '../src/physics/materials.js';
 import { PSTAR_DATASETS } from '../data/pstar/index.js';
 import { letFromMassStopping } from '../src/physics/qualityFactor.js';
 import { MEV_PER_G_TO_GY, SECONDS_PER_DAY } from '../src/physics/constants.js';
@@ -52,7 +52,8 @@ describe('material composition data', () => {
       expect(m.I_eV).toBeGreaterThan(0);
       const d = m.densityEffect;
       for (const v of [d.a, d.m, d.x0, d.x1, d.Cbar, d.delta0]) expect(Number.isFinite(v)).toBe(true);
-      const isNullSentinel = d.x0 === 99 && d.x1 === 99 && d.a === 0 && d.Cbar === 0 && d.delta0 === 0;
+      const isNullSentinel =
+        d.x0 === 99 && d.x1 === 99 && d.a === 0 && d.Cbar === 0 && !d.conductor && d.delta0 === 0;
       if (isNullSentinel) expect(['hydrogen', 'methane']).toContain(key);
       else expect(d.x1).toBeGreaterThan(d.x0);
     });
@@ -66,6 +67,45 @@ describe('material composition data', () => {
   it('ranks by hydrogen content the same way <Z/A> does (the shielding result depends on it)', () => {
     const byZoverA = [...KEYS].sort((a, b) => MATERIALS[b]!.ZoverA - MATERIALS[a]!.ZoverA);
     expect(byZoverA).toEqual(['hydrogen', 'methane', 'polyethylene', 'water', 'aluminum']);
+  });
+});
+
+/**
+ * Below x0 the density effect branches on the `conductor` flag. `checkDensityEffect` runs over
+ * every table at module load; these tests prove it actually rejects each way the flag and δ0
+ * can disagree, and pin which materials are conductors.
+ */
+describe('conductor flag ↔ δ0 consistency', () => {
+  const withDE = (m: Material, patch: Partial<Material['densityEffect']>): Material => ({
+    ...m,
+    densityEffect: { ...m.densityEffect, ...patch },
+  });
+
+  it('aluminium is the only conductor among the five shields', () => {
+    expect(KEYS.filter((k) => MATERIALS[k]!.densityEffect.conductor).sort()).toEqual(['aluminum']);
+    expect(MATERIALS.aluminum!.densityEffect.delta0).toBe(0.12);
+  });
+
+  it('the high-Z reference metals are conductors with their Sternheimer δ0', () => {
+    expect(HIGH_Z_REFERENCE.titanium!.densityEffect).toMatchObject({ conductor: true, delta0: 0.12 });
+    expect(HIGH_Z_REFERENCE.lead!.densityEffect).toMatchObject({ conductor: true, delta0: 0.14 });
+  });
+
+  it('accepts every shipped and reference material', () => {
+    for (const m of [...Object.values(MATERIALS), ...Object.values(HIGH_Z_REFERENCE)]) {
+      expect(() => checkDensityEffect(m)).not.toThrow();
+    }
+  });
+
+  it('rejects a conductor whose δ0 is zero, negative or NaN', () => {
+    for (const delta0 of [0, -0.12, Number.NaN]) {
+      expect(() => checkDensityEffect(withDE(MATERIALS.aluminum!, { delta0 }))).toThrow(/conductor/);
+    }
+  });
+
+  it('rejects a non-conductor with a nonzero δ0', () => {
+    expect(() => checkDensityEffect(withDE(MATERIALS.water!, { delta0: 0.12 }))).toThrow(/non-conductor/);
+    expect(() => checkDensityEffect(withDE(MATERIALS.aluminum!, { conductor: false }))).toThrow(/non-conductor/);
   });
 });
 
