@@ -31,7 +31,7 @@ function kin(T: number): [number, number, number] {
 
 describe('Sternheimer density effect', () => {
   const al = MATERIALS.aluminum!.densityEffect;
-  it('is ~0 well below x0 for an insulator-like onset and small for conductors', () => {
+  it('is exactly 0 below x0 for a non-conductor (water)', () => {
     // βγ = 0.05 → x ≈ -1.3, far below x0
     const d = densityEffect(0.05, MATERIALS.water!.densityEffect);
     expect(d).toBe(0);
@@ -40,6 +40,61 @@ describe('Sternheimer density effect', () => {
     const dLow = densityEffect(1.0, al); // x = 0
     const dHigh = densityEffect(5.0, al); // x ≈ 0.7
     expect(dHigh).toBeGreaterThan(dLow);
+  });
+});
+
+/**
+ * The conductor branch δ = δ0·10^(2(x−x0)) is the only part of the density effect acting on
+ * aluminium below 739 MeV. Nothing else pins it: at 10 MeV, where the PSTAR comparison peaks,
+ * it moves dE/dx by 0.012%, far inside that tolerance. So it is checked here directly, against
+ * the same aluminium with the branch forced off (δ = 0 below x0, everything else identical).
+ *
+ * PROVENANCE OF THE REFERENCE VALUES: computed independently from PDG Eq. 34.5 and 34.7
+ * (I = 166 eV, Z/A = 0.4818, K = 0.307075 MeV mol⁻¹ cm²) by someone who had not seen this code.
+ * They are an external cross-check of the implementation, not expectations derived from it.
+ * If this test fails, do NOT adjust the numbers to match the code until it has been worked out
+ * which side is wrong. (K and Z/A cancel in the ratio; I and the kinematics do not.)
+ */
+describe('Sternheimer conductor branch (aluminium)', () => {
+  const al = MATERIALS.aluminum!;
+  const alNoBranch = { ...al, densityEffect: { ...al.densityEffect, conductor: false, delta0: 0 } };
+  const changePct = (T: number) => {
+    const off = electronicMassStoppingPower(T, alNoBranch);
+    return ((electronicMassStoppingPower(T, al) - off) / off) * 100;
+  };
+
+  const REFERENCE: [T_MeV: number, changePct: number][] = [
+    [1, -0.0023],
+    [10, -0.012],
+    [100, -0.087],
+    [400, -0.3426],
+    [600, -0.535],
+    [738, -0.6788],
+  ];
+  for (const [T, ref] of REFERENCE) {
+    it(`T = ${T} MeV: lowers dE/dx by ${-ref}% (external reference, ±0.001 pp)`, () => {
+      expect(Math.abs(changePct(T) - ref)).toBeLessThanOrEqual(0.001);
+    });
+  }
+
+  it('lowers dE/dx everywhere below the branch point', () => {
+    for (const T of [1, 2, 5, 10, 20, 50, 100, 200, 400, 600, 700, 738, 739.06]) {
+      expect(changePct(T)).toBeLessThan(0);
+    }
+  });
+
+  /**
+   * x0 = 0.1708 ⇒ βγ = 1.48184 ⇒ T = 739.0678 MeV. In the function's own variable the branch
+   * point x = x0 is exact, so it is tested there. In energy, converting that T back to x lands
+   * one ulp below x0 and correctly takes the conductor branch, so the energy grid starts at
+   * 739.068 MeV (the first value on the x ≥ x0 side) and runs past x1 to cover both upper branches.
+   */
+  it('is bit-identical at and above the branch point', () => {
+    const bg0 = Math.pow(10, al.densityEffect.x0);
+    expect(densityEffect(bg0, al.densityEffect)).toBe(densityEffect(bg0, alNoBranch.densityEffect));
+    for (const T of [739.068, 739.1, 740, 800, 1000, 1e4, 1e5, 1e6, 1e7]) {
+      expect(electronicMassStoppingPower(T, al)).toBe(electronicMassStoppingPower(T, alNoBranch));
+    }
   });
 });
 

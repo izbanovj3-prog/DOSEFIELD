@@ -51,18 +51,19 @@ export function maxEnergyTransfer(beta2: number, gamma: number, restMass_MeV: nu
 }
 
 /**
- * Sternheimer density-effect correction δ(βγ).
+ * Sternheimer density-effect correction δ(βγ), four branches (PDG Eq. 34.7).
  *   x = log10(βγ)
  *   x ≥ x1:            δ = 2·ln(10)·x − C̄
  *   x0 ≤ x < x1:       δ = 2·ln(10)·x − C̄ + a·(x1 − x)^m
  *   x  < x0 (cond.):   δ = δ0·10^(2(x − x0))      [conductors only]
  *   x  < x0 (insul.):  δ = 0
+ * The branch below x0 follows the material's explicit `conductor` flag, not δ0 itself.
  */
 export function densityEffect(betaGamma: number, p: DensityEffectParams): number {
   const x = Math.log10(betaGamma);
   if (x >= p.x1) return 2 * LN10 * x - p.Cbar;
   if (x >= p.x0) return 2 * LN10 * x - p.Cbar + p.a * Math.pow(p.x1 - x, p.m);
-  return p.delta0 > 0 ? p.delta0 * Math.pow(10, 2 * (x - p.x0)) : 0;
+  return p.conductor ? p.delta0 * Math.pow(10, 2 * (x - p.x0)) : 0;
 }
 
 /**

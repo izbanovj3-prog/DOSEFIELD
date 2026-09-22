@@ -115,6 +115,7 @@ describe('high-Z reference input data', () => {
     it(`${key}: carries a real Sternheimer set (no δ≡0 sentinel — both are conductors)`, () => {
       const d = m.densityEffect;
       expect(d.x1).toBeGreaterThan(d.x0);
+      expect(d.conductor).toBe(true);
       expect(d.delta0).toBeGreaterThan(0);
     });
   }

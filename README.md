@@ -7,7 +7,7 @@ physics, with no parameter tuned to the answer.**
 ### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
 [![CI](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml/badge.svg)](https://github.com/izbanovj3-prog/DOSEFIELD/actions/workflows/ci.yml)
-&nbsp; CI runs typecheck · 172 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** · and an integrity cross-check that the values the app computes equal the values the report publishes — on every push.
+&nbsp; CI runs typecheck · 190 unit tests · production build · **all five physics-validation phases (NIST PSTAR + MSL/RAD)** · and an integrity cross-check that the values the app computes equal the values the report publishes — on every push.
 
 > ### The headline
 > **A Mars round-trip exceeds NASA's 600 mSv career radiation limit.** NASA's MSL/RAD instrument
