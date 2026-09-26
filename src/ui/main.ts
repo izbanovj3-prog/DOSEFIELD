@@ -85,6 +85,7 @@ let mlTimer: number | undefined;
 let applyingPreset = false; // guards the auto-→Custom fallback while a preset sets fields
 // last organ depth-doses from the worker (v2.1) — null until the first compute lands
 let organs: Record<string, { H: number; D: number }> | null = null;
+let organsKey = ''; // shieldConfigKey() the cached organs belong to
 let organTimer: number | undefined;
 // last validation summary — reused by the exported report so it only prints computed numbers
 let lastVal: ValidationSummary | null = null;
@@ -96,6 +97,7 @@ let specTimer: number | undefined;
 // `shieldedKey` tags the config it belongs to, so a reply that lands after the user has
 // moved on is discarded instead of being drawn under the new labels.
 let shieldedSpec: SpectrumData | null = null;
+let shieldedSpecKey = '';
 let shieldedSpecTimer: number | undefined;
 // automated self-checks (v2.2)
 let selfChecks: SelfCheck[] | null = null;
@@ -225,8 +227,10 @@ worker.onmessage = (e: MessageEvent) => {
     setStatus('ready', 'READY');
     render();
   } else if (msg.type === 'organs') {
+    if (msg.key !== shieldConfigKey()) return;
     organs = {};
     for (const o of msg.organs as { key: string; H: number; D: number }[]) organs[o.key] = { H: o.H, D: o.D };
+    organsKey = msg.key;
     renderOrgans();
   } else if (msg.type === 'spectrum') {
     if (msg.W === state.W) { spectrum = msg as SpectrumData; drawSpectrum(); }
@@ -234,6 +238,7 @@ worker.onmessage = (e: MessageEvent) => {
     // drop a reply whose configuration is no longer on screen (see shieldedKey)
     if (msg.key === shieldConfigKey()) {
       shieldedSpec = msg as SpectrumData;
+      shieldedSpecKey = msg.key;
       drawShieldedSpectrum();
     }
   } else if (msg.type === 'selfcheck') {
@@ -266,8 +271,9 @@ function readout(): { H: number; D: number; Q: number } {
 /** Debounced off-thread organ depth-dose compute (rates change only with the physics config). */
 function requestOrgans(): void {
   clearTimeout(organTimer);
+  const key = shieldConfigKey();
   organTimer = window.setTimeout(
-    () => worker.postMessage({ type: 'organs', layers: layers(), W: state.W, mode: state.mode }),
+    () => worker.postMessage({ type: 'organs', layers: layers(), W: state.W, mode: state.mode, key }),
     120,
   );
 }
@@ -592,7 +598,8 @@ function exportChartPNG(
     if (!spectrum) return;
     renderSpectrumChart(off, EXPORT_W, EXPORT_DPR, `Dose-rate contribution per decade of INCIDENT ion energy (GCR before shielding) — W = ${state.W} (Matthiä 2013)`);
   } else if (kind === 'spectrumShielded') {
-    if (!shieldedSpec) return;
+    // the caption is built from live state, so the curve must belong to that same state
+    if (!shieldedSpec || shieldedSpecKey !== shieldConfigKey()) return;
     renderSpectrumChart(
       off,
       EXPORT_W,
@@ -1074,10 +1081,9 @@ function reflectControls(): void {
   $('totalArealVal').textContent = (state.thickness + (state.singleLayer ? 0 : state.layer2.thickness)).toFixed(1);
 }
 
-function applyPreset(key: string): void {
+function loadPresetFields(key: string): boolean {
   const p = PRESETS[key];
-  if (!p) return;
-  applyingPreset = true;
+  if (!p) return false;
   state.duration = p.duration;
   state.W = p.W;
   state.mode = p.mode;
@@ -1085,6 +1091,27 @@ function applyPreset(key: string): void {
   state.material = p.l1.mat;
   state.thickness = p.l1.t;
   state.layer2 = { material: p.l2.mat, thickness: p.l2.t };
+  return true;
+}
+
+/** True when the live physics config is exactly preset `key` (layer 2 ignored for single-layer presets). */
+function stateMatchesPreset(key: string): boolean {
+  const p = PRESETS[key];
+  if (!p) return false;
+  return (
+    state.duration === p.duration &&
+    state.W === p.W &&
+    state.mode === p.mode &&
+    state.singleLayer === p.single &&
+    state.material === p.l1.mat &&
+    state.thickness === p.l1.t &&
+    (p.single || (state.layer2.material === p.l2.mat && state.layer2.thickness === p.l2.t))
+  );
+}
+
+function applyPreset(key: string): void {
+  applyingPreset = true;
+  if (!loadPresetFields(key)) { applyingPreset = false; return; }
   state.preset = key;
   reflectControls();
   requestCurves(); // W/mode may have changed → refresh the chart curves
@@ -1135,6 +1162,9 @@ function applyURLParams(): void {
   const known = ['preset', 'mat1', 'den1', 'mat2', 'den2', 'layers', 'w', 'solar', 'model', 'days'];
   if (!known.some((k) => q.has(k))) return;
   applyingPreset = true;
+  // a named preset seeds the whole config; explicit params below override individual fields
+  const presetKey = CODE_PRESET[q.get('preset') ?? ''] ?? 'custom';
+  loadPresetFields(presetKey);
   const m1 = CODE_MAT[q.get('mat1') ?? ''];
   if (m1) state.material = m1;
   const m2 = CODE_MAT[q.get('mat2') ?? ''];
@@ -1155,7 +1185,8 @@ function applyURLParams(): void {
   if (model) state.mode = model === 'frag' ? 'fragmentation' : 'primaries';
   const days = parseInt(q.get('days') ?? '', 10);
   if (Number.isFinite(days)) state.duration = Math.min(1000, Math.max(30, Math.round(days / 10) * 10));
-  state.preset = CODE_PRESET[q.get('preset') ?? ''] ?? 'custom';
+  // never label a config with a preset name it doesn't actually match (e.g. hand-edited den1)
+  state.preset = stateMatchesPreset(presetKey) ? presetKey : 'custom';
   reflectControls();
   applyingPreset = false;
 }
@@ -1286,7 +1317,7 @@ function buildReportText(): string {
   L.push(`NASA career limit (600 mSv effective): ${((totalMsv / NASA_CAREER_LIMIT_MSV) * 100).toFixed(0)}%`);
   L.push(rule);
   L.push('ORGAN ESTIMATES (approximate; NASA depth-dose convention + ICRP-60 Q)');
-  if (organs) {
+  if (organs && organsKey === shieldConfigKey()) {
     for (const o of ORGANS_UI) {
       const d = organs[o.key];
       if (!d) continue;
@@ -1295,7 +1326,7 @@ function buildReportText(): string {
       L.push(`${''.padEnd(34)}worst 30 d ${d30.toFixed(1)} mGy vs ${o.limit30d} mGy-Eq NASA 30-day limit (${((d30 / o.limit30d) * 100).toFixed(1)}%)`);
     }
   } else {
-    L.push('(organ depth-doses not computed yet)');
+    L.push('(organ depth-doses not yet computed for this configuration)');
   }
   L.push('Organ estimates are approximate: 1-D depth-dose at 0.007 / 0.3 / 5 g/cm2 water');
   L.push('(skin / eye lens / BFO convention); absorbed mGy shown as a proxy for gray-');
@@ -1391,3 +1422,5 @@ requestOrgans();
 requestSpectrum();
 requestShieldedSpectrum();
 worker.postMessage({ type: 'validate' }); // populate the validation panel on load
+// the hero quotes the DEFAULT config; a preset/shared-link load never requests it otherwise
+if (curveKey() !== `${W_MIN}:primaries`) worker.postMessage({ type: 'curves', W: W_MIN, mode: 'primaries' });
