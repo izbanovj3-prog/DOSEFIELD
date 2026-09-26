@@ -150,7 +150,7 @@ ctx.onmessage = (e: MessageEvent) => {
     layers?: ShieldLayer[];
     rate?: number;
     days?: number;
-    /** echo tag so a stale shielded-spectrum reply can be discarded on arrival */
+    /** echo tag so a stale shielded-spectrum / organs reply can be discarded on arrival */
     key?: string;
   };
   const W = msg.W ?? W_SOLAR_MIN;
@@ -171,7 +171,7 @@ ctx.onmessage = (e: MessageEvent) => {
       const r = fn([...(msg.layers ?? []), { material: 'water', thickness: o.depth }], W, CURVE_PERDECADE);
       return { key: o.key, H: r.doseEquivalent_mSv_day, D: r.absorbedDose_mGy_day };
     });
-    ctx.postMessage({ type: 'organs', organs });
+    ctx.postMessage({ type: 'organs', organs, key: msg.key ?? '' });
   } else if (msg.type === 'spectrum') {
     // incident (pre-shield) field — a function of solar modulation only
     ctx.postMessage({ type: 'spectrum', W, ...incidentSpectrum(W) });
