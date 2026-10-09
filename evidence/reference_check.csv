@@ -1,0 +1,18 @@
+key,DOI,resolves (Y/N),title match,first author match,year,volume,pages/article number,notes
+Matthia2013,10.1016/j.asr.2012.09.022,Y,Y ("A ready-to-use galactic cosmic ray model"),Y (Matthiä),2013,51,329-338,"Crossref + doi.org 302 → Elsevier, retrieved 2026-10-09. Repo cites Adv. Space Res. 51, 329: matches. The OULU→W relation is attributed to this paper only via the CosRayModifiedISO implementation (VERIFY flag in data/gcr/matthia2013.ts) — not checked against the paper text."
+Zeitlin2013,10.1126/science.1235989,Y,Y,Y (Zeitlin),2013,340,1080-1084,"Crossref + doi.org → science.org, 2026-10-09."
+Guo2015a,10.1051/0004-6361/201525680,Y,Y ("Variations of dose rate observed by MSL/RAD in transit to Mars"),Y (Guo),2015,577,A58,"Crossref + doi.org → aanda.org; arXiv:1503.06631 full text retrieved 2026-10-09 (shielding passages quoted in evidence/geometry_audit.md)."
+Guo2015b,NOT IN REPO,—,—,—,—,—,—,"PENDING: no second Guo 2015 entry is cited in the repo; needs the references.bib entry (path not yet provided)."
+Kohler2015,10.1016/j.lssr.2015.03.001,Y,Y ("Measurements of the neutron spectrum in transit to Mars on the Mars Science Laboratory"),Y (Köhler),2015,5,6-12,"Crossref + doi.org → Elsevier, 2026-10-09."
+Norbury2018,10.1016/j.lssr.2018.05.003,Y,Y ("Comparison of space radiation GCR models to recent AMS data"),Y (Norbury),2018,18,64-71,"DOI not in repo; found by Crossref bibliographic search (LSSR, author Norbury), 2026-10-09; doi.org → Elsevier. Add the DOI to the bib/METHODS."
+Whitman2019,10.1016/j.lssr.2019.07.007,Y,Y ("Comparison of space radiation GCR models to AMS heavy ion data"),Y (Whitman),2019,22,76-88,"DOI not in repo; found by Crossref bibliographic search, 2026-10-09; doi.org → Elsevier. Repo cites LSSR 22:76: matches."
+Slaba2010,NOT IN REPO,—,—,—,—,—,—,"PENDING: no Slaba 2010 citation found in the repo; needs the references.bib entry."
+Davis2026_version,10.5281/zenodo.22010089,Y,Y ("CosRayModifiedISO"),Y (Davis, Christopher Stephen William),2026 (2026-08-19),—,—,"Zenodo API record 22010089: version v1.2.12 — MATCHES the version cited in data/gcr/matthia2013.ts; conceptdoi 10.5281/zenodo.10992395. Retrieved 2026-10-09."
+Davis2026_concept,10.5281/zenodo.10992395,Y,Y ("CosRayModifiedISO"),Y (Davis),—,—,—,"Concept DOI; Zenodo API currently resolves it to the latest version 22010089 = v1.2.12 (2026-10-09). A future CosRayModifiedISO release will move the concept DOI; cite the version DOI for the exact code."
+Matthia2016,10.1051/swsc/2016008,Y,Y ("The Martian surface radiation environment – a comparison of models and MSL/RAD measurements"),Y (Matthiä),2016,6,A13,"Cited in README/METHODS literature table; Crossref + doi.org, 2026-10-09."
+HasslerNorbury2017,10.1016/j.lssr.2017.06.004,Y,Y ("Mars science laboratory radiation assessment detector (MSL/RAD) modeling workshop proceedings"),Y (Hassler),2017,14,1-2,"DOI not in repo; found by Crossref search, 2026-10-09. Repo cites LSSR 14, 1: matches."
+NIST_SRD124,10.18434/T4NC7P,Y,Y ("Stopping-Powers and Range Tables for Electrons, Protons, and Helium Ions, NIST Standard Reference Database 124"),Y (Seltzer — DataCite creator),1993 (DataCite publicationYear),—,—,"DataCite DOI (Crossref returns 404 — expected); doi.org → nist.gov/pml/data/star. Retrieved 2026-10-09."
+Barkas1963,NO DOI — manual,—,—,—,—,—,—,NO DOI — manual
+ICRP60,NO DOI — manual,—,—,—,—,—,—,NO DOI — manual
+ICRU49,NO DOI — manual,—,—,—,—,—,—,NO DOI — manual
+ALL_OTHER_BIB_ENTRIES,PENDING,—,—,—,—,—,—,"references.bib path not provided; every remaining entry is unchecked."
