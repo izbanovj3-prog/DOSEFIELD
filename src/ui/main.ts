@@ -976,7 +976,8 @@ function renderValidation(d: ValidationSummary): void {
     ) +
     `<div class="rad-box">
       <div class="rad-kicker">MSL/RAD CRUISE — MODEL vs MEASURED</div>
-      <div class="rad-note">φ≈${d.phiLo}–${d.phiHi} MV → Matthiä W≈${d.cruiseW}, behind ${d.cruiseShield} g/cm² Al-equiv · set independently of the measurement</div>
+      <div class="rad-note">W = ${d.cruiseW.toFixed(2)} (Oulu NM, SEP days excluded), behind ${d.cruiseShield} g/cm² Al-equiv · set independently of the measurement</div>
+      <div class="rad-note">φ ≈ ${d.phiLo}–${d.phiHi} MV (Guo et al. 2015a, context only)</div>
       <table class="rad-table">
         <thead><tr>
           <th>quantity</th>
