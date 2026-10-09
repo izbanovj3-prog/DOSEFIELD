@@ -8,7 +8,13 @@
  *   J. Guo et al., "Variations of dose rate observed by MSL/RAD in transit to Mars",
  *   Astron. Astrophys. 577 (2015) A58. doi:10.1051/0004-6361/201525680 (arXiv:1503.06631)
  *
- * The MSL cruise ran 2011-11-26 → 2012-08-06 (~253 days). RAD measured the GCR field PLUS
+ * NAMING NOTE: the file/export names are historical. The comparison values in RAD_CRUISE (0.458 mGy/day,
+ * 1.75 mSv/day) are the RE-EVALUATED values of Guo et al. (2015, A&A 577, A58); the original Zeitlin et
+ * al. (2013) values (0.481 ± 0.080 mGy/day, 1.84 ± 0.33 mSv/day) are kept in the comments below. <Q> = 3.82
+ * is Zeitlin's. Names are not changed here to avoid touching imports.
+ *
+ * The MSL cruise ran 2011-11-26 → 2012-08-06 ("253-day cruise" as stated by Guo et al. 2015 and Köhler
+ * et al. 2015 for these dates; the calendar-date difference is 254 days). RAD measured the GCR field PLUS
  * secondary particles produced in the spacecraft, behind real (anisotropic) shielding.
  */
 
@@ -16,7 +22,10 @@ export const RAD_CRUISE = {
   /** absorbed GCR dose rate in water, mGy/day (Guo 2015: 458 ± 32 µGy/day) */
   doseRate_mGy_day: 0.458,
   doseRate_sigma: 0.032,
-  /** GCR dose-equivalent rate, mSv/day (Guo 2015: 1.75 ± 0.30; Zeitlin 2013: 1.84 ± 0.33) */
+  /** GCR dose-equivalent rate, mSv/day. Guo 2015: 1.75 ± 0.30 (after the re-evaluated Si→tissue
+   *  conversion). Zeitlin 2013 (original): 1.84 ± 0.33 — confirmed from the paper text by the author.
+   *  Two papers, two values; not a contradiction. Zeitlin's original absorbed dose in water: 481 ± 80
+   *  µGy/day; the silicon-detector rate was 332 ± 23 µGy/day, × 1.38 → 458 ± 32 (Guo 2015). */
   doseEquivalent_mSv_day: 1.75,
   doseEquivalent_sigma: 0.3,
   /** mean quality factor ⟨Q⟩ (Zeitlin 2013) */

@@ -8,7 +8,8 @@
  *
  * Charge-changing cross-section — Bradt–Peters geometric form:
  *   σ_cc = π·r0²·(A_p^{1/3} + A_t^{1/3} − b)²
- * (Bradt & Peters, Phys. Rev. 77, 54 (1950); r0, b are the standard semi-empirical overlap
+ * (Bradt & Peters, Phys. Rev. 77, 54 (1950); VERIFY: the values r0 = 1.35 fm, b = 0.83 have NOT
+ * been confirmed in that paper and their source is unidentified — r0, b are semi-empirical overlap
  * parameters). Energy dependence is neglected (σ is ~flat above ~200 MeV/n) — labeled.
  *
  * Mean free path in areal density:  λ[g/cm²] = A_t / (N_A · σ_cc)   (per target element;
@@ -16,7 +17,8 @@
  *
  * APPROXIMATIONS (labeled): geometric cross-section only; single energy-independent σ;
  * a crude charge+(A/Z)-conserving fragment charge distribution; NEUTRONS and target
- * fragments are NOT produced (the chargeless secondaries that dominate the *absorbed-dose*
+ * fragments are NOT produced (the untransported secondary field — mainly charged secondaries
+ * such as secondary protons and target fragments; neutrons are a minor part — carries the *absorbed-dose*
  * buildup behind shielding — the main reason this stays short of HZETRN).
  */
 

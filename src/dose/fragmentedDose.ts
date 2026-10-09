@@ -10,7 +10,7 @@
  * APPROXIMATIONS (labeled): single charge-changing collision (no multi-generation cascade);
  * fragments inherit the parent's residual energy/nucleon; energy-independent Bradt–Peters σ;
  * crude charge+(A/Z)-conserving fragment spectrum; NEUTRONS / target fragments not produced
- * (so the chargeless secondary *dose buildup* RAD sees is not captured — the honest gap).
+ * (so the secondary *dose buildup* RAD sees — mostly charged secondaries, neutrons a minor part — is not captured — the honest gap).
  *
  * Integration is in residual-energy (E_out) space, as in shieldedDose (smooth integrand).
  */
