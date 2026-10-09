@@ -42,10 +42,11 @@ const rad = computeRadComparison(); // exactly what the UI validation panel call
 
 // --- validation-panel quantities: UI path === report path (same functions, default res) ---
 rows.push({ quantity: 'NIST PSTAR max err ≥10 MeV [%]', ui: computeNistStoppingSummary().maxSolidPct, ref: 1.55, tol: 3 });
-rows.push({ quantity: 'RAD H_model [mSv/day]', ui: rad.model.H, ref: 1.47, tol: 2 });
-rows.push({ quantity: 'RAD ⟨Q⟩_model primaries', ui: rad.model.Q, ref: 4.78, tol: 2 });
+// model regression snapshot at W = 47.50 (paper1_results.json @ 0130722), not a validation target
+rows.push({ quantity: 'RAD H_model [mSv/day]', ui: rad.model.H, ref: 1.318, tol: 2 });
+rows.push({ quantity: 'RAD ⟨Q⟩_model primaries', ui: rad.model.Q, ref: 4.995, tol: 2 });
 rows.push({ quantity: 'RAD measured H [mSv/day]', ui: rad.measured.H, ref: 1.75, tol: 0.5 });
-rows.push({ quantity: 'RAD ⟨Q⟩ + fragmentation', ui: radQ(true), ref: 4.41, tol: 2 });
+rows.push({ quantity: 'RAD ⟨Q⟩ + fragmentation', ui: radQ(true), ref: 4.598, tol: 2 });
 
 // --- curve quantities: UI uses perDecade=50, report uses default (~0.4% coarser) ---
 const advPrimUI = polyAdvantage(W_SOLAR_MIN, false, UI_PERDECADE);
