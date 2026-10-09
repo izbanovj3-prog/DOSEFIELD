@@ -60,7 +60,7 @@ secondary field, not an input error, and no constant was fitted to close it.
 Scope, on purpose. The research question is: *how much of the deep-space dose problem is
 explained by primary slowing-down alone, and how much genuinely requires secondary transport?*
 A 1-D CSDA model answers that cleanly and transparently — every equation fits in METHODS.md
-and a judge can verify a number by hand. The remaining 0.33× of absorbed dose is the measured
+and a judge can verify a number by hand. The remaining 0.42× of absorbed dose is the measured
 answer to "how much requires more". Reimplementing HZETRN badly would answer neither question.
 
 **Q: You omit shell, Barkas and Bloch corrections. How is Bethe-Bloch valid?**

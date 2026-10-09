@@ -364,7 +364,7 @@ function render(): void {
   setReading('qVal', cur.Q.toFixed(2));
 
   // Phase A: 1σ-style input band on the headline rate (GCR flux ⊕ stopping power ⊕ this
-  // run's PSTAR deviation). Explicitly NOT model-form error — the 0.67× gap is separate.
+  // run's PSTAR deviation). Explicitly NOT model-form error — the absorbed-dose gap vs RAD is separate.
   $('uncLine').textContent =
     bandRel > 0
       ? `± ${(cur.H * bandRel).toFixed(2)} mSv/day input uncertainty (±${(bandRel * 100).toFixed(1)}% — GCR flux ⊕ stopping power; excludes un-modeled secondaries)`

@@ -189,7 +189,7 @@ model in which no constant was fitted to the validation data:
   aluminium bracket (W = 47.50) the model spans 0.28–0.26 mGy/day; weighting the three RAD shielding
   bins (2.5/9/54 g/cm², fixed before computing) gives D ratio 0.59 (H 0.83) — the D gap survives the geometry
   uncertainty, exactly as expected if the missing physics is particle *production* rather than
-  slab thickness. (Dose-equivalent at the thin end, 1.67 mSv/day, is within the measurement's
+  slab thickness. (Dose-equivalent at the thin end, 1.48 mSv/day, is within the measurement's
   ±0.30.)
 
 Closing this gap requires full secondary-particle transport — HZETRN / OLTARIS territory,
@@ -204,7 +204,7 @@ labeled where it matters.
 | omission / approximation | direction of effect | magnitude | source |
 |---|---|---|---|
 | Secondary charged particles & target fragments not transported | absorbed dose **under**-predicted | the 0.58× RAD gap itself (0.264 vs 0.458 mGy/day at W = 47.50, computed) | this work vs Guo et al. 2015 |
-| Secondary neutrons not transported | dose **under**-predicted | small: 6 ± 2 µGy/day, 30 ± 10 µSv/day measured in-cruise (~1–2% of totals; ≈3% of the D deficit) | Köhler et al. 2015 |
+| Secondary neutrons not transported | dose **under**-predicted | small: 3.8 ± 1.2 µGy/day measured (12–436 MeV); 6 ± 2 µGy/day, 30 ± 10 µSv/day extrapolated to 0.1–1000 MeV — ≈0.8 % / ≈1.3 % of the measured D, ≈2 % / ≈3 % of the D deficit | Köhler et al. 2015 |
 | No fragmentation softening of HZE LET (primaries mode) | ⟨Q⟩ **over**-predicted | 5.00 vs 3.82 measured (1.31×, computed); Phase 5 moves it to 4.60 | this work vs Zeitlin et al. 2013 |
 | Shell, Barkas (z³), Bloch (z⁴) corrections omitted | stopping power error grows at low E | ≤1.55% (≥10 MeV), ≤4.03% (all E ≥1 MeV) — computed vs PSTAR every CI run | NIST PSTAR |
 | High-Z shield materials excluded | n/a (deliberately not offered) | reproducible as of 2026-08-31: max stopping-power deviation ≥10 MeV is **6.19% for lead (Z=82)** and **2.50% for titanium (Z=22)** vs **1.55% for shipped aluminium (Z=13)**, against a 2.5% gate — lead fails decisively, titanium only marginally. PSTAR tables and the check now ship (`data/pstar/{lead,titanium}.ts`, `test/highZRejection.test.ts`); the far larger percentages quoted historically are **not** what this repo computes. | this work vs NIST PSTAR (matno 082 / 022) |
@@ -212,7 +212,7 @@ labeled where it matters.
 | Straight-ahead 1-D slab geometry (single thickness) | RAD sat behind an anisotropic distribution (most solid angle <10 g/cm²) | H over the 10–20 g/cm² bracket (W = 47.50): 1.48–1.23 mSv/day; three-bin check H 0.81–0.88×, D 0.59–0.61× (computed); D gap survives | Guo et al. 2015 shielding model |
 | GCR spectra for Z ≥ 3 not directly constrained by AMS comparison | unknown sign | assumed comparable to H (±20%) — stated assumption | Norbury et al. 2018 covers H, He; Whitman et al. 2019 covers Li–O only |
 | Constant GCR rate over the mission (no solar-cycle variation, no SPE) | mission totals are snapshots at fixed W | direction known, magnitude scenario-dependent — not quantified in this work | labeled in UI timeline |
-| Thin-target tissue dose (point dose in water) | no body self-shielding in the headline number | organ panel adds 0.007/0.3/5 g/cm² depth-doses (computed); full phantom out of scope | NASA/NCRP depth convention |
+| Thin-target tissue dose (point dose equivalent H in water — not effective dose E) | no body self-shielding in the headline number | organ panel adds 0.007/0.3/5 g/cm² depth-doses (computed); full phantom out of scope | NASA/NCRP depth convention |
 | ICRP-60 Q(L) rather than ICRP-103 wR | convention choice, not an error | not applicable — definitional; stated to match RAD's Q-based reporting | ICRP-60; Zeitlin et al. 2013 |
 | Multi-layer stacks beyond the single-layer limit | unvalidated (no NASA layered measurement) | reduces exactly to the validated single slab at the limit (0.05%/0.00%, tested) | this work |
 
