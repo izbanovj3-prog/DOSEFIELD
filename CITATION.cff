@@ -1,0 +1,45 @@
+cff-version: 1.2.0
+title: >-
+  DOSEFIELD: a transparent 1-D deep-space radiation dose and
+  shielding model with source-traceable constants
+message: >-
+  If you use this software, please cite it using the metadata
+  from this file.
+type: software
+# AUTHORS — PENDING AUTHOR CONFIRMATION (2026-10-09): the author asked for this block to be
+# changed but has not yet supplied the final names/affiliation/ORCID. Do not release until updated.
+authors:
+  - given-names: Zhanbolat
+    family-names: Izbanov
+    email: izbanovj3@gmail.com
+    affiliation: RFMSH, Almaty, Kazakhstan
+repository-code: 'https://github.com/izbanovj3-prog/DOSEFIELD'
+url: 'https://izbanovj3-prog.github.io/DOSEFIELD/'
+abstract: >-
+  A deterministic one-dimensional model of the deep-space
+  galactic cosmic ray environment. A parametric GCR spectrum is
+  transported in the continuous-slowing-down approximation through
+  a shield of given areal density applied uniformly in every
+  direction (spherical-shell geometry) and converted to absorbed
+  dose and ICRP-60 dose equivalent at a point in water. Secondary
+  particles produced in the shield are not transported; it is not
+  a substitute for full radiation-transport codes. Every constant
+  is taken from a cited primary source and no parameter is fitted
+  to any validation target. Compared with NIST PSTAR proton
+  stopping-power tables (1.55 percent maximum deviation above
+  10 MeV across five low-Z materials) and with the MSL/RAD
+  Mars-cruise measurement.
+keywords:
+  - space radiation
+  - galactic cosmic rays
+  - radiation shielding
+  - dosimetry
+  - stopping power
+  - Bethe-Bloch
+  - reproducible research
+license: MIT
+version: 1.0.0
+# DOI PLACEHOLDER — fill in ONLY after Zenodo mints it for the GitHub release paper1-v1.0.0
+# (uncomment and replace; do not invent):
+# doi: 10.5281/zenodo.XXXXXXXX
+# date-released: YYYY-MM-DD
