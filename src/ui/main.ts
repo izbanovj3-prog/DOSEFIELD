@@ -1184,7 +1184,8 @@ function applyURLParams(): void {
   const model = q.get('model');
   if (model) state.mode = model === 'frag' ? 'fragmentation' : 'primaries';
   const days = parseInt(q.get('days') ?? '', 10);
-  if (Number.isFinite(days)) state.duration = Math.min(1000, Math.max(30, Math.round(days / 10) * 10));
+  // floor 10 d (= slider min) so the 10-day Artemis Transit preset survives a shared link
+  if (Number.isFinite(days)) state.duration = Math.min(1000, Math.max(10, Math.round(days / 10) * 10));
   // never label a config with a preset name it doesn't actually match (e.g. hand-edited den1)
   state.preset = stateMatchesPreset(presetKey) ? presetKey : 'custom';
   reflectControls();
