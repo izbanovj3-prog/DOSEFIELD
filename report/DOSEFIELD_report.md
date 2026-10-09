@@ -60,21 +60,21 @@ below aluminium; polyethylene — the best *solid* — beats aluminium by **11.6
 
 ## 4. MSL/RAD cruise-dose validation (the headline number)
 
-Model run at the cruise solar modulation (φ≈550–800 MV → Matthiä W≈30)
-behind ≈16 g/cm² Al-equivalent shielding — set **independently** of the measurement.
+Model run at the cruise solar modulation W = 47.50, derived from the OULU neutron-monitor mean over the Zeitlin et al. (2013) averaging window, excluding the days of the five SEP events listed by Guo et al. (2015), via the Matthiä relation (cruise φ≈550–800 MV, Guo et al. 2015),
+behind ≈16 g/cm² of aluminium (Guo 2015 average depth; mixed materials represented as Al) — no constant fitted to the validation data.
 
 | quantity | model | measured (RAD) | ratio |
 |---|---|---|---|
-| absorbed dose [mGy/day] | 0.308 | 0.458 ± 0.032 | **0.67** |
-| dose-equivalent [mSv/day] | 1.47 | 1.75 ± 0.3 | **0.84** |
-| mean quality ⟨Q⟩ | 4.78 | 3.82 ± 0.25 | **1.25** |
+| absorbed dose [mGy/day] | 0.264 | 0.458 ± 0.032 | **0.58** |
+| dose-equivalent [mSv/day] | 1.32 | 1.75 ± 0.3 | **0.75** |
+| mean quality ⟨Q⟩ | 5.00 | 3.82 ± 0.25 | **1.31** |
 
-Model dose-equivalent over the W/shielding brackets: **1.25–1.77 mSv/day** — the
-measured **1.75 mSv/day** lies inside this range.
+Model dose-equivalent over the W/shielding brackets: **1.21–1.48 mSv/day** — the
+measured **1.75 mSv/day** lies OUTSIDE this range.
 
-With propagated input uncertainty the model value reads **H = 1.47 ±
-0.22 mSv/day** (±14.6%, 1σ-style; quadrature of GCR-flux
-±14% — DLR-model deviation vs AMS-02 in the dose-dominant <1.5 GeV/n range, Norbury et al. 2018,
+With propagated input uncertainty the model value reads **H = 1.32 ±
+0.27 mSv/day** (±20.5%, 1σ-style; quadrature of GCR-flux
+±20% — DLR-model full-spectrum |Rd| vs AMS-02 hydrogen, Norbury et al. 2018,
 *Life Sci. Space Res.* 18, 64, Table 1 — and stopping-power ±4% — ICRU-49 compound bound — plus
 this run's computed 1.55% PSTAR deviation). The band is **input uncertainty only**:
 it deliberately excludes the un-modeled secondary production discussed below, which is a scope
@@ -85,12 +85,12 @@ limit, not an input error.
 **Honest error discussion.** The model is within the ~2× bar the project sets for a
 primary-only result. The structure of the disagreement is physically meaningful:
 
-- **Absorbed dose is under-predicted** (ratio 0.67): RAD also records secondary particles
+- **Absorbed dose is under-predicted** (ratio 0.58): RAD also records secondary particles
   (neutrons, fragments) produced in the spacecraft, which add dose the primary-only model omits.
-- **⟨Q⟩ is over-predicted** (ratio 1.25): without nuclear fragmentation the HZE ions are not
+- **⟨Q⟩ is over-predicted** (ratio 1.31): without nuclear fragmentation the HZE ions are not
   broken into lower-LET fragments, and no low-Q secondaries dilute the field — both of which
   lower the *real* ⟨Q⟩.
-- These partially **cancel** in the dose-equivalent (H = D·⟨Q⟩), giving a closer ratio (0.84).
+- These partially **cancel** in the dose-equivalent (H = D·⟨Q⟩), giving a closer ratio (0.75).
 
 Measured values: Zeitlin et al., Science 340, 1080 (2013); Guo et al., A&A 577, A58 (2015).
 
@@ -111,7 +111,7 @@ Iron charge-changing mean free path (why hydrogen-rich shields win):
 | Polyethylene | 6.8 | 10% |
 
 At the RAD point (16 g/cm² Al, cruise W), fragmentation **softens ⟨Q⟩ toward the measured 3.82**
-(4.78 → 4.41), and the **polyethylene advantage at 20 g/cm² grows from
+(5.00 → 4.60), and the **polyethylene advantage at 20 g/cm² grows from
 11.6% to 33.3%** — i.e. fragmentation is *why* hydrogen-rich
 shielding wins, which the primary-only model under-states.
 

@@ -20,7 +20,7 @@ import { computeShieldedDose } from '../dose/shieldedDose.js';
 import { computeFragmentedDose } from '../dose/fragmentedDose.js';
 import { interactionMFP } from '../physics/fragmentation.js';
 import { computeValidationSummary } from '../validation/validationSummary.js';
-import { doseRelUncertainty } from '../validation/uncertainty.js';
+import { doseRelUncertainty, GCR_FLUX_REL_UNC } from '../validation/uncertainty.js';
 import type { RadComparison } from '../dose/radComparison.js';
 import { RAD_CRUISE } from '../../data/rad/zeitlin2013.js';
 import { W_SOLAR_MIN, W_CRUISE_2012 } from '../../data/gcr/matthia2013.js';
@@ -270,8 +270,8 @@ below aluminium; polyethylene — the best *solid* — beats aluminium by **${fx
 
 ## 4. MSL/RAD cruise-dose validation (the headline number)
 
-Model run at the cruise solar modulation (φ≈${RAD_CRUISE.phi_MV_low}–${RAD_CRUISE.phi_MV_high} MV → Matthiä W≈${W_CRUISE_2012})
-behind ≈${RAD_CRUISE.shielding_gcm2} g/cm² Al-equivalent shielding — set **independently** of the measurement.
+Model run at the cruise solar modulation W = ${fx(W_CRUISE_2012, 2)}, derived from the OULU neutron-monitor mean over the Zeitlin et al. (2013) averaging window, excluding the days of the five SEP events listed by Guo et al. (2015), via the Matthiä relation (cruise φ≈${RAD_CRUISE.phi_MV_low}–${RAD_CRUISE.phi_MV_high} MV, Guo et al. 2015),
+behind ≈${RAD_CRUISE.shielding_gcm2} g/cm² of aluminium (Guo 2015 average depth; mixed materials represented as Al) — no constant fitted to the validation data.
 
 | quantity | model | measured (RAD) | ratio |
 |---|---|---|---|
@@ -280,11 +280,11 @@ behind ≈${RAD_CRUISE.shielding_gcm2} g/cm² Al-equivalent shielding — set **
 | mean quality ⟨Q⟩ | ${fx(rad.model.Q)} | ${fx(rad.measured.Q)} ± ${RAD_CRUISE.meanQ_sigma} | **${fx(rad.ratioQ)}** |
 
 Model dose-equivalent over the W/shielding brackets: **${fx(rad.H_lo)}–${fx(rad.H_hi)} mSv/day** — the
-measured **${fx(rad.measured.H)} mSv/day** lies inside this range.
+measured **${fx(rad.measured.H)} mSv/day** lies ${rad.measured.H >= rad.H_lo && rad.measured.H <= rad.H_hi ? 'inside' : 'OUTSIDE'} this range.
 
 With propagated input uncertainty the model value reads **H = ${fx(rad.model.H)} ±
 ${fx(rad.model.H * bandRel)} mSv/day** (±${fx(bandRel * 100, 1)}%, 1σ-style; quadrature of GCR-flux
-±14% — DLR-model deviation vs AMS-02 in the dose-dominant <1.5 GeV/n range, Norbury et al. 2018,
+±${fx(GCR_FLUX_REL_UNC * 100, 0)}% — DLR-model full-spectrum |Rd| vs AMS-02 hydrogen, Norbury et al. 2018,
 *Life Sci. Space Res.* 18, 64, Table 1 — and stopping-power ±4% — ICRU-49 compound bound — plus
 this run's computed ${fx(nistMaxSolid)}% PSTAR deviation). The band is **input uncertainty only**:
 it deliberately excludes the un-modeled secondary production discussed below, which is a scope
