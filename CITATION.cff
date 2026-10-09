@@ -6,13 +6,12 @@ message: >-
   If you use this software, please cite it using the metadata
   from this file.
 type: software
-# AUTHORS — PENDING AUTHOR CONFIRMATION (2026-10-09): the author asked for this block to be
-# changed but has not yet supplied the final names/affiliation/ORCID. Do not release until updated.
+# Sole author (confirmed 2026-10-09). Replace the affiliation placeholder and add the ORCID before release.
 authors:
   - given-names: Zhanbolat
     family-names: Izbanov
-    email: izbanovj3@gmail.com
-    affiliation: RFMSH, Almaty, Kazakhstan
+    affiliation: 'PLACEHOLDER: affiliation to be supplied by the author'
+    # orcid: 'https://orcid.org/0000-0000-0000-0000'  # PLACEHOLDER: uncomment with the real ORCID
 repository-code: 'https://github.com/izbanovj3-prog/DOSEFIELD'
 url: 'https://izbanovj3-prog.github.io/DOSEFIELD/'
 abstract: >-
