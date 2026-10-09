@@ -84,15 +84,79 @@ export const W_SOLAR_MIN = 0;
 export const W_SOLAR_MAX = 130;
 
 /**
- * Solar modulation for the MSL/RAD cruise (2011-11 → 2012-08), rising solar activity.
- * Set INDEPENDENTLY of the RAD measurement (no tuning to fit): the cruise modulation
- * potential was φ ≈ 550–800 MV (Guo et al. 2015); via the model's OULU→W relation
- * (W = −0.093·R_OULU[/min] + 638.7), the ~2012 neutron-monitor level (~108 counts/s)
- * maps to W ≈ 30. Bracketed by W_CRUISE_LOW..HIGH for the honest error budget.
+ * OULU neutron-monitor → W relation of the Matthiä model, exactly as implemented in the
+ * reference implementation CosRayModifiedISO v1.2.12 (`getWparameterFromOULUcountRate`,
+ * version doi:10.5281/zenodo.22010089; concept doi:10.5281/zenodo.10992395), which attributes it
+ * to Matthiä et al. (2013):
+ *
+ *   W = −0.093 · N + 638.7,   N = OULU corrected count rate in counts per MINUTE.
+ *
+ * UNITS: the relation takes counts/MINUTE. A rate in counts/s must be multiplied by 60 first —
+ * use `wFromOuluCountsPerSecond`. (An earlier comment here fed ~108 counts/s straight into the
+ * per-minute relation and quoted W ≈ 30; the relation actually gives W = 36.1 at 108 counts/s.)
+ * VERIFY: coefficients traceable to Matthiä 2013 only via the reference implementation.
  */
-export const W_CRUISE_2012 = 30;
-export const W_CRUISE_LOW = 20;
-export const W_CRUISE_HIGH = 45;
+export function wFromOuluCountsPerMinute(countsPerMinute: number): number {
+  return -0.093 * countsPerMinute + 638.7;
+}
+export function wFromOuluCountsPerSecond(countsPerSecond: number): number {
+  return wFromOuluCountsPerMinute(60 * countsPerSecond);
+}
+
+/**
+ * Mean OULU corrected count rates (counts/min) during the MSL cruise, computed from the OULU
+ * record bundled with CosRayModifiedISO v1.2.12 (`neutronMonitorData/OULUinputData.pkl`,
+ * 5-min cadence):
+ *  - Zeitlin et al. (2013) averaging window, 2011-12-06 00:00 → 2012-07-14 23:55 UTC
+ *  - full cruise, launch → landing, 2011-11-26 00:00 → 2012-08-06 23:55 UTC
+ * The averaging-window dates are those of the Zeitlin et al. (2013) GCR dose-rate average
+ * (confirmed by the author from the paper text, 2026-09-27).
+ *
+ * SEP MASK (headline): the whole UTC days of the five RAD-observed SEP events listed by Guo et al.
+ * (2015, A&A 577, A58, §4, "as already reported by Zeitlin et al. (2013)") are excluded, so that the
+ * neutron-monitor average excludes the same events as the quiet-time RAD GCR dose average (at
+ * whole-UTC-day resolution; the exact RAD exclusion intervals are not stated by Guo et al.):
+ * 23–29 Jan 2012, 7–15 Mar 2012, 17 May 2012 (17 days). Author decision, 2026-09-27.
+ *  - Zeitlin window, SEP-masked:   205 days, 59 040 samples → 6357.04 counts/min (HEADLINE)
+ *  - Zeitlin window, unmasked:     222 days, 63 936 samples → 6335.48 counts/min
+ *  - full cruise, SEP-masked:      238 days, 68 544 samples → 6331.36 counts/min (check)
+ *  - full cruise, unmasked:        255 days, 73 440 samples → 6314.30 counts/min
+ */
+export const SEP_MASK_DAYS_UTC: readonly [string, string][] = [
+  ['2012-01-23', '2012-01-29'],
+  ['2012-03-07', '2012-03-15'],
+  ['2012-05-17', '2012-05-17'],
+];
+export const OULU_MEAN_ZEITLIN_WINDOW_SEP_MASKED_PER_MIN = 6357.04;
+export const OULU_MEAN_ZEITLIN_WINDOW_PER_MIN = 6335.48;
+export const OULU_MEAN_FULL_CRUISE_SEP_MASKED_PER_MIN = 6331.36;
+export const OULU_MEAN_FULL_CRUISE_PER_MIN = 6314.3;
+
+/**
+ * Solar modulation for the MSL/RAD cruise comparison, DERIVED (not chosen) from the OULU record
+ * via the relation above, independently of the RAD measurement — nothing is fitted to RAD.
+ *  - W_CRUISE_2012 (headline)          = SEP-masked OULU mean, Zeitlin window  → 47.50
+ *  - W_CRUISE_2012_UNMASKED            = unmasked OULU mean, Zeitlin window    → 49.50
+ *  - W_CRUISE_FULL (check)             = SEP-masked OULU mean, full cruise     → 49.88
+ *  - W_CRUISE_FULL_UNMASKED            = unmasked OULU mean, full cruise       → 51.47
+ * W_CRUISE_LOW..HIGH = the two SEP-masked means — a two-averaging-window CHECK, not the full
+ * sensitivity range (monthly OULU means during cruise span W ≈ 35–72).
+ */
+export const W_CRUISE_2012 = wFromOuluCountsPerMinute(OULU_MEAN_ZEITLIN_WINDOW_SEP_MASKED_PER_MIN);
+export const W_CRUISE_2012_UNMASKED = wFromOuluCountsPerMinute(OULU_MEAN_ZEITLIN_WINDOW_PER_MIN);
+export const W_CRUISE_FULL = wFromOuluCountsPerMinute(OULU_MEAN_FULL_CRUISE_SEP_MASKED_PER_MIN);
+export const W_CRUISE_FULL_UNMASKED = wFromOuluCountsPerMinute(OULU_MEAN_FULL_CRUISE_PER_MIN);
+export const W_CRUISE_LOW = Math.min(W_CRUISE_2012, W_CRUISE_FULL);
+export const W_CRUISE_HIGH = Math.max(W_CRUISE_2012, W_CRUISE_FULL);
+
+/**
+ * LEGACY, NON-REPRODUCIBLE: the value W = 30 (bracket 20–45) used before this correction. It is
+ * NOT reproduced by its own stated derivation (see units note above) and is retained only so the
+ * old headline numbers can be regenerated for comparison. Do not use for new results.
+ */
+export const W_CRUISE_LEGACY_30 = 30;
+export const W_CRUISE_LEGACY_LOW = 20;
+export const W_CRUISE_LEGACY_HIGH = 45;
 
 /**
  * Matthiä 2013 differential GCR flux for species Z at kinetic energy per nucleon

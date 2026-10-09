@@ -4,8 +4,11 @@
  * We run the (primary-only) shielded-dose model at the cruise solar modulation and the
  * representative Al-equivalent shielding, set INDEPENDENTLY of the RAD measurement, and report
  * the model value, the measured value, and the ratio. The dominant expected discrepancy is the
- * absence of nuclear fragmentation / secondary production (Phase 5), which in reality lowers
- * ⟨Q⟩ (breaking HZE ions into lighter fragments + adding low-Q protons/neutrons).
+ * absence of secondary production in the shield (target-side charged secondaries and target
+ * fragments, which this model never transports), plus the missing fragmentation softening of ⟨Q⟩.
+ * Phase-5 projectile fragmentation lowers ⟨Q⟩ but also LOWERS D, so it cannot close the D gap.
+ * NOTE: W_CRUISE_2012 (SEP-masked headline) is the low-W end of W_CRUISE_LOW..HIGH, so the bracket
+ * below extends only toward higher W (lower H).
  */
 
 import { computeShieldedDose } from './shieldedDose.js';

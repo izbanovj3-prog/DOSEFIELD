@@ -19,8 +19,9 @@ console.log('DOSEFIELD — Phase 4:  model vs measured MSL/RAD cruise dose-equiv
 console.log('='.repeat(80));
 console.log(`Measured: ${RAD_CRUISE.source}`);
 console.log(
-  `Conditions: cruise φ≈${RAD_CRUISE.phi_MV_low}–${RAD_CRUISE.phi_MV_high} MV → Matthiä W≈${W_CRUISE_2012} ` +
-    `(bracket ${W_CRUISE_LOW}–${W_CRUISE_HIGH}); shielding ≈${RAD_CRUISE.shielding_gcm2} g/cm² Al-eq ` +
+  `Conditions: Matthiä W=${W_CRUISE_2012.toFixed(2)} from the OULU neutron-monitor mean over the Zeitlin 2013 window, SEP days excluded ` +
+    `(bracket ${W_CRUISE_LOW.toFixed(2)}–${W_CRUISE_HIGH.toFixed(2)} incl. SEP-masked full-cruise mean; cruise φ≈${RAD_CRUISE.phi_MV_low}–${RAD_CRUISE.phi_MV_high} MV, Guo 2015); ` +
+    `shielding ≈${RAD_CRUISE.shielding_gcm2} g/cm² as Al `+
     `(${RAD_CRUISE.shielding_low}–${RAD_CRUISE.shielding_high}). Primary-only, no secondaries.`,
 );
 
@@ -53,7 +54,8 @@ console.log(
 console.log('     fragmentation, HZE ions are not broken into lower-LET fragments and no low-Q');
 console.log('     secondary protons/neutrons are added — both of which lower the real ⟨Q⟩.');
 console.log('   • Absorbed dose is the more robust comparison (less sensitive to the LET spectrum).');
-console.log('   • Closing the gap is exactly the role of Phase 5 (fragmentation/secondaries).');
+console.log('   • Phase 5 (projectile fragmentation) softens ⟨Q⟩ but LOWERS D; the D gap needs target-side');
+console.log('     secondaries (charged secondaries, target fragments), which this model does not transport.');
 
 const gatePass = within2x(c.ratioH) && within2x(c.ratioD);
 console.log('\n  GATE (order-of-magnitude / within 2×): ' + (gatePass ? 'PASS' : 'FAIL'));
