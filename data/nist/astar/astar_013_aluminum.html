@@ -1,0 +1,75 @@
+<html>
+<head>
+<title>Stopping Power and Range Tables for Alpha Particles</title>
+<head><title>NIST STAR Database</title><!-- Google Analtyics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9SLN1VEEJ2"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-9SLN1VEEJ2');
+</script>
+<!-- End of Google Analytics 4 -->
+<SCRIPT async type="text/javascript" id="_fed_an_ua_tag" src="https://dap.digitalgov.gov/Universal-Federated-Analytics-Min.js?agency=DOC&subagency=NIST&pua=UA-37115410-46&yt=false&exts=ppsx,pps,f90,sch,rtf,wrl,txz,m1v,xlsm,msi,xsd,f,tif,eps,mpg,xml,pl,xlt,c"></script></head>
+<body bgcolor="#FFFFFF">
+<h2>ASTAR : Stopping Power and Range Tables for Alpha Particles</h2>
+Show compositional data for <a href="compos.pl?ap013">ALUMINUM</a><p>
+<h2>ALUMINUM</h2>
+<form enctype="multipart/form-data" method="POST" action="/cgi-bin/Star/apdata.pl">To download data in spreadsheet (array) form, choose a delimiter and use the checkboxes in the table heading.  After downloading, save the output by using your browser's <tt>Save As</tt> feature.<p>
+<b>Delimiter:</b><br>
+<input type="radio" value="space" name="character" checked> space<br>
+<input type="radio" value="bar" name="character"> | (vertical bar)<br>
+<input type="radio" value="tab" name="character"> tab (some browsers may use spaces instead)<br>
+<input type="radio" value="newline" name="character"> newline<br>
+<input type="submit" value="Download data"> <input type="reset" value="Reset">
+<input type="hidden" name="prog" value="ASTAR">
+<input type="hidden" name="matno" value="013">
+<input type="hidden" name="ShowDefault" value="">
+<input type="hidden" name="NumofEnergies" value="8">
+<input type="hidden" name="E0" value="4">
+<input type="hidden" name="E1" value="8">
+<input type="hidden" name="E2" value="20">
+<input type="hidden" name="E3" value="40">
+<input type="hidden" name="E4" value="80">
+<input type="hidden" name="E5" value="200">
+<input type="hidden" name="E6" value="400">
+<input type="hidden" name="E7" value="1000">
+<table border=1 width=80%>
+<thead>
+<tr align=center BGColor=ADADDD>
+<th rowspan=2 valign=center scope="col"><font size="-1">(required)</font><br>Kinetic Energy<br>(MeV)</th>
+<th colspan=3 align=center scope="col">Stopping Power (MeV cm<sup>2</sup>/g)</th>
+<th colspan=3 align=center scope="col">Range</th>
+</tr><tr align=center BGColor=ADADDD>
+<th scope="col"><input type="checkbox" name="electronic"><br>Electronic</th>
+<th scope="col"><input type="checkbox" name="nuclear"><br>Nuclear</th>
+<th scope="col"><input type="checkbox" name="total"><br>Total</th>
+<th scope="col"><input type="checkbox" name="csda"><br>CSDA<br>(g/cm<sup>2</sup>)</th>
+<th scope="col"><input type="checkbox" name="project"><br>Projected<br>(g/cm<sup>2</sup>)</th>
+<th scope="col"><input type="checkbox" name="detour"><br>Detour Factor<br>Projected / CSDA</th>
+</tr>
+<tr></tr>
+<tbody>
+<tr>
+<td align=center>4.000E+00</td><td align=center>6.986E+02</td><td align=center>5.506E-01</td><td align=center>6.991E+02</td><td align=center>4.283E-03</td><td align=center>4.209E-03</td><td align=center>0.9826</td></tr>
+<tr>
+<td align=center>8.000E+00</td><td align=center>4.398E+02</td><td align=center>3.004E-01</td><td align=center>4.401E+02</td><td align=center>1.173E-02</td><td align=center>1.164E-02</td><td align=center>0.9926</td></tr>
+<tr>
+<td align=center>2.000E+01</td><td align=center>2.271E+02</td><td align=center>1.332E-01</td><td align=center>2.272E+02</td><td align=center>5.216E-02</td><td align=center>5.202E-02</td><td align=center>0.9973</td></tr>
+<tr>
+<td align=center>4.000E+01</td><td align=center>1.344E+02</td><td align=center>7.131E-02</td><td align=center>1.345E+02</td><td align=center>1.712E-01</td><td align=center>1.709E-01</td><td align=center>0.9984</td></tr>
+<tr>
+<td align=center>8.000E+01</td><td align=center>7.831E+01</td><td align=center>3.780E-02</td><td align=center>7.835E+01</td><td align=center>5.775E-01</td><td align=center>5.768E-01</td><td align=center>0.9988</td></tr>
+<tr>
+<td align=center>2.000E+02</td><td align=center>3.816E+01</td><td align=center>1.604E-02</td><td align=center>3.817E+01</td><td align=center>2.943E+00</td><td align=center>2.940E+00</td><td align=center>0.9991</td></tr>
+<tr>
+<td align=center>4.000E+02</td><td align=center>2.259E+01</td><td align=center>8.252E-03</td><td align=center>2.260E+01</td><td align=center>1.006E+01</td><td align=center>1.005E+01</td><td align=center>0.9992</td></tr>
+<tr>
+<td align=center>1.000E+03</td><td align=center>1.225E+01</td><td align=center>3.371E-03</td><td align=center>1.225E+01</td><td align=center>4.878E+01</td><td align=center>4.874E+01</td><td align=center>0.9993</td></tr>
+</table>
+</form>
+<hr>
+<a href="/PhysRefData/Star/Text/ASTAR.html"><img src="/PhysRefData/Star/Images/ASTAR_little.gif" width=188 height=50 border=0 alt="Back"></a>
+<a href="/PhysRefData/Star/Text/contents.html"><img src="/PhysRefData/Star/Images/contents.gif" width=219 height=50 border=0 alt="Contents"></a>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a47f3b39bf97d481',t:'MTc5MTU2ODI2NQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,2 @@
+# Raw NIST exports are archived byte-exact so their SHA-256 checksums stay valid on every checkout.
+data/nist/** -text
