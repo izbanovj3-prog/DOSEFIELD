@@ -2,7 +2,7 @@
 
 **A scientifically-honest 1-D model of the radiation dose an astronaut absorbs behind shielding
 on a deep-space mission — validated against NASA's MSL/RAD measurement, from first-principles
-physics, with no parameter tuned to the answer.**
+physics, with no constant fitted to the validation data.**
 
 ### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
@@ -31,9 +31,13 @@ model sits relative to published work &nbsp;·&nbsp; plots:
 > **Scope — read this first.** A *tractable deterministic 1-D slab model*, **not** a reimplementation
 > of HZETRN/OLTARIS. Every approximation is labeled in the code and the report; the credibility is
 > the validation number, not the UI. Top-line results: proton stopping power within **≤ 1.55 %** of
-> NIST PSTAR (≥ 10 MeV), and an MSL/RAD cruise dose-equivalent ratio of **0.84** (well inside the
-> ~2× bar). The one honest gap — absorbed dose under-predicted (~0.7×) because secondary neutrons
-> aren't transported — is documented, not hidden.
+> NIST PSTAR (≥ 10 MeV), and an MSL/RAD cruise dose-equivalent ratio of **0.75** (primaries only, at the
+> Oulu-neutron-monitor-derived W = 47.50, SEP days excluded; inside the
+> ~2× bar). The one honest gap — absorbed dose under-predicted (0.58×) because the secondary field
+> produced in the spacecraft (mainly secondary charged particles and target fragments; the measured
+> cruise neutron dose rate, 3.8 ± 1.2 µGy/day, is ~2 % of the gap — ~3 % for the 6 ± 2 µGy/day
+> full-spectrum extrapolation, Köhler et al. 2015)
+> is not transported — is documented, not hidden. No constant is fitted to the validation data.
 
 ## Status — validated MVP + fragmentation · CI-gated · deployed live
 
@@ -120,64 +124,70 @@ fragmentation — Phase 5.
 
 ### Phase 4 — MSL/RAD cruise-dose validation + auto-generated report
 
-- **RAD comparison** — model dose-equivalent behind ≈16 g/cm² Al-equiv at the cruise modulation
-  (φ≈550–800 MV → Matthiä W≈30), set **independently** of the measurement —
+- **RAD comparison** — model dose-equivalent behind ≈16 g/cm² of aluminium at the cruise modulation
+  W = 47.50 (Oulu neutron-monitor mean over the Zeitlin et al. 2013 averaging window, 6 Dec 2011 –
+  14 Jul 2012, excluding the days of the five SEP events listed by Guo et al. 2015; SEP-masked
+  full-cruise mean W = 49.88 as a check; unmasked 49.50 / 51.47), set **independently** of the measurement —
   [`src/dose/radComparison.ts`](src/dose/radComparison.ts), [`src/validation/runPhase4.ts`](src/validation/runPhase4.ts).
 - **Auto-generated portfolio report** — markdown + PNG plots (NIST validation, shielding curve,
   RAD comparison) — [`src/report/generateReport.ts`](src/report/generateReport.ts) → [`report/DOSEFIELD_report.md`](report/DOSEFIELD_report.md).
 
 | quantity | model | measured (RAD) | ratio |
 |---|---|---|---|
-| absorbed dose | 0.31 | 0.46 mGy/day | **0.67** |
-| dose-equivalent | 1.47 | 1.75 mSv/day | **0.84** |
-| mean ⟨Q⟩ | 4.78 | 3.82 | **1.25** |
+| absorbed dose | 0.264 | 0.458 mGy/day | **0.58** |
+| dose-equivalent | 1.318 | 1.75 mSv/day | **0.75** |
+| mean ⟨Q⟩ | 5.00 | 3.82 | **1.31** |
 
-**Result (spec validation #2):** within the ~2× bar, with the measured 1.75 mSv/day lying inside
-the model's W/shielding bracket (1.25–1.78 mSv/day). The disagreement is physically coherent:
+**Result (spec validation #2):** within the ~2× bar; the measured 1.75 mSv/day lies *above* the
+model's W/shielding bracket (1.21–1.48 mSv/day for W 47.50–49.88 × 10–20 g/cm²). The disagreement is physically coherent:
 absorbed dose is *under*-predicted (missing spacecraft secondaries) while ⟨Q⟩ is *over*-predicted
 (no fragmentation to break HZE ions into lower-LET fragments) — partly cancelling in H. Both point
 to Phase 5. Measured: Zeitlin et al., *Science* 340 (2013) 1080; Guo et al., *A&A* 577 (2015) A58.
 
 #### Propagated input uncertainty
 
-The dose-equivalent carries a **1σ-style input-uncertainty band of ≈15%**, propagated in
+The dose-equivalent carries a **1σ-style input-uncertainty band of ≈20.5%**, propagated in
 quadrature from cited sources (implemented in
 [`src/validation/uncertainty.ts`](src/validation/uncertainty.ts), displayed live in the UI as a
 shaded band and a ± readout):
 
-- **GCR flux ±14%** — the DLR (Matthiä 2013) model's absolute relative difference vs AMS-02
-  hydrogen data in the dose-dominant < 1.5 GeV/n range (Norbury et al. 2018, *Life Sci. Space
-  Res.* **18**, 64–71, Table 1; 5.3% at 1.5–4 GeV/n, 2.7% at 4–20 GeV/n; helium ≤ 2.8%
-  everywhere). Taking the largest dose-relevant value for all species is conservative; the
-  Z ≥ 3 spectra are not constrained by that comparison and are *assumed* comparable — a stated
-  assumption, not a measurement.
-- **Stopping power ±4%** — ICRU Report 49's stated accuracy for compounds in the high-energy
+- **GCR flux ±20%** — the DLR (Matthiä 2013) model's full-spectrum absolute relative difference
+  vs AMS-02 hydrogen data (Norbury et al. 2018, *Life Sci. Space Res.* **18**, 64–71, Table 1:
+  14% <1.5 GeV/n, 5.3% 1.5–4, 22% >4, 2.7% 4–20 GeV/n, 20% full spectrum; helium ≤ 2.8%
+  everywhere). The full-spectrum value is used because the dose integral spans the whole
+  spectrum; it is not the largest entry (22%). The Z ≥ 3 spectra are *assumed* comparable — a
+  stated assumption: Whitman et al. 2019 (LSSR 22, 76) cover only Li–O, and no comparison exists
+  for Z ≥ 9.
+- **Stopping power ±4%** — ICRU Report 49's stated upper bound for compounds (applied to all materials, conservatively) in the high-energy
   region (via the NIST STAR documentation), plus this run's computed ≤1.55% implementation
   deviation vs PSTAR, in quadrature.
 - **Not included, deliberately:** the un-modeled secondary-particle production (that is the
-  0.67× scope gap below, a model-form limit — not an input error), and ICRP-60 Q(L), which is
+  0.58× scope gap below, a model-form limit — not an input error), and ICRP-60 Q(L), which is
   a regulatory convention with no measurement uncertainty to propagate.
 
 #### On the remaining absorbed-dose gap
 
-The model computes **0.31 mGy/day** of absorbed dose behind the RAD configuration against the
-measured **0.46 ± 0.03 mGy/day** (ratio 0.67), and **1.47 vs 1.75 ± 0.30 mSv/day** of
-dose-equivalent (ratio 0.84). The gap is understood, and its structure is itself evidence that
-nothing was tuned:
+The model computes **0.264 mGy/day** of absorbed dose behind the RAD configuration (W = 47.50)
+against the measured **0.458 ± 0.032 mGy/day** (ratio 0.58), and **1.318 vs 1.75 ± 0.30 mSv/day**
+of dose-equivalent (ratio 0.75). The gap is understood, and its structure is consistent with a
+model in which no constant was fitted to the validation data:
 
 - **The missing dose is the secondary charged-particle field, not neutrons alone.** RAD counts
   everything the spacecraft shell produces — secondary protons, target fragments, neutrons —
   while this model transports primaries (plus simplified projectile fragmentation). The neutron
-  component was measured directly during the same cruise: **6 ± 2 µGy/day and 30 ± 10 µSv/day**
-  (Köhler et al. 2015, spectrum extrapolated to 0.1–1000 MeV) — only **~1–2%** of the measured
-  totals. The bulk of the gap is therefore carried by secondary *charged* particles and target
-  fragments produced in the shielding.
+  component was measured directly during the same cruise: **3.8 ± 1.2 µGy/day** from the measured
+  12–436 MeV spectrum (medium not stated in the abstract), **6 ± 2 µGy/day and 30 ± 10 µSv/day**
+  extrapolated to 0.1–1000 MeV (Köhler et al. 2015) — ≈0.8 % (measured) and ≈1.3 % (extrapolated) of
+  the measured absorbed dose, and ≈2 % / ≈3 % of the 0.194 mGy/day deficit — and, being neutral, it is largely not
+  part of the silicon-detector dose RAD reports as D in the first place. The bulk of the gap is therefore
+  carried by secondary *charged* particles and target fragments produced in the shielding.
 - **The two errors are coherent and partially cancel.** Absorbed dose is *under*-predicted
-  (missing secondary production) while ⟨Q⟩ is *over*-predicted at 4.78 vs 3.82 (no fragmentation
+  (missing secondary production) while ⟨Q⟩ is *over*-predicted at 5.00 vs 3.82 (no fragmentation
   softening of the HZE LET spectrum); their product H = ⟨Q⟩·D lands closer to the measurement
-  (0.84×) than either factor alone.
+  (0.75×) than either factor alone.
 - **Shielding uncertainty does not rescue the absorbed dose.** Over the plausible 10–20 g/cm²
-  Al-equivalent bracket the model spans 0.33–0.30 mGy/day — the D gap survives the geometry
+  aluminium bracket (W = 47.50) the model spans 0.28–0.26 mGy/day; weighting the three RAD shielding
+  bins (2.5/9/54 g/cm², fixed before computing) gives D ratio 0.59 (H 0.83) — the D gap survives the geometry
   uncertainty, exactly as expected if the missing physics is particle *production* rather than
   slab thickness. (Dose-equivalent at the thin end, 1.67 mSv/day, is within the measurement's
   ±0.30.)
@@ -193,14 +203,14 @@ labeled where it matters.
 
 | omission / approximation | direction of effect | magnitude | source |
 |---|---|---|---|
-| Secondary charged particles & target fragments not transported | absorbed dose **under**-predicted | the 0.67× RAD gap itself (0.31 vs 0.46 mGy/day, computed) | this work vs Guo et al. 2015 |
-| Secondary neutrons not transported | dose **under**-predicted | small: 6 ± 2 µGy/day, 30 ± 10 µSv/day measured in-cruise (~1–2% of totals) | Köhler et al. 2015 |
-| No fragmentation softening of HZE LET (primaries mode) | ⟨Q⟩ **over**-predicted | 4.78 vs 3.82 measured (1.25×, computed); Phase 5 moves it to 4.41 | this work vs Zeitlin et al. 2013 |
+| Secondary charged particles & target fragments not transported | absorbed dose **under**-predicted | the 0.58× RAD gap itself (0.264 vs 0.458 mGy/day at W = 47.50, computed) | this work vs Guo et al. 2015 |
+| Secondary neutrons not transported | dose **under**-predicted | small: 6 ± 2 µGy/day, 30 ± 10 µSv/day measured in-cruise (~1–2% of totals; ≈3% of the D deficit) | Köhler et al. 2015 |
+| No fragmentation softening of HZE LET (primaries mode) | ⟨Q⟩ **over**-predicted | 5.00 vs 3.82 measured (1.31×, computed); Phase 5 moves it to 4.60 | this work vs Zeitlin et al. 2013 |
 | Shell, Barkas (z³), Bloch (z⁴) corrections omitted | stopping power error grows at low E | ≤1.55% (≥10 MeV), ≤4.03% (all E ≥1 MeV) — computed vs PSTAR every CI run | NIST PSTAR |
 | High-Z shield materials excluded | n/a (deliberately not offered) | reproducible as of 2026-08-31: max stopping-power deviation ≥10 MeV is **6.19% for lead (Z=82)** and **2.50% for titanium (Z=22)** vs **1.55% for shipped aluminium (Z=13)**, against a 2.5% gate — lead fails decisively, titanium only marginally. PSTAR tables and the check now ship (`data/pstar/{lead,titanium}.ts`, `test/highZRejection.test.ts`); the far larger percentages quoted historically are **not** what this repo computes. | this work vs NIST PSTAR (matno 082 / 022) |
 | Heavy-ion stopping via z_eff² scaling | few-% level at low E/n | not separately quantified in this work (subsumed in the RAD comparison) | Barkas 1963 convention |
-| Straight-ahead 1-D slab geometry (single thickness) | RAD sat behind an anisotropic distribution (most solid angle <10 g/cm²) | H over the 10–20 g/cm² bracket: 1.67–1.37 mSv/day (computed); D gap survives the bracket | Guo et al. 2015 shielding model |
-| GCR spectra for Z ≥ 3 not directly constrained by AMS comparison | unknown sign | assumed comparable to H (±14%) — stated assumption | Norbury et al. 2018 covers H, He only |
+| Straight-ahead 1-D slab geometry (single thickness) | RAD sat behind an anisotropic distribution (most solid angle <10 g/cm²) | H over the 10–20 g/cm² bracket (W = 47.50): 1.48–1.23 mSv/day; three-bin check H 0.81–0.88×, D 0.59–0.61× (computed); D gap survives | Guo et al. 2015 shielding model |
+| GCR spectra for Z ≥ 3 not directly constrained by AMS comparison | unknown sign | assumed comparable to H (±20%) — stated assumption | Norbury et al. 2018 covers H, He; Whitman et al. 2019 covers Li–O only |
 | Constant GCR rate over the mission (no solar-cycle variation, no SPE) | mission totals are snapshots at fixed W | direction known, magnitude scenario-dependent — not quantified in this work | labeled in UI timeline |
 | Thin-target tissue dose (point dose in water) | no body self-shielding in the headline number | organ panel adds 0.007/0.3/5 g/cm² depth-doses (computed); full phantom out of scope | NASA/NCRP depth convention |
 | ICRP-60 Q(L) rather than ICRP-103 wR | convention choice, not an error | not applicable — definitional; stated to match RAD's Q-based reporting | ICRP-60; Zeitlin et al. 2013 |
@@ -217,7 +227,7 @@ benchmark for this model.
 
 | configuration | model | D [mGy/d] | H [mSv/d] | source |
 |---|---|---|---|---|
-| MSL **cruise** (≈16 g/cm² Al-eq, 2011–12) | **DOSEFIELD** (1-D, primaries) — computed | 0.31 | 1.47 | this work |
+| MSL **cruise** (16 g/cm² as Al, W = 47.50, 2011–12) | **DOSEFIELD** (1-D, primaries) — computed | 0.264 | 1.318 | this work |
 | MSL cruise, same | measured, MSL/RAD | 0.458 ± 0.032 | 1.75 ± 0.30 | Zeitlin et al. 2013; Guo et al. 2015 |
 | MSL cruise, same | HZETRN / OLTARIS / GEANT4 / PHITS | *not available* | *not available* | no verified published per-code cruise value found |
 | Mars **surface** (Gale, GCR) | GEANT4, PHITS, HZETRN/OLTARIS (range over codes) | 0.16–0.20 (tissue) | 0.51–0.60 | Matthiä et al. 2016 |
@@ -226,7 +236,7 @@ benchmark for this model.
 Reading the context honestly: on their own surface benchmark the full 3-D transport codes land
 at 0.76–0.95× of the measured tissue dose and 0.80–0.94× of the measured dose-equivalent, and
 the 2016 blind-challenge workshop across seven codes found "differences of factors of two are
-not uncommon" (Hassler & Norbury 2017). A 1-D primary-particle model at 0.67×/0.84× on its own
+not uncommon" (Hassler & Norbury 2017). A 1-D primary-particle model at 0.58×/0.75× on its own
 (cruise) benchmark is exactly where such a model should sit — with its missing physics
 identified and quantified above, rather than absorbed into fitted parameters.
 
@@ -238,13 +248,13 @@ single-collision fragment buildup) — [`src/physics/fragmentation.ts`](src/phys
 HZE primaries attenuate (`λ = A_t/(N_A·σ)`) and break into lower-LET fragments. Two robust,
 parameter-free results that move the model **toward** RAD:
 
-- **⟨Q⟩ softens** 4.78 → 4.41 (measured 3.82) behind 16 g/cm² Al.
+- **⟨Q⟩ softens** 5.00 → 4.60 (measured 3.82) behind 16 g/cm² Al at W = 47.50.
 - **Polyethylene's advantage grows** 11.6% → **33.3%** at 20 g/cm² — iron's charge-changing mean
   free path is 6.8 g/cm² in poly vs 21.8 in Al (poly destroys ~90% of Fe behind 16 g/cm² vs ~52%),
   so fragmentation is *why* hydrogen-rich shielding wins.
 
 **Honest limitation:** absorbed dose does *not* rise toward 0.46 mGy/day — this model omits the
-secondary **neutrons** / target fragments that carry much of the shielded dose. That is HZETRN's
+secondary charged particles and target fragments (and, to a minor extent, neutrons) that carry much of the shielded dose. That is HZETRN's
 job and is deliberately out of scope; Phase 5 isolates the ⟨Q⟩-softening and material-ordering.
 
 ### v2.0 — multi-layer shielding, mission presets, cumulative-dose timeline

@@ -7,27 +7,32 @@ computes, the code wins — rerun it.
 
 ---
 
-**Q: Your absorbed dose is 0.67× of what NASA measured. Why doesn't that disqualify the model?**
+**Q: Your absorbed dose is 0.58× of what NASA measured. Why doesn't that disqualify the model?**
 
 Because the gap is *the finding*, not a defect I failed to fix. The model transports GCR
 primaries (plus simplified projectile fragmentation) and deliberately omits the secondary
 particles produced inside the spacecraft shell. The measured gap tells you the size of that
-omission: 0.31 vs 0.46 mGy/day. Its structure confirms the explanation — the dose-equivalent
-gap is *smaller* (1.47 vs 1.75 mSv/day, 0.84×) because the model *over*-predicts ⟨Q⟩ (4.78 vs
-3.82) for the same physical reason (no fragmentation softening), and the two errors partially
-cancel in H = ⟨Q⟩·D. A tuned model would not have that coherent structure; it would just match.
+omission: 0.264 vs 0.458 mGy/day (at W = 47.50, derived from the Oulu neutron monitor with the
+same SEP events excluded as in the dose average). Its structure confirms the explanation — the dose-equivalent
+gap is *smaller* (1.318 vs 1.75 mSv/day, 0.75×) because the model *over*-predicts ⟨Q⟩ (5.00 vs 3.82) for the same physical reason (no
+fragmentation softening), and the two errors partially cancel in H = ⟨Q⟩·D. A model fitted to the
+measurement would not have that coherent structure; it would just match.
 For context: at the 2016 NASA MSL/RAD modeling workshop, seven full 3-D transport codes
 (GEANT4, PHITS, HZETRN, FLUKA, MCNP6, …) were compared against RAD surface data, and
 "differences of factors of two are not uncommon" (Hassler & Norbury 2017, LSSR 14:1–2). A 1-D
-primary-particle model at 0.84× on dose-equivalent is exactly where it should be.
+primary-particle model at 0.75× on dose-equivalent is within that range.
 
-**Q: How do I know you didn't tune anything to the RAD measurement?**
+**Q: How do I know you didn't fit anything to the RAD measurement?**
 
 Three structural defenses, all checkable in the repo history:
 1. Every physical constant traces to a citation that predates the comparison (CODATA,
    ICRU/NIST, ICRP-60, Matthiä 2013 coefficients transcribed verbatim from the reference
-   implementation). The cruise modulation W≈30 was set from the OULU neutron-monitor relation
-   and Guo 2015's φ range — not adjusted to fit.
+   implementation). The cruise modulation W = 47.50 is derived from the mean Oulu neutron-monitor
+   count rate over the Zeitlin et al. 2013 averaging window, excluding the same five SEP events
+   that the dose average excludes, via the Matthiä relation (SEP-masked full-cruise mean W = 49.88
+   as a check; unmasked 49.50 and 51.47 reported alongside) — not adjusted to fit. An earlier value, W ≈ 30, turned out not to be
+   reproducible from its own stated derivation (a counts/s vs counts/min units error); correcting
+   it *lowered* the agreement, and the correction is documented rather than hidden.
 2. The CI pipeline reruns the *entire* validation (NIST stopping power, shielding trend,
    RAD comparison) on every push; the validation panel on the site, the generated report, and
    the deployed-build check all read one function (`computeValidationSummary`) — there is no
@@ -38,15 +43,17 @@ Three structural defenses, all checkable in the repo history:
    reverse-engineered to land on the RAD number and whose material ordering was physically
    inverted). Each rejection is documented in the commit history with the physics reason.
 
-**Q: Norbury et al. 2018 says your GCR model differs from AMS-02 by up to 14%. Why trust the dose?**
+**Q: Norbury et al. 2018 says your GCR model differs from AMS-02 by up to 22%. Why trust the dose?**
 
-That 14% is exactly what the uncertainty band on the site propagates — it IS the input error
-budget, not a hidden flaw (hydrogen, <1.5 GeV/n, the range carrying ~50% of dose behind
-20 g/cm² Al; helium is ≤2.8% everywhere in the same comparison). Propagated in quadrature with
-the ICRU-49 stopping-power accuracy, the dose-equivalent carries ±14.6%. The honest caveat I
-state myself: AMS constrained H and He only; I *assume* Z≥3 spectra carry comparable error.
-The measured 1.75 mSv/day sits inside my W/shielding bracket (1.25–1.78) — consistent with an
-input-limited, untuned model.
+The uncertainty band on the site propagates the full-spectrum value, 20% (hydrogen; the bins are
+14% <1.5, 5.3% 1.5–4, 22% >4, 2.7% 4–20 GeV/n; helium is ≤2.8% everywhere in the same
+comparison) — it IS the input error budget, not a hidden flaw. Propagated in quadrature with the
+ICRU-49 stopping-power accuracy, the dose-equivalent carries ±20.5%. The honest caveat I state
+myself: AMS constrained H and He (and Li–O in Whitman et al. 2019); I *assume* the Z ≥ 9 spectra,
+which carry most of the dose-equivalent, have comparable error. The measured 1.75 mSv/day lies
+*above* my W/shielding bracket (1.21–1.48 mSv/day), and above a three-bin shielding-distribution
+check (at most 1.54 mSv/day) — the remaining gap is the untransported
+secondary field, not an input error, and no constant was fitted to close it.
 
 **Q: Why a 1-D deterministic model instead of Monte Carlo?**
 
@@ -108,7 +115,7 @@ hide a failure.
 **Q: What is the actual contribution here?**
 
 A fully transparent, CI-gated measurement of how far first-principles primary transport gets
-you on deep-space dose: stopping power to ≤1.55% of NIST, dose-equivalent to 0.84× of MSL/RAD
+you on deep-space dose: stopping power to ≤1.55% of NIST, dose-equivalent to 0.75× of MSL/RAD
 with the discrepancy structure explained and quantified (the missing piece is secondary
 charged particles and target fragments; measured neutrons are only ~1–2% — Köhler 2015), an
 input-uncertainty budget built from published comparisons, and a validated, monotonic

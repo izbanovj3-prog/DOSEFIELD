@@ -179,12 +179,13 @@ the charts are drawn at.
 
     ε_H = √( ε_φ² + ε_S² + ε_impl² )
 
-ε_φ = 14% — DLR-model |relative difference| vs AMS-02 hydrogen in the dose-dominant
-< 1.5 GeV/n range (Norbury et al. 2018, LSSR 18:64, Table 1; He ≤ 2.8%; Z ≥ 3 assumed
-comparable — stated assumption). ε_S = 4% — ICRU-49 compound bound (NIST STAR docs).
+ε_φ = 20% — DLR-model full-spectrum |relative difference| vs AMS-02 hydrogen (Norbury et al.
+2018, LSSR 18:64, Table 1: 14% <1.5, 5.3% 1.5–4, 22% >4, 2.7% 4–20 GeV/n, 20% full spectrum;
+He ≤ 2.8%). The full-spectrum value is used because the dose integral spans the whole incident
+spectrum; it is not the largest entry (22%). Z ≥ 3 assumed comparable — stated assumption (§13, item 7). ε_S = 4% — ICRU (1993) as quoted in the NIST STAR documentation ("1 % to 2 % for elements, and 1 % to 4 % for compounds"); the compound upper bound, applied to all materials as a conservative choice (Al and H₂ are elements).
 ε_impl = this run's computed max PSTAR deviation (≤ 1.55%), passed as a parameter — never a
-stale copy. Total ≈ 14.6%. The band is **input uncertainty only**: it excludes un-modeled
-secondary production (the documented 0.673× absorbed-dose scope gap) and the ICRP-60 Q(L)
+stale copy. Total ε_H = 0.20455 (≈ 20.5%). The band is **input uncertainty only**: it excludes un-modeled
+secondary production (the documented 0.58× absorbed-dose scope gap at W = 47.50) and the ICRP-60 Q(L)
 convention (definitional).
 
 ## 9. Worked example — one number, by hand
@@ -235,10 +236,10 @@ being trustworthy.
 | Q(L) three-branch quality function | ICRP Publication 60 (1991), *Annals of the ICRP* 21(1–3) | `src/physics/qualityFactor.ts` |
 | GCR differential flux coefficients (28 species, DLR-modified ISO 15390 fit to Badhwar–O'Neill) | D. Matthiä, T. Berger, A.I. Mrigakshi, G. Reitz, *Adv. Space Res.* **51** (2013) 329, doi:10.1016/j.asr.2012.09.022 — coefficients transcribed from the reference implementation `ssc-maire/CosRayModifiedISO` | `data/gcr/matthia2013.ts` |
 | Effective-charge convention z_eff(Z, β) | W.H. Barkas, *Nuclear Research Emulsions* (1963) | `src/physics/effectiveCharge.ts` |
-| Bradt–Peters charge-changing cross-section (r₀ = 1.35 fm, overlap b = 0.83) | Bradt & Peters geometric form, standard parameters | `src/physics/fragmentation.ts` |
+| Bradt–Peters charge-changing cross-section (r₀ = 1.35 fm, overlap b = 0.83) | Bradt & Peters geometric form; FLAG: the source of the r₀, b pair is not confirmed in Bradt & Peters (1950) | `src/physics/fragmentation.ts` |
 | MSL/RAD cruise measurements used as the comparison target | C. Zeitlin et al., *Science* **340** (2013) 1080, doi:10.1126/science.1235989; J. Guo et al., *A&A* **577** (2015) A58, doi:10.1051/0004-6361/201525680 | `data/rad/zeitlin2013.ts` |
 | Cruise neutron component | J. Köhler et al., *Life Sci. Space Res.* **5** (2015) 6, doi:10.1016/j.lssr.2015.03.001 | quoted in §1.2 and §13 |
-| GCR-model accuracy versus AMS-02 (±14%) | J.W. Norbury, K. Whitman, K. Lee, T.C. Slaba, F.F. Badavi, *Life Sci. Space Res.* **18** (2018) 64, Table 1 | `src/validation/uncertainty.ts` |
+| GCR-model accuracy versus AMS-02 (±20%, full spectrum) | J.W. Norbury, K. Whitman, K. Lee, T.C. Slaba, F.F. Badavi, *Life Sci. Space Res.* **18** (2018) 64, Table 1 | `src/validation/uncertainty.ts` |
 | Stopping-power accuracy bound (±4%, compounds) | ICRU Report 49 (1993), as quoted in the NIST STAR documentation | `src/validation/uncertainty.ts` |
 
 ### 10.2 Implemented in this work on the basis of those sources
@@ -261,8 +262,12 @@ Not new physics — new code, and the numbers it produces.
 checkable rather than merely asserted:
 
 1. Every constant traces to a source published before the comparison it is used in. The cruise
-   solar modulation W ≈ 30 was set from the OULU neutron-monitor relation and the φ range given by
-   Guo et al. 2015 — not adjusted to improve agreement.
+   solar modulation W = 47.50 is derived from the Oulu neutron-monitor record (mean over the
+   Zeitlin et al. 2013 averaging window, 6 Dec 2011 – 14 Jul 2012, excluding the days of the five
+   SEP events listed by Guo et al. 2015) via the Matthiä relation, with the SEP-masked full-cruise
+   mean W = 49.88 as a check and the unmasked values (49.50, 51.47) reported alongside — not
+   adjusted to improve agreement. (An earlier value,
+   W ≈ 30, is not reproduced by its own stated derivation and is kept only as a labelled legacy constant.)
 2. There is exactly one code path for each reported number. `computeValidationSummary()`
    (`src/validation/validationSummary.ts`) feeds the in-app panel, the generated report and the
    deployed-build check alike; `npm run verify:deployed` re-derives the UI-path values and compares
@@ -298,7 +303,7 @@ Per material, recomputed against the tables in `data/pstar/` (10 points each):
 The ordering is the physics: hydrogen has one electron and therefore a negligible shell correction,
 so it is the best-reproduced material; aluminium is the worst of the five for the same reason in
 reverse. The residual grows toward low energy, which is exactly the signature of the omitted shell
-correction — reported, not tuned away. This is also why **only low-Z materials are offered**
+correction — reported, not fitted away. This is also why **only low-Z materials are offered**
 (§13, item 4).
 
 ### 11.2 Free-space and shielding results
@@ -320,35 +325,45 @@ slowing primaries raises their LET and therefore Q.
 
 ### 11.3 MSL/RAD cruise comparison, and the absorbed-dose gap
 
-`npm run validate:phase4` → **GATE: PASS** (within 2×). Model run at W ≈ 30 behind ≈16 g/cm²
-aluminium-equivalent, both set independently of the measurement.
+`npm run validate:phase4` → **GATE: PASS** (within 2×). Model run at W = 47.50 (Oulu neutron-monitor
+mean over the Zeitlin et al. 2013 window, SEP days 23–29 Jan, 7–15 Mar, 17 May 2012 excluded) behind ≈16 g/cm² of aluminium (Guo et al. 2015 average
+depth; mixed materials represented as Al), both set independently of the measurement.
 
 | quantity | model | measured (RAD) | ratio |
 |---|---|---|---|
-| absorbed dose [mGy/day] | **0.308** | 0.458 ± 0.032 | **0.673** |
-| dose-equivalent [mSv/day] | **1.473** | 1.750 ± 0.30 | **0.842** |
-| mean quality ⟨Q⟩ | **4.775** | 3.820 ± 0.25 | **1.250** |
+| absorbed dose [mGy/day] | **0.264** | 0.458 ± 0.032 | **0.58** |
+| dose-equivalent [mSv/day] | **1.318** | 1.750 ± 0.30 | **0.75** |
+| mean quality ⟨Q⟩ | **4.995** | 3.820 ± 0.25 | **1.31** |
 
-Model dose-equivalent across the W and shielding brackets: **1.253–1.775 mSv/day** — the measured
-1.750 lies inside it. With propagated input uncertainty the model value reads
-**H = 1.47 ± 0.22 mSv/day (±14.6%)**, per §8.
+Check at the SEP-masked full-cruise W = 49.88: ratios 0.56 (D), 0.74 (H), 1.32 (⟨Q⟩). Unmasked: W = 49.50 → 0.57, 0.74, 1.31;
+W = 51.47 → 0.55, 0.73, 1.32. Ratios are given to 2 decimal places, computed from unrounded values.
 
-**The 0.673× absorbed-dose ratio is the model's declared limit, and it is left open on purpose.**
+Model dose-equivalent across the W (47.50–49.88) and shielding (10–20 g/cm²) brackets:
+**1.214–1.477 mSv/day** — the measured 1.750 lies *above* it. With propagated input uncertainty the
+model value reads **H = 1.32 ± 0.27 mSv/day (±20.5%)**, per §8. A three-bin shielding sensitivity
+check (Guo et al. 2015 bins, weights 0.3/0.5/0.2; depths 2.5/9/54 g/cm² Al fixed before the
+calculation; heavy bin also at 20 and 80) gives H ratios 0.81–0.88 and D ratios 0.59–0.61
+(primaries only): the H gap narrows, the D gap barely moves, and the headline stays the 16 g/cm² slab.
+
+**The 0.58× absorbed-dose ratio is the model's declared limit, and it is left open on purpose.**
 Three observations make it a diagnosis rather than an excuse:
 
 1. **The structure of the disagreement matches the omission.** With no secondary production, the
    model must under-predict D. With no fragmentation to break HZE ions into lower-LET pieces, it
-   must over-predict ⟨Q⟩ — and it does (1.250×). The two errors act in opposite directions and
-   partially cancel in H = ⟨Q⟩·D, which is why the dose-equivalent ratio (0.842×) is closer to
-   unity than the absorbed-dose ratio. A model tuned to the measurement would not reproduce that
+   must over-predict ⟨Q⟩ — and it does (1.31×). The two errors act in opposite directions and
+   partially cancel in H = ⟨Q⟩·D, which is why the dose-equivalent ratio (0.75×) is closer to
+   unity than the absorbed-dose ratio. A model fitted to the measurement would not reproduce that
    internal structure; it would simply match.
 2. **Adding the missing physics moves the right quantity.** `npm run validate:phase5` → **PASS**:
-   switching on simplified fragmentation moves ⟨Q⟩ **4.775 → 4.407** toward the measured 3.820,
-   while absorbed dose *falls* **0.308 → 0.258** — because the charged-fragment channel is now
+   switching on simplified fragmentation moves ⟨Q⟩ **4.995 → 4.598** toward the measured 3.820,
+   while absorbed dose *falls* **0.264 → 0.221** — because the charged-fragment channel is now
    modelled but the neutron and target-fragment channels still are not. The prediction and its
    failure both land where the omission says they should.
-3. **The measured neutron component is too small to close it.** 6 ± 2 µGy/day and 30 ± 10 µSv/day,
-   ~1–2% of the total (Köhler et al. 2015). The gap is therefore carried by secondary *charged*
+3. **The measured neutron component cannot close it.** The comparison is against the
+   charged-particle-dominated dose in silicon detector B; the neutral component, measured separately
+   with other RAD detectors (Köhler et al. 2015: 6 ± 2 µGy/day and 30 ± 10 µSv/day, spectrum
+   extrapolated to 0.1–1000 MeV), is largely not part of that quantity — and even if it were, it would
+   be ~1–2% of the measured totals and ≈3% of the 0.194 mGy/day absorbed-dose deficit. The gap is therefore carried by secondary *charged*
    particles and target fragments — a specific, falsifiable attribution.
 
 Fragmentation also widens the polyethylene-versus-aluminium advantage at 20 g/cm² from
@@ -376,7 +391,7 @@ number it was built to be checked against.
 
 | configuration | source | D [mGy/day] | H [mSv/day] |
 |---|---|---|---|
-| MSL cruise, ≈16 g/cm² Al-eq (2011–12) | **DOSEFIELD**, 1-D primaries — computed this run | 0.308 | 1.473 |
+| MSL cruise, 16 g/cm² as Al, W = 47.50 (2011–12) | **DOSEFIELD**, 1-D primaries — computed this run | 0.264 | 1.318 |
 | MSL cruise, same | measured, MSL/RAD (Zeitlin et al. 2013; Guo et al. 2015) | 0.458 ± 0.032 | 1.750 ± 0.30 |
 
 ### 12.2 Against professional transport codes — stated, not benchmarked
@@ -413,11 +428,11 @@ mission planning.
 
 ## 13. Known limitations
 
-1. **Absorbed dose is under-predicted by a factor 0.673** against MSL/RAD, because secondary charged
+1. **Absorbed dose is under-predicted by a factor 0.58** (W = 47.50; 0.56 at the SEP-masked full-cruise W = 49.88) against MSL/RAD, because secondary charged
    particles and target fragments produced in the shield are not transported. Declared scope limit;
    diagnosed in §11.3; not closed by any correction factor.
-2. **⟨Q⟩ is over-predicted (1.250×)** in primaries mode for the same reason — no fragmentation
-   softening of the HZE LET spectrum. The fragmentation mode reduces it to 4.407 but does not
+2. **⟨Q⟩ is over-predicted (1.31×)** in primaries mode for the same reason — no fragmentation
+   softening of the HZE LET spectrum. The fragmentation mode reduces it to 4.598 but does not
    remove it.
 3. **Stopping power carries a few-percent residual** that grows toward low energy — ≤1.55% above
    10 MeV, ≤4.03% down to 1 MeV — from the omitted shell, Barkas and Bloch corrections.
@@ -456,9 +471,11 @@ mission planning.
    water behind the stack (NASA/NCRP shallow / eye / deep convention). ICRP-60 tissue weighting
    factors w_T are **not** applied as multipliers — w_T builds effective dose *from* organ doses, and
    using them the other way round would be wrong.
-7. **Z ≥ 3 GCR spectra are not directly constrained** by the AMS-02 comparison that sets the ±14%
-   flux uncertainty; that comparison covers H and He only. Comparable accuracy for heavier ions is a
-   stated assumption, not a measured one.
+7. **Z ≥ 3 GCR spectra are only partly constrained.** The AMS-02 comparison that sets the ±20%
+   flux uncertainty (Norbury et al. 2018) covers H and He. Whitman et al. (2019, LSSR 22:76, Table 2)
+   extend it to Li–O: DLR full-spectrum |Rd| is 8.2% (C), 6.5% (O), 4.2% (N), but 32% (Li), 29% (Be),
+   16% (B). No comparison exists for Z ≥ 9, which carry ≈76% of the free-space dose-equivalent
+   (W = 0). Applying 20% to all Z ≥ 3 remains a stated assumption.
 8. **Geometry is a straight-ahead 1-D slab of one thickness**, while RAD sat behind an anisotropic
    distribution with most of the solid angle under 10 g/cm². This is carried as the 10–20 g/cm²
    bracket, not as a correction.
