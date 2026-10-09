@@ -1,44 +1,44 @@
 # CODE GATE — Paper 1 preprint (code side)
 
-Date: 2026-10-09. Numeric freeze `0130722`; release-prep commits up to `ea8bd00` plus the evidence commit.
+Updated 2026-10-09, Round 2. Numeric freeze `0130722` (unchanged). Round-2 commits: `e946a32` (verify snapshot), `405f38e` (UI W display), then metadata and evidence.
 
 | gate | status | basis |
 |---|---|---|
-| tests green | **FAIL** | `vitest` 190/190 PASS and `validate:phase1..5` PASS, but `verify:deployed`, which CI runs (`ci.yml:57`), **fails 3/7**: hardcoded W = 30-era references at `src/validation/verifyDeployed.ts:45,46,48` (1.47 / 4.78 / 4.41 vs computed 1.318 / 4.995 / 4.598). Not edited, per brief rule 6. |
-| HEAD SHA recorded | **PASS** | `evidence/freeze.md`: numeric freeze `0130722f5357448becf35f9cb40c2eb5a6bad2da`; later commits change no computed value (field-by-field check). |
-| reproduction deterministic | **PASS** | Two clean-checkout runs are identical except `provenance.generatedUTC`. `provenance.gitHead` = `unknown` when there is no `.git/` directory, e.g. in a Zenodo zip. |
-| manuscript numbers match | **HUMAN-ONLY** | Not run: manuscript path not provided (asked once). Command in `evidence/release_steps.md` §0.4. |
-| geometry audit done + verdict | **PASS** | `evidence/geometry_audit.md`. Implemented geometry: **uniform spherical shell** (4π·J, the same normal t in every direction, no cos θ). "Planar" is WRONG; "1-D slab" as a geometry statement is MISLEADING. Manuscript sentences pending the path. |
-| high-energy exposure reported | **PASS** | `evidence/high_energy_exposure.{csv,md}`: at W = 47.50 behind 20 g/cm², 48–57% of D and 52–74% of H come from E_in > 1000 MeV/n (H₂ highest). Closure vs the engine ≤ 8e-15. |
-| references resolve | **HUMAN-ONLY** | `evidence/reference_check.csv`: **11 Y / 0 N / 3 manual** (Barkas 1963, ICRP 60, ICRU 49). Guo 2015b and Slaba 2010 could not be identified, and the rest of `references.bib` is unchecked: bib path not provided. Davis 2026 version DOI = CosRayModifiedISO **v1.2.12** (matches); the concept DOI currently resolves to the same record. |
-| ASTAR re-derived | **PASS** | Raw NIST exports archived with SHA-256 (`data/nist/astar/`); transcription matches (0/40 mismatches); recomputed **1.437%** (Al, 10 MeV/n) and **−4.517%** (H, 1 MeV/n), equal to the manuscript figures. z_eff note in `evidence/astar_note.md`. |
-| CITATION/.zenodo valid | **HUMAN-ONLY** | CFF valid against schema 1.2.0 (cffconvert 2.0.0); .zenodo.json valid JSON with Zenodo vocabulary IDs checked. The **author block is pending confirmation** and the **preprint identifier is a placeholder**, so both need the author before release. |
-| README consistent | **FAIL** | Fixed (`f002e99`): stale 1.67 → 1.48 mSv/day; the neutron row (measured vs extrapolated); "not effective dose"; JUDGE_PREP 0.33× → 0.42×. The items from the validation plan (units comment, zeitlin naming, radComparison comment, UI min duration, uncertainty.ts) were already in the committed edits. **Still inconsistent:** README/METHODS/UI describe the geometry as a "1-D slab" while the code implements a shell (author wording decision). Not checked against the manuscript (no path). |
-| site in sync | **FAIL** | Live = `34b35a9`: W ≈ 30, 0.84×, ±14.6% vs manuscript W = 47.50, ε_φ = 0.20. A local build of the frozen code gives 0.75× and ±20.5% (in sync) but prints `φ≈550–800 MV → Matthiä W≈47.49528000000009, behind 16 g/cm² Al-equiv` (`src/ui/main.ts:979`): unformatted, and framed as derived from φ. |
+| tests green | **PASS** | vitest 190/190; tsc 0/0; `validate:phase1..5` all exit 0; `verify:deployed` **7/7 PASS** after `e946a32`. The 3 rows (H_model, ⟨Q⟩_model, ⟨Q⟩ + frag) are a **model regression snapshot**, not a measurement: W = 30-era values replaced by W = 47.50 values from `paper1_results.json`. The measured-H row (1.75) is unchanged. `npm run build` exit 0. |
+| HEAD SHA recorded | **PASS** | Numeric freeze `0130722f5357448becf35f9cb40c2eb5a6bad2da` (`evidence/freeze.md`). The reproduction at Round-2 HEAD is identical to the freeze, field by field, apart from provenance. |
+| reproduction deterministic | **PASS** | Only `provenance.generatedUTC` differs between runs. `gitHead` = `unknown` without `.git/` (e.g. a Zenodo zip). |
+| manuscript numbers match | **PASS** | r6 (`Downloads/DOSEFIELD_manuscript_draft_r6.md`, identical to the Claude Science artifact): **0 value mismatches**, 58/67 OK. The 9 NOT FOUND are stale checker entries whose numbers are absent from r6. Line 151 was hand-checked and matches. `evidence/manuscript_check_r6.md`. |
+| geometry audit done + verdict | **PASS** | Implemented geometry: **uniform spherical shell** (4π·J, normal t in every direction). r6 "planar shields" (l. 9, 203) and "single planar slab" (Fig. 3 caption, l. 179) are **WRONG**; "single slab at the mean depth" (l. 119, 135, 165) is MISLEADING. Guo's 30% fraction is FOV-qualified ("within the field of view of RAD from above", §3 p. 5); r6 l. 119 drops the qualifier. The code has no cone option, so no cone variant was computed. |
+| high-energy exposure reported | **PASS** | 48–57% of D and 52–74% of H from E_in > 1 GeV/n at W = 47.50, 20 g/cm² (`high_energy_exposure.md`). |
+| references resolve | **PASS** | r6 `references.bib` (Claude Science `va6a53c72`, newest): **18 Y / 0 N / 3 manual** (Barkas 1963, ICRP 60, ICRU 49). Davis 2026 = v1.2.12 (version DOI), and the concept DOI resolves to the same record. Findings: (i) NISTSTAR's DataCite metadata (Seltzer, 1993) differ from the bib (Berger et al., 2017); NIST's own landing page matches the bib authors, and the year is NOT RETRIEVED; (ii) the NISTSTAR note "LH2, LCH4" is wrong because the data are NIST gas tables; (iii) Hassler & Norbury 2017 is cited in the repo (literature-context quote, added `a21f2a5`) but is not in the r6 bib. |
+| ASTAR re-derived | **PASS** | 1.437% (Al, 10 MeV/n) and −4.517% (H, 1 MeV/n) from the raw NIST exports (sha256 in `data/nist/astar/README.md`). ASTAR "HYDROGEN" (matno 001) and "METHANE" (matno 197) are gas entries. |
+| CITATION/.zenodo valid | **HUMAN-ONLY** | Both valid (CFF schema 1.2.0; JSON plus Zenodo vocabularies). Author is "Izbanov, Zhanbolat" only. The affiliation and ORCID placeholders, and the preprint-DOI placeholder in .zenodo.json, must be filled or removed by the author before release. The e-mail was dropped from CFF (not in the author spec). |
+| README consistent | **FAIL** | Numbers are consistent (round 1). Geometry is still described as a "1-D slab" in README/METHODS/UI while the code is a shell. That's an author wording decision, not changed here. |
+| site in sync | **FAIL (until push)** | Live = `34b35a9` (W ≈ 30, 0.84×, ±14.6%). A local build of the current tree shows "W = 47.50 (Oulu NM, SEP days excluded)", φ as context only, 0.75× and ±20.5%, which is in sync with the manuscript once pushed and deployed. |
+
+## Liquid-constants side calculation (defaults unchanged)
+
+PDG liquid H₂ (2024, index 85: I 21.8 eV, a 0.1348, k 5.6249, x₀ 0.4400, x₁ 1.8856, C̄ 3.0977, δ₀ 0; retrieved 2026-10-09) vs current (I 19.2 eV, δ ≡ 0). Effect at W = 0, 5–40 g/cm²: H₂ dose equivalent **+0.44% to +0.89%** (primaries) and **+0.46% to +1.01%** (fragmentation); D +0.21% to +0.59%. The ranking H₂ < CH₄ < PE < water < Al holds everywhere. The Mars-cruise preset shift is 0 (no H₂/CH₄). Liquid CH₄: **NOT RETRIEVED**, because PDG and NIST list gas only. Details: `liquid_constants_sensitivity.{csv,md}`.
 
 ## HUMAN-ONLY steps, in order
 
-0. Clear the blockers in `evidence/release_steps.md` §0: the `verify:deployed` decision, the authors, the `.zenodo.json` placeholder, the manuscript check.
-1. Push the commits (`git push origin main`) and the tag (`git tag -a paper1-v1.0.0 …` as drafted in `release_steps.md`, then `git push origin paper1-v1.0.0`). Pushing `main` redeploys the site.
-2. Enable the repository in Zenodo (GitHub integration), create the GitHub release `paper1-v1.0.0`, and wait for the DOI.
-3. Paste the DOI into CITATION.cff and the manuscript and commit that; **do not move the tag**. The archived version is the tag's content, which does not include the DOI line added afterwards.
+0. Fill or remove the placeholders (affiliation, ORCID, preprint DOI); see `release_steps.md` §0. Fix the manuscript wording (planar → shell; Guo's FOV qualifier; NISTSTAR "LH2/LCH4" note).
+1. Push the commits (`git push origin main`, which also redeploys the site) and the tag `paper1-v1.0.0` (draft command in `release_steps.md`).
+2. Enable the repository in Zenodo, create the GitHub release `paper1-v1.0.0`, and wait for the DOI.
+3. Paste the DOI into CITATION.cff and the manuscript and commit that; **do not move the tag**. The archive is the tag's content, without the DOI line.
 
-## DEVLOG packet
+## DEVLOG packet (Round 2)
 
-**CHANGED (this session):**
-- Committed the pending W/ε_φ correction as 8 logical commits (`899ee1d`…`0130722`).
-- `f002e99`: README.md, JUDGE_PREP.md, src/ui/main.ts (comment).
-- `37115a3`: .gitattributes, data/nist/astar/* (5 raw exports + README).
-- `ea8bd00`: CITATION.cff, .zenodo.json.
-- evidence/: freeze.md, geometry_audit.md, high_energy_exposure.{csv,md}, reference_check.csv, astar_note.md, release_steps.md, CODE_GATE.md, paper1_results_0130722.json.
-- No physics, constant or test was changed by this session.
+**CHANGED:**
+- `src/validation/verifyDeployed.ts` (3 snapshot refs; `e946a32`).
+- `src/ui/main.ts` (W display, 2 lines; `405f38e`).
+- CITATION.cff and .zenodo.json (author block → "Izbanov, Zhanbolat" + placeholders).
+- evidence/: liquid_constants_sensitivity.{csv,md}, manuscript_check_r6.md, reference_check.csv (rewritten for r6 bib), geometry_audit.md (r6 sentences + FOV follow-up; Guo passages reduced to paraphrase plus short quoted fragments), release_steps.md, this file.
+- No physics constant or default result changed.
+- Note: during verification `src/ui/buildInfo.ts` (the auto-generated build stamp, rewritten by `npm run build` moments earlier) was reset to HEAD with `git checkout`; it contains no hand edits.
 
-**VERIFIED this run:**
-- Tests 190/190; tsc 0/0; phases 1–5 PASS; verify:deployed FAIL 3/7.
-- W = 47.4953; D 0.2638 mGy/d; H 1.3178 mSv/d; ⟨Q⟩ 4.995; ratios 0.576 / 0.753; ε_H 0.20455; PSTAR 1.554%.
-- He ASTAR 1.437% / −4.517%; high-energy share (H₂, 20 g/cm², W = 47.50) 57.0% D / 73.7% H above 1 GeV/n.
-- z_eff He 1.948 / 2.000 / 2.000; z_eff Fe 22.72 / 25.94 / 26.00.
+**VERIFIED this run:** tests 190/190; verify 7/7; phases 1–5 pass; build OK; reproduction == freeze. Manuscript r6: 0 mismatches. bib: 18 Y / 0 N / 3 manual. Liquid-H₂ shifts as above.
 
-**SCREENSHOT:** none taken. The live-site and local-build checks were DOM reads (values quoted in the table above).
+**SCREENSHOT:** none usable (the narrow pane hid the RAD box). The panel text was read from the DOM: "W = 47.50 (Oulu NM, SEP days excluded), behind 16 g/cm² Al-equiv · set independently of the measurement" / "φ ≈ 550–800 MV (Guo et al. 2015a, context only)".
 
-**DEVLOG draft:** omitted. The brief (rule 5) forbids prose in the author's voice; the facts above are the material for it.
+**DEVLOG draft:** omitted (brief rule 5: no prose in the author's voice).

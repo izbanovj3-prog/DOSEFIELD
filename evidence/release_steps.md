@@ -2,12 +2,12 @@
 
 ## 0. Blockers to clear before tagging
 
-1. **CI will be red on push.** `npm run verify:deployed` (run by `.github/workflows/ci.yml:57`) fails 3 of 7 checks. Its reference values are hardcoded W = 30-era numbers: `src/validation/verifyDeployed.ts:45` (H 1.47), `:46` (⟨Q⟩ 4.78), `:48` (⟨Q⟩ frag 4.41). The current tree computes 1.318 / 4.995 / 4.598, and the regenerated report says the same. This is a check, so it was **not edited** (brief rule 6). The author decides whether to update the references to the regenerated report values (and say so in the commit), or to release with CI red.
-2. **Authors.** CITATION.cff and .zenodo.json still carry the old author block, marked "PENDING AUTHOR CONFIRMATION". Supply the final names, affiliation and ORCID, and update both files identically.
-3. **.zenodo.json preprint placeholder.** The `related_identifiers[1].identifier` value `PLACEHOLDER-PREPRINT-DOI-REPLACE-OR-DELETE-BEFORE-RELEASE` is not a valid DOI. Replace it with the preprint DOI, or delete that entry before creating the release; otherwise Zenodo will reject or mis-file the metadata.
-4. **Manuscript number check not run** (manuscript path not provided):
-   `python scripts/check_manuscript_numbers.py <MANUSCRIPT.md> paper1_results.json evidence/manuscript_check.md`, which must report 0 not OK.
-5. Optional (UI): after deploy, the validation panel will print `W≈47.49528000000009` after `φ≈550–800 MV → Matthiä`, at `src/ui/main.ts:979`. See CODE_GATE.md.
+1. ~~CI red on push~~ **RESOLVED** in `e946a32`: the `verify:deployed` model-snapshot references were updated to the W = 47.50 values (the measured row was unchanged); it now passes 7/7.
+2. **Placeholders in the author metadata.** The sole author "Izbanov, Zhanbolat" is confirmed. Before release, replace the affiliation placeholder in CITATION.cff and both `PLACEHOLDER-AFFILIATION…` / `PLACEHOLDER-ORCID…` values in .zenodo.json, or delete the `orcid` key if there is none. An invalid ORCID string will make the Zenodo metadata fail.
+3. **.zenodo.json preprint placeholder.** The `related_identifiers[1].identifier` value `PLACEHOLDER-PREPRINT-DOI-REPLACE-OR-DELETE-BEFORE-RELEASE` is not a valid DOI. Replace it with the preprint DOI, or delete that entry before creating the release.
+4. ~~Manuscript number check~~ **DONE on r6**: 0 value mismatches. Nine checker entries are stale (their numbers no longer appear in r6); see `evidence/manuscript_check_r6.md`. Re-run on the final manuscript text.
+5. ~~UI W display~~ **RESOLVED** in `405f38e`.
+6. Manuscript wording (Claude Science side): "planar shields" / "single planar slab" (r6 lines 9, 179, 203) are WRONG for the implemented shell geometry. Line 119 drops Guo's field-of-view qualifier. The bib NISTSTAR note labels the H₂/CH₄ data as liquid, but they are NIST gas tables. See `geometry_audit.md` and `liquid_constants_sensitivity.md`.
 
 ## 1. Tag (draft — do NOT run until §0 is resolved)
 
