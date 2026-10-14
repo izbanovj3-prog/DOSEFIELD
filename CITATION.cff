@@ -6,12 +6,9 @@ message: >-
   If you use this software, please cite it using the metadata
   from this file.
 type: software
-# Sole author (confirmed 2026-10-09). Replace the affiliation placeholder and add the ORCID before release.
 authors:
   - given-names: Zhanbolat
     family-names: Izbanov
-    affiliation: 'PLACEHOLDER: affiliation to be supplied by the author'
-    # orcid: 'https://orcid.org/0000-0000-0000-0000'  # PLACEHOLDER: uncomment with the real ORCID
 repository-code: 'https://github.com/izbanovj3-prog/DOSEFIELD'
 url: 'https://izbanovj3-prog.github.io/DOSEFIELD/'
 abstract: >-
