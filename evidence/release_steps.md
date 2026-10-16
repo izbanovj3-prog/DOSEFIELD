@@ -41,3 +41,35 @@ Pushing `main` also triggers `.github/workflows/deploy.yml`, so the live site mo
 1. Put the version DOI into `CITATION.cff` (uncomment `doi:` and `date-released:`) and into the manuscript.
 2. Commit that on `main`. **Do not move the tag.** The Zenodo archive is the content of `paper1-v1.0.0`, which does not contain its own DOI; the DOI line exists only in the later commit.
 3. Push `main`.
+
+---
+
+# Site sync + paper1-v1.0.1 (prepared 2026-10-17; HUMAN-ONLY; nothing here has been executed)
+
+Branch `site-sync`, started from `e38c9fc` (= `paper1-v1.0.0`, which is not moved). It adds text-only commits: `1b4ca48` (UI wording) and `1844850` (METHODS/README limitations wording), plus this evidence commit. Reproduction at `1844850` is identical to `0130722` field by field (provenance excluded). Tests 190/190; phases 1–5, verify:deployed and build pass.
+
+## 1. Publish the site (pushing `main` triggers CI and "Deploy to GitHub Pages" in parallel)
+
+The working copy holds the uncommitted README AI-disclosure draft, so don't switch branches. Push the branch head as `main` (fast-forward only; it is refused if not a fast-forward):
+
+```
+git fetch origin
+git log --oneline origin/main..site-sync
+git push origin site-sync:main
+git branch -f main site-sync
+```
+
+Then check the live site (https://izbanovj3-prog.github.io/DOSEFIELD/): the footer shows the new commit; the RAD panel shows "W = 47.50 (Oulu NM, SEP days excluded)", 0.58× / 0.75× / 1.31×, ±20.5%; methods.html shows ε_φ = 20%.
+
+## 2. Tag paper1-v1.0.1 (optional; numbers identical to v1.0.0)
+
+```
+git tag -a paper1-v1.0.1 site-sync -m "DOSEFIELD v1.0.1 — site and METHODS text synced with Paper 1.
+
+Text-only changes since paper1-v1.0.0 (e38c9fc): wording ('compared with', shell geometry, r0/b
+provenance, neutron share computed live). scripts/reproduce_paper1.ts output is identical to
+paper1-v1.0.0 / 0130722 (provenance excluded). Tests 190/190."
+git push origin paper1-v1.0.1
+```
+
+Create the GitHub release from that tag (title e.g. "DOSEFIELD v1.0.1 (Paper 1 code, site text sync)"). As of 2026-10-17 Zenodo shows **no record** for v1.0.0: no search hits for DOSEFIELD, and `zenodo.org/badge/latestdoi/1272094482` returns 404. Check the repository page under zenodo.org → GitHub before relying on v1.0.1 to be archived.
