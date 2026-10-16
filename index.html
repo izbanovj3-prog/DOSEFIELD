@@ -6,13 +6,13 @@
     <title>DOSEFIELD · Deep-Space Dosimeter</title>
     <meta
       name="description"
-      content="Scientifically-honest 1D deep-space radiation dose &amp; shielding model — GCR ion spectra to dose-equivalent behind spacecraft shielding, validated against NIST PSTAR and NASA MSL/RAD."
+      content="Scientifically-honest 1D deep-space radiation dose &amp; shielding model — GCR ion spectra to dose-equivalent behind spacecraft shielding, compared with NIST PSTAR and NASA MSL/RAD."
     />
     <meta name="theme-color" content="#12110f" />
     <meta property="og:title" content="DOSEFIELD · Deep-Space Dosimeter" />
     <meta
       property="og:description"
-      content="1D deep-space radiation dose &amp; shielding model from first principles — validated against NIST PSTAR and NASA MSL/RAD. Every constant cited, nothing tuned."
+      content="1D deep-space radiation dose &amp; shielding model built from published, cited physics — compared with NIST PSTAR and NASA MSL/RAD. Every constant cited, nothing tuned."
     />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://izbanovj3-prog.github.io/DOSEFIELD/" />
@@ -58,7 +58,7 @@
       </section>
 
       <p class="hero-scope">
-        Deterministic 1-D slab · stopping power within <span class="hero-num" id="heroNist">—</span>
+        Deterministic 1-D, straight-ahead; uniform shield in every direction · stopping power within <span class="hero-num" id="heroNist">—</span>
         of NIST PSTAR (≥10&nbsp;MeV) · integral cruise dose within ~2× of MSL/RAD · primaries + simplified
         Bradt–Peters fragmentation, no secondary-neutron transport —
         <a class="scope-link" href="./methods.html#limitations">full methods &amp; limitations</a>; not a substitute for HZETRN / OLTARIS.
@@ -68,9 +68,9 @@
         <summary>What this instrument computes</summary>
         <p class="hero-plain">
           DOSEFIELD turns galactic-cosmic-ray ion spectra into absorbed dose and dose-equivalent
-          behind spacecraft shielding, from first principles — Bethe–Bloch stopping power, ICRP-60
+          behind spacecraft shielding, built from published, cited physics — Bethe–Bloch stopping power, ICRP-60
           quality factors, a cited GCR model. Every constant is sourced and cited, nothing is tuned
-          to the answer, and the result is validated against NASA’s MSL/RAD Mars-cruise measurement.
+          to the answer, and the result is compared with NASA’s MSL/RAD Mars-cruise measurement.
         </p>
       </details>
 
@@ -96,8 +96,8 @@
                block widths and labels follow the material and areal density live. -->
           <figure class="geom">
             <svg id="geomSvg" viewBox="0 0 264 78" role="img"
-                 aria-label="Model geometry: galactic cosmic rays arrive from the left, cross the shield slab, and deposit dose in a thin water target behind it."></svg>
-            <figcaption>Straight-ahead 1-D slab — not a 3-D field calculation.</figcaption>
+                 aria-label="Model geometry schematic: an isotropic galactic-cosmic-ray field crosses the same areal density of shield from every direction and deposits dose in a thin water target."></svg>
+            <figcaption>Schematic. Straight-ahead transport through the same areal density in every direction (uniform shell) — not a 3-D field calculation.</figcaption>
           </figure>
 
           <div class="control">

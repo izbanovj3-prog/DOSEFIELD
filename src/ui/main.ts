@@ -435,7 +435,7 @@ function sensitivityRows(): SensRow[] | null {
     if (state.material !== bestKey) {
       const Hb = interp(curves[bestKey]!, state.thickness).H;
       rows.push({
-        label: `Material → liquid hydrogen @ ${state.thickness.toFixed(1)} g/cm²`,
+        label: `Material → hydrogen @ ${state.thickness.toFixed(1)} g/cm²`,
         pct: ((Hb * state.duration) / cur - 1) * 100,
         note: 'validated H-content ranking',
       });
@@ -955,6 +955,11 @@ function renderSelfChecks(): void {
     .join('');
 }
 
+// Köhler et al. 2015 (LSSR 5, 6): cruise neutron absorbed dose, mGy/day — measured 12–436 MeV and
+// extrapolated to 0.1–1000 MeV (same values as scripts/reproduce_paper1.ts → summary.neutron_Kohler2015)
+const NEUTRON_MEAS_MGY = 0.0038;
+const NEUTRON_EXTRAP_MGY = 0.006;
+
 function renderValidation(d: ValidationSummary): void {
   const f = (x: number, n = 2): string => x.toFixed(n);
   const check = (ok: boolean, label: string, detail: string): string =>
@@ -986,7 +991,7 @@ function renderValidation(d: ValidationSummary): void {
           <th>ratio</th></tr></thead>
         <tbody>
           ${radRow('absorbed dose [mGy/d]', f(r.model.D, 3), `${f(r.measured.D, 3)} ± ${d.radSigma.D}`, f(r.ratioD))}
-          <tr class="rt-annot"><td colspan="4">${f(r.ratioD)}× is a declared scope limit, not a defect: secondary charged particles and target fragments made in the shield are not transported. Measured cruise neutrons are only ~1–2% of the total, so the shortfall is charged secondaries.</td></tr>
+          <tr class="rt-annot"><td colspan="4">${f(r.ratioD)}× is a declared scope limit, not a defect: secondary charged particles and target fragments made in the shield are not transported. Cruise neutrons (Köhler et al. 2015: ${f(NEUTRON_MEAS_MGY * 1000, 1)} µGy/d measured, ${f(NEUTRON_EXTRAP_MGY * 1000, 0)} µGy/d extrapolated) are ≈${f((NEUTRON_MEAS_MGY / r.measured.D) * 100, 1)} % / ≈${f((NEUTRON_EXTRAP_MGY / r.measured.D) * 100, 1)} % of the measured ${f(r.measured.D * 1000, 0)} µGy/d and ≈${f((NEUTRON_MEAS_MGY / (r.measured.D - r.model.D)) * 100, 0)}–${f((NEUTRON_EXTRAP_MGY / (r.measured.D - r.model.D)) * 100, 0)} % of the absorbed-dose gap, so the shortfall is mainly charged secondaries.</td></tr>
           ${radRow('dose-equivalent [mSv/d]', f(r.model.H), `${f(r.measured.H)} ± ${d.radSigma.H}`, f(r.ratioH))}
           ${radRow('mean quality ⟨Q⟩', f(r.model.Q), `${f(r.measured.Q)} ± ${d.radSigma.Q}`, f(r.ratioQ))}
         </tbody>
@@ -1289,7 +1294,7 @@ function fallbackCopy(done: () => void): void {
 // Plain-text report built ONLY from numbers computed this session (readout, organ
 // depth-doses, cached validation summary) — nothing typed in, per the integrity rules.
 const MAT_LABEL: Record<string, string> = {
-  aluminum: 'Aluminium', polyethylene: 'Polyethylene', water: 'Water', hydrogen: 'Liquid hydrogen', methane: 'Methane',
+  aluminum: 'Aluminium', polyethylene: 'Polyethylene', water: 'Water', hydrogen: 'Hydrogen (liquid density; gas-phase I and δ)', methane: 'Methane',
 };
 const PRESET_LABEL: Record<string, string> = {
   'mars-cruise': 'Mars Cruise', 'lunar-gateway': 'Lunar Gateway', 'artemis-transit': 'Artemis Transit', custom: 'Custom',
