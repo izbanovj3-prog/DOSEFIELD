@@ -19,8 +19,10 @@ disagrees with what the code prints, rerun and fix the file.
 
 ## 1. What the model is, and what it is not
 
-A deterministic, one-dimensional slab. Galactic-cosmic-ray ions enter normal to a shield of stated
-areal density; each ion is slowed continuously; what emerges deposits energy in a thin water target.
+A deterministic, one-dimensional model. Galactic-cosmic-ray ions are transported straight-ahead along
+each ray through a shield of stated areal density; the dose point sees the same areal density in every
+direction (a uniform spherical shell); each ion is slowed continuously; what emerges deposits energy in
+a thin water target.
 
 ### 1.1 What is modelled
 
@@ -51,8 +53,8 @@ generated report, and in §13 below.
 |---|---|---|
 | Secondary **neutrons** | Neutron production and transport require a nuclear-reaction network and a 3-D geometry. That is what HZETRN and OLTARIS exist to do. | Small: measured in-cruise neutrons are 6 ± 2 µGy/day and 30 ± 10 µSv/day, ~1–2% of the total (Köhler et al. 2015). |
 | Secondary charged particles and **target fragments** produced in the shield | Same reason: it is the other half of a full nuclear transport code. | This is the dominant term in the absorbed-dose gap — see §11.3. |
-| Multi-generation fragmentation cascades | The fragmentation mode is deliberately single-collision, so it stays parameter-free and inspectable. | Not separately quantified in this work. |
-| Three-dimensional geometry / angular distribution | The model is a 1-D slab by design. **No result here should be read as a 3-D field calculation.** | RAD sat behind an anisotropic shielding distribution; the 10–20 g/cm² bracket in §11.3 is how that uncertainty is carried. |
+| Multi-generation fragmentation cascades | The fragmentation mode is deliberately single-collision, so it has no fitted parameters and stays inspectable. r0 and b are fixed values; their original source could not be traced. | Not separately quantified in this work. |
+| Three-dimensional geometry / angular distribution | The model is 1-D by design: straight-ahead transport through one uniform areal density in every direction (a spherical shell). **No result here should be read as a 3-D field calculation.** | RAD sat behind an anisotropic shielding distribution; the 10–20 g/cm² bracket in §11.3 is how that uncertainty is carried. |
 | Shell, Barkas (z³) and Bloch (z⁴) corrections to Bethe | Omitting them keeps the stopping-power core small enough to verify by hand — and the cost is measured rather than assumed. | ≤1.55% above 10 MeV, ≤4.03% down to 1 MeV (§11.1). It is also why only low-Z shields are offered. |
 | Solar particle events (SPE) | A different source with different statistics; mixing it into a GCR result validated against RAD would contaminate the one thing that is validated. | Mission totals are snapshots at fixed W. |
 | Energy-dependent nuclear cross-sections | Bradt–Peters is geometric and energy-independent. | Not separately quantified in this work. |
@@ -343,7 +345,7 @@ Model dose-equivalent across the W (47.50–49.88) and shielding (10–20 g/cm²
 model value reads **H = 1.32 ± 0.27 mSv/day (±20.5%)**, per §8. A three-bin shielding sensitivity
 check (Guo et al. 2015 bins, weights 0.3/0.5/0.2; depths 2.5/9/54 g/cm² Al fixed before the
 calculation; heavy bin also at 20 and 80) gives H ratios 0.81–0.88 and D ratios 0.59–0.61
-(primaries only): the H gap narrows, the D gap barely moves, and the headline stays the 16 g/cm² slab.
+(primaries only): the H gap narrows, the D gap barely moves, and the headline stays the uniform 16 g/cm² shell.
 
 **The 0.58× absorbed-dose ratio is the model's declared limit, and it is left open on purpose.**
 Three observations make it a diagnosis rather than an excuse:
@@ -476,7 +478,7 @@ mission planning.
    extend it to Li–O: DLR full-spectrum |Rd| is 8.2% (C), 6.5% (O), 4.2% (N), but 32% (Li), 29% (Be),
    16% (B). No comparison exists for Z ≥ 9, which carry ≈76% of the free-space dose-equivalent
    (W = 0). Applying 20% to all Z ≥ 3 remains a stated assumption.
-8. **Geometry is a straight-ahead 1-D slab of one thickness**, while RAD sat behind an anisotropic
+8. **Geometry is straight-ahead transport through one uniform areal density in every direction (a spherical shell)**, while RAD sat behind an anisotropic
    distribution with most of the solid angle under 10 g/cm². This is carried as the 10–20 g/cm²
    bracket, not as a correction.
 9. **The GCR rate is constant over a mission** — no solar-cycle variation and no solar particle
