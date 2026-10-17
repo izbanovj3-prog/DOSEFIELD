@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Scientifically-honest 1D deep-space radiation dose & shielding model. Phase 1: Bethe stopping power + CSDA range, validated against NIST PSTAR.",
+  "description": "1-D deep-space radiation dose and shielding model: GCR spectra transported in the continuous-slowing-down approximation through a uniform shield; absorbed dose and ICRP-60 dose equivalent at a point in water; compared with NIST PSTAR and NASA MSL/RAD.",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "prebuild": "tsx scripts/writeBuildInfo.ts",
