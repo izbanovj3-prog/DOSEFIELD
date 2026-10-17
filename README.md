@@ -368,7 +368,11 @@ cross-sections — i.e. the territory HZETRN/OLTARIS occupy.
 Built independently (Grade 10) as a NASA Stardance Challenge entry.
 
 Suggested citation: Izbanov, Z. (2026). *DOSEFIELD: a transparent 1-D deep-space radiation dose
-and shielding model with source-traceable constants*. <https://github.com/izbanovj3-prog/DOSEFIELD>. For a journal submission, match the
+and shielding model with source-traceable constants* (version 1.0.1). Zenodo.
+<https://doi.org/10.5281/zenodo.23433384>
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23433384.svg)](https://doi.org/10.5281/zenodo.23433384)
+— archived code of tag `paper1-v1.0.1`. Source: <https://github.com/izbanovj3-prog/DOSEFIELD>. For a journal submission, match the
 author/affiliation line to the venue's own submission template — it may require a different
 format than the one above.
 
