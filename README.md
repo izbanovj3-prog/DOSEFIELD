@@ -1,8 +1,8 @@
 # DOSEFIELD
 
 **A scientifically-honest 1-D model of the radiation dose an astronaut absorbs behind shielding
-on a deep-space mission — validated against NASA's MSL/RAD measurement, from first-principles
-physics, with no constant fitted to the validation data.**
+on a deep-space mission — built from published, cited physics and compared with NASA's MSL/RAD
+measurement, with no constant fitted to the validation data.**
 
 ### ▶ Live dosimeter — **https://izbanovj3-prog.github.io/DOSEFIELD/**
 
@@ -39,7 +39,7 @@ model sits relative to published work &nbsp;·&nbsp; plots:
 > full-spectrum extrapolation, Köhler et al. 2015)
 > is not transported — is documented, not hidden. No constant is fitted to the validation data.
 
-## Status — validated MVP + fragmentation · CI-gated · deployed live
+## Status — MVP compared with NIST PSTAR and MSL/RAD + fragmentation · CI-gated · deployed live
 
 ### Phase 1 — physics core + NIST PSTAR validation
 
@@ -214,7 +214,7 @@ labeled where it matters.
 | Constant GCR rate over the mission (no solar-cycle variation, no SPE) | mission totals are snapshots at fixed W | direction known, magnitude scenario-dependent — not quantified in this work | labeled in UI timeline |
 | Thin-target tissue dose (point dose equivalent H in water — not effective dose E) | no body self-shielding in the headline number | organ panel adds 0.007/0.3/5 g/cm² depth-doses (computed); full phantom out of scope | NASA/NCRP depth convention |
 | ICRP-60 Q(L) rather than ICRP-103 wR | convention choice, not an error | not applicable — definitional; stated to match RAD's Q-based reporting | ICRP-60; Zeitlin et al. 2013 |
-| Multi-layer stacks beyond the single-layer limit | unvalidated (no NASA layered measurement) | reduces exactly to the validated single slab at the limit (0.05%/0.00%, tested) | this work |
+| Multi-layer stacks beyond the single-layer limit | unvalidated (no NASA layered measurement) | reduces exactly to the single-layer uniform-shell result (the one compared with PSTAR and MSL/RAD) at the limit (0.05%/0.00%, tested) | this work |
 
 #### Where this sits among published transport codes
 
@@ -367,8 +367,8 @@ cross-sections — i.e. the territory HZETRN/OLTARIS occupy.
 
 Built independently (Grade 10) as a NASA Stardance Challenge entry.
 
-Suggested citation: Izbanov, Z. (2026). *DOSEFIELD: a validated 1-D deep-space radiation dose
-model*. <https://github.com/izbanovj3-prog/DOSEFIELD>. For a journal submission, match the
+Suggested citation: Izbanov, Z. (2026). *DOSEFIELD: a transparent 1-D deep-space radiation dose
+and shielding model with source-traceable constants*. <https://github.com/izbanovj3-prog/DOSEFIELD>. For a journal submission, match the
 author/affiliation line to the venue's own submission template — it may require a different
 format than the one above.
 
