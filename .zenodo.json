@@ -1,7 +1,6 @@
 {
   "title": "DOSEFIELD: a transparent 1-D deep-space radiation dose and shielding model with source-traceable constants",
   "upload_type": "software",
-  "version": "1.0.1",
   "publication_date": "2026-10-17",
   "license": "mit",
   "description": "<p>DOSEFIELD is a deterministic one-dimensional model of galactic cosmic-ray (GCR) dose. The Matthiä et al. (2013) GCR spectrum is transported in the continuous-slowing-down approximation (Bethe–Bloch stopping power with the Sternheimer density effect, effective charge for heavy ions, optional single-collision Bradt–Peters projectile fragmentation) through a shield of given areal density applied uniformly in every direction (spherical-shell geometry), and converted to absorbed dose and ICRP-60 dose equivalent at a point in water.</p><p>Secondary particles produced in the shield (secondary charged particles, target fragments, neutrons) are not transported. DOSEFIELD is not a substitute for full radiation-transport codes.</p><p>This release (tag paper1-v1.0.1) reproduces every number in Paper 1 via <code>scripts/reproduce_paper1.ts</code>; its output is identical to tag paper1-v1.0.0. Changes since v1.0.0 are text only (web interface and documentation wording).</p>",
