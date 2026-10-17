@@ -34,8 +34,8 @@ keywords:
   - Bethe-Bloch
   - reproducible research
 license: MIT
-version: 1.0.0
-# DOI PLACEHOLDER — fill in ONLY after Zenodo mints it for the GitHub release paper1-v1.0.0
+version: 1.0.1
+date-released: '2026-10-17'
+# DOI PLACEHOLDER — fill in ONLY after Zenodo mints it for the GitHub release paper1-v1.0.1
 # (uncomment and replace; do not invent):
 # doi: 10.5281/zenodo.XXXXXXXX
-# date-released: YYYY-MM-DD
