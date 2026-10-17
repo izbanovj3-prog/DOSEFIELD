@@ -17,3 +17,6 @@ dist/
 # Editor / tooling
 .vscode/
 .idea/
+
+# Output of scripts/reproduce_paper1.ts (regenerated on demand; the frozen copy is evidence/paper1_results_0130722.json)
+/paper1_results.json
