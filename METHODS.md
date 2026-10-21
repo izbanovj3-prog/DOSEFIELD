@@ -8,7 +8,7 @@ one fully worked numerical example so any single number can be checked by hand, 
 the code. Sections 10–14 are the **ledger**: what is cited versus what is implemented here, the
 validation results, the honest comparison with published work, and the limitations. The equations
 are transcribed from the implementation files named in each section — if this document and the
-code ever disagree, the code and its CI-gated tests win.
+code ever disagree, the code and its tests take precedence.
 
 **Every number below was produced by running the code on 2026-08-31, and re-run in full on 2026-09-22** — `npm run validate:phase1..5`,
 `npm run report`, `npm run verify:deployed`, and a per-material recomputation against the NIST PSTAR
@@ -284,7 +284,7 @@ checkable rather than merely asserted:
 
 ### 11.1 Stopping power and range versus NIST PSTAR
 
-`npm run validate:phase1` → **GATE: PASS**. Stopping power **50/50** points pass, CSDA range
+`npm run validate:phase1` → **check passes**. Stopping power **50/50** points pass, CSDA range
 increment **45/45**.
 
 | | max \|error\|, all E (1–1000 MeV) | max \|error\|, E ≥ 10 MeV |
@@ -327,7 +327,7 @@ slowing primaries raises their LET and therefore Q.
 
 ### 11.3 MSL/RAD cruise comparison, and the absorbed-dose gap
 
-`npm run validate:phase4` → **GATE: PASS** (within 2×). Model run at W = 47.50 (Oulu neutron-monitor
+`npm run validate:phase4` → **check passes** (within 2×). Model run at W = 47.50 (Oulu neutron-monitor
 mean over the Zeitlin et al. 2013 window, SEP days 23–29 Jan, 7–15 Mar, 17 May 2012 excluded) behind ≈16 g/cm² of aluminium (Guo et al. 2015 average
 depth; mixed materials represented as Al), both set independently of the measurement.
 
