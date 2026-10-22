@@ -1,5 +1,88 @@
 # DOSEFIELD
 
+DOSEFIELD estimates, in your browser, the cosmic-ray radiation dose an astronaut receives behind a
+spacecraft wall on a deep-space trip, and checks itself against the dose NASA's Curiosity rover
+measured on its way to Mars (MSL/RAD).
+
+![DOSEFIELD in the browser](docs/screenshot.png)
+
+**Try it:** https://izbanovj3-prog.github.io/DOSEFIELD/
+
+## Quick start
+
+1. Open the demo and scroll to **Validation Suite**. It fills in on load with the model next to the
+   MSL/RAD measurement (W = 47.50, 16 g/cm² aluminium).
+2. In **Mission Configuration**, pick a material under **Layer 1 · structural** (Aluminium,
+   Polyethylene, Water, Hydrogen, Methane) and drag **Areal density**. The **Dose-Equivalent (behind
+   shield)** readout and the **Dose-Equivalent vs Shield Areal Density** chart update.
+3. Switch **Nuclear model** to **+ Fragmentation**, then open **Methods & Limitations** in the top
+   bar for the equations and the limitations table.
+
+## Features
+
+- Five shield materials, **Single layer** or **Two layers**, areal density 0 to 40 g/cm², solar
+  modulation W 0 to 130, mission duration 10 to 1000 days.
+- Proton stopping power within 1.55 % of NIST PSTAR from 10 to 1000 MeV, for all five materials.
+- MSL/RAD cruise comparison at W = 47.50 behind 16 g/cm² Al: dose equivalent 1.318 vs
+  1.75 mSv/day (0.75×), mean quality factor ⟨Q⟩ 4.995 vs 3.82 (1.31×).
+- Known limitation, shown in the app: secondary particles made in the shield are not transported,
+  so absorbed dose is 0.264 vs 0.458 mGy/day (0.58× of the measured value).
+- Five live self-checks, a cumulative-dose chart against the NASA 600 mSv career limit, PNG export,
+  a plain-text report (**Export report**) and shareable links (**Copy link**).
+- 190 unit tests and the headless validation scripts run in CI on every push.
+
+## Run locally
+
+Node.js 22 (the version CI uses; `package.json` has no `engines` field). No environment variables.
+
+```bash
+npm ci
+npm run dev            # Vite dev server at http://localhost:5173
+```
+
+Other commands, all from `package.json`:
+
+```bash
+npm test               # 190 unit tests (vitest)
+npm run typecheck
+npm run validate:phase1   # through validate:phase5, headless physics checks
+npm run build          # runs the tests first and rewrites src/ui/buildInfo.ts, then builds dist/
+npx tsx scripts/reproduce_paper1.ts out.json   # recomputes the numbers in the paper
+```
+
+## How it works
+
+- **Straight-ahead CSDA transport through a uniform spherical shell.** Each galactic cosmic-ray ion
+  (Z = 1 to 28) crosses the same areal density from every direction and slows continuously
+  (Bethe stopping power with the Sternheimer density effect; heavy ions by effective-charge
+  scaling). What is left deposits dose in a thin water target, and ICRP-60 Q(L) turns that into
+  dose equivalent. The model is 1-D by design, not a 3-D field calculation.
+- **No constant is tuned to the validation data.** Every constant comes from a cited source
+  (CODATA, PDG, Matthiä et al. 2013). The solar modulation W = 47.50 is computed from the Oulu
+  neutron-monitor record over the RAD averaging window, with solar-particle-event days excluded,
+  and is set independently of the measurement. The 0.58× absorbed-dose gap stays visible instead
+  of being fitted away.
+
+## Paper and code archive
+
+- Paper (SSRN): https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7202101 (DOI 10.2139/ssrn.7202101)
+- Code archive (Zenodo): https://doi.org/10.5281/zenodo.23433384
+
+## Credits
+
+- GCR spectrum: D. Matthiä et al., *Adv. Space Res.* 51 (2013) 329, coefficients via the reference
+  implementation [ssc-maire/CosRayModifiedISO](https://github.com/ssc-maire/CosRayModifiedISO).
+- Proton stopping-power reference tables: NIST PSTAR.
+- Neutron-monitor record: Oulu neutron monitor (https://cosmicrays.oulu.fi), as bundled with
+  CosRayModifiedISO v1.2.12.
+- Stopping-power formalism and material constants: Particle Data Group (PDG), "Passage of particles
+  through matter".
+- Measurement: MSL/RAD, Zeitlin et al., *Science* 340 (2013) 1080; Guo et al., *A&A* 577 (2015) A58.
+
+---
+
+# DOSEFIELD
+
 **A scientifically-honest 1-D model of the radiation dose an astronaut absorbs behind shielding
 on a deep-space mission — built from published, cited physics and compared with NASA's MSL/RAD
 measurement, with no constant fitted to the validation data.**
